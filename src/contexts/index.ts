@@ -1,3 +1,2 @@
 // Exportaciones centralizadas de contextos
-export { AuthProvider, useAuth } from './AuthContext';
-
+export { AuthProvider, useAuth } from "./AuthContext";

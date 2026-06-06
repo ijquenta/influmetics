@@ -1,4 +1,3 @@
 // Exportaciones centralizadas de componentes de layout
-export { DashboardSidebar } from './DashboardSidebar';
-export { DashboardHeader } from './DashboardHeader';
-
+export { DashboardSidebar } from "./DashboardSidebar";
+export { DashboardHeader } from "./DashboardHeader";
