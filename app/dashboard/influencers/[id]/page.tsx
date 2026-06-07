@@ -88,10 +88,10 @@ const createDummyInfluencer = (id: number): InfluencerWithRelations => {
     return {
         id,
         name,
-        email: `${slug}@takenos.com`,
+        email: `${slug}@influmetics.com`,
         birthDate: null,
         niche,
-        referralCode: `TAKENOS${2000 + id}`,
+        referralCode: `INFLUMETICS${2000 + id}`,
         createdAt: new Date(),
         updatedAt: new Date(),
         socialAccounts: [],
@@ -239,8 +239,8 @@ const buildScrapedFromDummyJson = (id: number, raw: DummyJson): ScrapedResponse 
         engagements.length === 0
             ? 0
             : engagements.length % 2 !== 0
-              ? engagements[Math.floor(engagements.length / 2)]
-              : (engagements[engagements.length / 2 - 1] + engagements[engagements.length / 2]) / 2;
+                ? engagements[Math.floor(engagements.length / 2)]
+                : (engagements[engagements.length / 2 - 1] + engagements[engagements.length / 2]) / 2;
 
     const average = engagements.length === 0 ? 0 : engagements.reduce((a, b) => a + b, 0) / engagements.length;
 

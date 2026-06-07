@@ -143,7 +143,7 @@ export default function NewCampaignPage() {
                                                 id="name"
                                                 value={formData.name}
                                                 onChange={(e) => handleInputChange("name", e.target.value)}
-                                                placeholder="Ej: Lanzamiento Takenos Bolivia"
+                                                placeholder="Ej: Lanzamiento Influmetics Bolivia"
                                                 className="rounded-2xl"
                                                 required
                                             />
@@ -223,10 +223,10 @@ export default function NewCampaignPage() {
                                                         >
                                                             {formData.startDate
                                                                 ? new Date(formData.startDate).toLocaleDateString("es-ES", {
-                                                                      day: "2-digit",
-                                                                      month: "short",
-                                                                      year: "numeric",
-                                                                  })
+                                                                    day: "2-digit",
+                                                                    month: "short",
+                                                                    year: "numeric",
+                                                                })
                                                                 : "Seleccionar fecha"}
                                                         </Button>
                                                     </PopoverTrigger>
@@ -255,10 +255,10 @@ export default function NewCampaignPage() {
                                                         >
                                                             {formData.endDate
                                                                 ? new Date(formData.endDate).toLocaleDateString("es-ES", {
-                                                                      day: "2-digit",
-                                                                      month: "short",
-                                                                      year: "numeric",
-                                                                  })
+                                                                    day: "2-digit",
+                                                                    month: "short",
+                                                                    year: "numeric",
+                                                                })
                                                                 : "Seleccionar fecha"}
                                                         </Button>
                                                     </PopoverTrigger>

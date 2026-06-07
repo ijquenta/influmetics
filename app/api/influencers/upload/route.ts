@@ -30,11 +30,30 @@ function parseCSV(csvText: string): string[][] {
     return lines;
 }
 
-// Función para leer archivo Excel (requiere xlsx library)
+// Función para leer archivo Excel usando exceljs
 async function parseExcel(buffer: Buffer): Promise<string[][]> {
-    // Para una implementación completa, necesitarías instalar: npm install xlsx
-    // Por ahora, retornamos un error indicando que necesitas instalar la librería
-    throw new Error("Para procesar archivos Excel, instala xlsx: npm install xlsx");
+    const rows: string[][] = [];
+    try {
+        const ExcelJS = await import("exceljs");
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(buffer as any);
+        const worksheet = workbook.worksheets[0];
+        if (!worksheet) return rows;
+
+        worksheet.eachRow((row) => {
+            const values: string[] = [];
+            row.eachCell((cell) => {
+                const v = cell.value;
+                if (v === null || v === undefined) values.push("");
+                else if (typeof v === "object" && (v as any).richText) values.push((v as any).richText.map((r: any) => r.text).join(""));
+                else values.push(String(v));
+            });
+            rows.push(values);
+        });
+        return rows;
+    } catch (err) {
+        throw new Error("Error parsing Excel: ensure 'exceljs' is installed");
+    }
 }
 
 export async function POST(request: NextRequest) {

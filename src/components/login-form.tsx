@@ -30,11 +30,11 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                             </div>
                             <Field>
                                 <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-                                <Input id="email" type="email" defaultValue="admin@takenos.com" placeholder="admin@takenos.com" required />
+                                <Input id="email" type="email" defaultValue="admin@influmetics.com" placeholder="admin@influmetics.com" required />
                             </Field>
                             <Field>
                                 <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                                <Input id="password" type="password" defaultValue="takenos" placeholder="takenos" required />
+                                <Input id="password" type="password" defaultValue="admin" placeholder="admin" required />
                             </Field>
                             <Field>
                                 <Button type="submit" className="w-full">

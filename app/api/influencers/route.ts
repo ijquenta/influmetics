@@ -2,94 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 
-// Datos dummy de influencers (modo demo / sin BD)
-const dummyInfluencers = [
-    {
-        id: 1,
-        name: "María García",
-        email: "maria@example.com",
-        niche: "Beauty & Lifestyle",
-        referralCode: "MARIA2025",
-    },
-    {
-        id: 2,
-        name: "Carlos Rodríguez",
-        email: "carlos@example.com",
-        niche: "Tech & Gadgets",
-        referralCode: "CARLOS2025",
-    },
-    {
-        id: 3,
-        name: "Ana Martínez",
-        email: "ana@example.com",
-        niche: "Fitness & Wellness",
-        referralCode: "ANA2025",
-    },
-    {
-        id: 4,
-        name: "Luis Fernández",
-        email: "luis@example.com",
-        niche: "Travel & Adventure",
-        referralCode: "LUIS2025",
-    },
-    {
-        id: 5,
-        name: "Sofia Pérez",
-        email: "sofia@example.com",
-        niche: "Fashion & Style",
-        referralCode: "SOFIA2025",
-    },
-    {
-        id: 6,
-        name: "Diego Morales",
-        email: "diego@example.com",
-        niche: "Food & Cooking",
-        referralCode: "DIEGO2025",
-    },
-    {
-        id: 7,
-        name: "Valentina Ruiz",
-        email: "valentina@example.com",
-        niche: "Music & Entertainment",
-        referralCode: "VALEN2025",
-    },
-    {
-        id: 8,
-        name: "Andrés Sánchez",
-        email: "andres@example.com",
-        niche: "Sports & Fitness",
-        referralCode: "ANDRES2025",
-    },
-];
-
-function filterDummyInfluencers(search: string | null, niche: string | null) {
-    let filteredDummy = dummyInfluencers;
-
-    if (search) {
-        const s = search.toLowerCase();
-        filteredDummy = filteredDummy.filter(
-            (inf) =>
-                inf.name.toLowerCase().includes(s) || inf.email?.toLowerCase().includes(s) || inf.referralCode?.toLowerCase().includes(s)
-        );
-    }
-
-    if (niche) {
-        filteredDummy = filteredDummy.filter((inf) => inf.niche === niche);
-    }
-
-    return filteredDummy;
-}
-
 export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
     const niche = searchParams.get("niche");
-
-    // Si no hay DATABASE_URL, responder siempre con dummy filtrado y no tocar Prisma
-    if (!process.env.DATABASE_URL) {
-        const filteredDummy = filterDummyInfluencers(search, niche);
-        return NextResponse.json({ data: filteredDummy });
-    }
 
     try {
         const where: Prisma.InfluencerWhereInput = {};
@@ -131,35 +47,10 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        // Si no hay influencers en la BD, retornar datos dummy
-        if (influencers.length === 0) {
-            let filteredDummy = dummyInfluencers;
-
-            if (search) {
-                filteredDummy = dummyInfluencers.filter(
-                    (inf) =>
-                        inf.name.toLowerCase().includes(search.toLowerCase()) ||
-                        inf.email?.toLowerCase().includes(search.toLowerCase()) ||
-                        inf.referralCode?.toLowerCase().includes(search.toLowerCase())
-                );
-            }
-
-            if (niche) {
-                filteredDummy = filteredDummy.filter((inf) => inf.niche === niche);
-            }
-
-            return NextResponse.json({ data: filteredDummy });
-        }
-
         return NextResponse.json({ data: influencers });
     } catch (error) {
         console.error("Error fetching influencers:", error);
-        // En caso de error, retornar datos dummy filtrados
-        const searchParams = request.nextUrl.searchParams;
-        const search = searchParams.get("search");
-        const niche = searchParams.get("niche");
-        const filteredDummy = filterDummyInfluencers(search, niche);
-        return NextResponse.json({ data: filteredDummy });
+        return NextResponse.json({ error: "Error al obtener influencers" }, { status: 500 });
     }
 }
 
@@ -174,7 +65,6 @@ export async function POST(request: NextRequest) {
         }
 
         // Validar que no haya emails duplicados (si se proporciona email)
-        // Usamos findFirst porque el email no es clave única en el esquema actual
         if (email && email.trim()) {
             const existingInfluencer = await prisma.influencer.findFirst({
                 where: { email: email.trim() },
@@ -241,7 +131,6 @@ export async function POST(request: NextRequest) {
 
         // Crear influencer con sus cuentas sociales usando transacción
         const influencer = await prisma.$transaction(async (tx) => {
-            // Crear el influencer
             const newInfluencer = await tx.influencer.create({
                 data: {
                     name: name.trim(),
@@ -252,7 +141,6 @@ export async function POST(request: NextRequest) {
                 },
             });
 
-            // Crear las cuentas de redes sociales si se proporcionaron
             if (socialAccounts && Array.isArray(socialAccounts) && socialAccounts.length > 0) {
                 const validAccounts = socialAccounts
                     .filter(
@@ -274,7 +162,6 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-            // Retornar el influencer con todas sus relaciones
             return await tx.influencer.findUnique({
                 where: { id: newInfluencer.id },
                 include: {
@@ -297,7 +184,6 @@ export async function POST(request: NextRequest) {
     } catch (error: unknown) {
         console.error("Error creating influencer:", error);
 
-        // Manejar errores específicos de Prisma
         if (typeof error === "object" && error !== null && "code" in error && (error as { code?: string }).code === "P2002") {
             return NextResponse.json({ error: "Ya existe un registro con estos datos únicos" }, { status: 400 });
         }

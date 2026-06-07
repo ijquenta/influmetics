@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList, ResponsiveContainer } from "recharts";
 import { IconChevronDown } from "@tabler/icons-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { toast } from "sonner";
 
 interface InfluencerOption {
@@ -50,84 +50,6 @@ const formatDateForInput = (date: Date) => {
     return date.toISOString().split("T")[0];
 };
 
-// Generar NAU y ROI dummy para un rango de fechas y un conjunto de influencers,
-// filtrando opcionalmente por campaña y/o código de referido.
-function generateRoiDummyData(
-    start: Date,
-    end: Date,
-    influencers: InfluencerOption[],
-    selectedCampaignId?: number,
-    selectedReferralCodes: string[] = []
-) {
-    const timeline: RoiTimelinePoint[] = [];
-    const summary: RoiSummary[] = [];
-
-    const days: Date[] = [];
-    const current = new Date(start);
-    while (current <= end) {
-        days.push(new Date(current));
-        current.setDate(current.getDate() + 1);
-    }
-
-    const effectiveInfluencers =
-        selectedCampaignId || (selectedReferralCodes && selectedReferralCodes.length > 0)
-            ? influencers.filter((inf) => {
-                  const matchesCampaign =
-                      selectedCampaignId !== undefined && selectedCampaignId !== null ? inf.campaignId === selectedCampaignId : true;
-                  const matchesReferral =
-                      selectedReferralCodes && selectedReferralCodes.length > 0
-                          ? inf.referralCode != null && selectedReferralCodes.includes(inf.referralCode)
-                          : true;
-                  return matchesCampaign && matchesReferral;
-              })
-            : influencers;
-
-    effectiveInfluencers.forEach((inf) => {
-        let totalNau = 0;
-
-        days.forEach((day, dayIndex) => {
-            const key = inf.referralCode || `INF_${inf.id}`;
-            const seed = inf.id * 37 + dayIndex * 17;
-            const rand = Math.abs(Math.sin(seed)); // 0..1 aprox
-
-            const baseNau = 5 + rand * 40; // 5–45 NAU por día
-            const nau = Math.round(baseNau);
-            totalNau += nau;
-
-            const dateKey = day.toISOString().split("T")[0];
-            let point = timeline.find((p) => p.date === dateKey);
-            if (!point) {
-                point = { date: dateKey };
-                timeline.push(point);
-            }
-            (point as RoiTimelinePoint)[key] = nau;
-        });
-
-        // ROI dummy en función del NAU total
-        const roiSeed = Math.abs(Math.sin(inf.id * 123.456));
-        const roi = Number((roiSeed * 60 - 10).toFixed(1)); // -10% a +50%
-
-        summary.push({
-            influencerId: inf.id,
-            name: inf.name,
-            referralCode: inf.referralCode,
-            username: inf.username,
-            socialPlatforms: inf.socialPlatforms,
-            campaignId: inf.campaignId ?? null,
-            campaignName: inf.campaignName ?? null,
-            nau: totalNau,
-            roi,
-        });
-    });
-
-    // Ordenar timeline por fecha
-    timeline.sort((a, b) => (a.date as string).localeCompare(b.date as string));
-
-    // Ordenar summary por ROI desc
-    summary.sort((a, b) => b.roi - a.roi);
-
-    return { timeline, summary };
-}
 
 export default function RoiPage() {
     const [influencers, setInfluencers] = useState<InfluencerOption[]>([]);
@@ -165,13 +87,12 @@ export default function RoiPage() {
                 }>;
             }>;
 
-            let list: InfluencerOption[] = apiInfluencers.flatMap((inf) => {
+            const list: InfluencerOption[] = apiInfluencers.flatMap((inf) => {
                 const platforms = inf.socialAccounts?.map((sa) => sa.socialPlatform.name) ?? [];
                 const primaryHandleRaw = inf.socialAccounts?.[0]?.handle ?? null;
                 const primaryHandle = primaryHandleRaw ? "@" + primaryHandleRaw.replace(/^@/, "") : null;
-
-                const username = primaryHandle || `@${inf.name.split(" ")[0].toLowerCase()}_${inf.id}`; // dummy si no hay handle
-                const socialPlatforms = platforms.length > 0 ? platforms : ["TikTok", "Instagram"]; // dummy si no hay redes
+                const username = primaryHandle || null;
+                const socialPlatforms = platforms.length > 0 ? platforms : [];
 
                 if (!inf.influencerCampaigns || inf.influencerCampaigns.length === 0) {
                     const single: InfluencerOption = {
@@ -197,24 +118,6 @@ export default function RoiPage() {
                 }));
             });
 
-            // Si ningún influencer viene con campaña (modo demo sin BD),
-            // asignar campañas dummy para que el selector tenga opciones.
-            if (list.every((inf) => inf.campaignId == null)) {
-                const dummyCampaigns = [
-                    { id: 1, name: "Lanzamiento Takenos" },
-                    { id: 2, name: "Performance Q1 Ecommerce" },
-                    { id: 3, name: "Branding Latam" },
-                ];
-                list = list.map((inf, index) => {
-                    const dc = dummyCampaigns[index % dummyCampaigns.length];
-                    return {
-                        ...inf,
-                        campaignId: dc.id,
-                        campaignName: dc.name,
-                    };
-                });
-            }
-
             setInfluencers(list);
 
             // Preseleccionar primera campaña si aún no hay una seleccionada
@@ -233,49 +136,7 @@ export default function RoiPage() {
             setSelectedReferralCodes(defaultCodes);
         } catch (error) {
             console.error("Error fetching influencers:", error);
-            // Dummy mínimo si falla la API
-            const dummyList: InfluencerOption[] = [
-                {
-                    id: 1,
-                    name: "María García",
-                    referralCode: "MARIA2025",
-                    username: "@maria.beauty",
-                    socialPlatforms: ["TikTok", "Instagram"],
-                    campaignId: 1,
-                    campaignName: "Lanzamiento Takenos",
-                },
-                {
-                    id: 2,
-                    name: "Carlos Rodríguez",
-                    referralCode: "CARLOS2025",
-                    username: "@carlos.tech",
-                    socialPlatforms: ["YouTube", "X (Twitter)"],
-                    campaignId: 2,
-                    campaignName: "Performance Q1 Ecommerce",
-                },
-                {
-                    id: 3,
-                    name: "Ana Martínez",
-                    referralCode: "ANA2025",
-                    username: "@ana.fit",
-                    socialPlatforms: ["Instagram", "TikTok"],
-                    campaignId: 1,
-                    campaignName: "Lanzamiento Takenos",
-                },
-            ];
-            setInfluencers(dummyList);
-
-            if (selectedCampaignId === "all") {
-                const firstCampaign = dummyList.find((inf) => inf.campaignId != null);
-                if (firstCampaign?.campaignId != null) {
-                    setSelectedCampaignId(firstCampaign.campaignId.toString());
-                }
-            }
-
-            const defaultCodes = Array.from(
-                new Set(dummyList.map((inf) => inf.referralCode).filter((code): code is string => !!code))
-            ).slice(0, 3);
-            setSelectedReferralCodes(defaultCodes);
+            setInfluencers([]);
         }
     };
 
@@ -285,22 +146,9 @@ export default function RoiPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Calcular timeline y summary en memoria según filtros
-    const { timeline, summary } = useMemo(() => {
-        if (influencers.length === 0 || !startDate || !endDate) {
-            return {
-                timeline: [] as RoiTimelinePoint[],
-                summary: [] as RoiSummary[],
-            };
-        }
-
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-
-        const effectiveCampaignId = selectedCampaignId !== "all" ? parseInt(selectedCampaignId) : undefined;
-
-        return generateRoiDummyData(start, end, influencers, effectiveCampaignId, selectedReferralCodes);
-    }, [startDate, endDate, influencers, selectedCampaignId, selectedReferralCodes]);
+    // Timeline y summary: vacíos hasta que se conecte una fuente de datos real de NAU/ROI
+    const timeline = useMemo<RoiTimelinePoint[]>(() => [], []);
+    const summary = useMemo<RoiSummary[]>(() => [], []);
 
     const selectedCampaignName = useMemo(() => {
         if (selectedCampaignId === "all") return "Todas las campañas";
@@ -322,7 +170,7 @@ export default function RoiPage() {
     // Top 5 influencers por ROI (ya viene ordenado desc en generateRoiDummyData)
     const topSummaryForChart = useMemo(() => summary.slice(0, 5), [summary]);
 
-    const exportTimelineToExcel = () => {
+    const exportTimelineToExcel = async () => {
         if (timeline.length === 0 || topSummaryForChart.length === 0) {
             toast.error("No hay datos de NAU para exportar");
             return;
@@ -349,20 +197,36 @@ export default function RoiPage() {
                 return row;
             });
 
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(excelData);
-            const colWidths = Object.keys(excelData[0] || {}).map((key) => ({
-                wch: Math.max(key.length, 16),
-            }));
-            // Ajustar anchos de columna
-            (ws as XLSX.WorkSheet)["!cols"] = colWidths;
-            XLSX.utils.book_append_sheet(wb, ws, "NAU en el tiempo");
+            // Usar ExcelJS para generar el archivo en el cliente
+            const workbook = new ExcelJS.Workbook();
+            const ws = workbook.addWorksheet("NAU en el tiempo");
+
+            const headers = Object.keys(excelData[0] || {});
+            ws.addRow(headers);
+            for (const rowObj of excelData) {
+                const row = headers.map((h) => (rowObj[h] !== undefined ? rowObj[h] : ""));
+                ws.addRow(row);
+            }
+
+            headers.forEach((key, idx) => {
+                const maxLen = Math.max(key.length, ...excelData.map((r) => String(r[key] ?? "").length));
+                ws.getColumn(idx + 1).width = Math.min(50, maxLen + 2);
+            });
 
             const fileName = `ROI_NAU_Top5_${selectedCampaignName
                 .replace(/\s+/g, "_")
                 .replace(/[^a-zA-Z0-9_]/g, "")}_${startDate}_${endDate}.xlsx`;
 
-            XLSX.writeFile(wb, fileName);
+            const buf = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
             toast.success("Archivo Excel descargado exitosamente");
         } catch (error) {
             console.error("Error exportando NAU a Excel:", error);
@@ -406,10 +270,10 @@ export default function RoiPage() {
                                                 >
                                                     {startDate
                                                         ? new Date(startDate).toLocaleDateString("es-ES", {
-                                                              day: "2-digit",
-                                                              month: "short",
-                                                              year: "numeric",
-                                                          })
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                        })
                                                         : "Seleccionar fecha"}
                                                     <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
                                                 </Button>
@@ -437,10 +301,10 @@ export default function RoiPage() {
                                                 >
                                                     {endDate
                                                         ? new Date(endDate).toLocaleDateString("es-ES", {
-                                                              day: "2-digit",
-                                                              month: "short",
-                                                              year: "numeric",
-                                                          })
+                                                            day: "2-digit",
+                                                            month: "short",
+                                                            year: "numeric",
+                                                        })
                                                         : "Seleccionar fecha"}
                                                     <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
                                                 </Button>
@@ -524,8 +388,8 @@ export default function RoiPage() {
                                                     {selectedReferralCodes.length === 0
                                                         ? "Todos los códigos"
                                                         : selectedReferralCodes.length <= 3
-                                                          ? selectedReferralCodes.join(", ")
-                                                          : `${selectedReferralCodes.length} códigos seleccionados`}
+                                                            ? selectedReferralCodes.join(", ")
+                                                            : `${selectedReferralCodes.length} códigos seleccionados`}
                                                     <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </PopoverTrigger>
@@ -662,9 +526,8 @@ export default function RoiPage() {
                                                                     dataKey={key}
                                                                     name={
                                                                         row.referralCode
-                                                                            ? `${row.referralCode} / ${row.name}${
-                                                                                  row.campaignName ? " · " + row.campaignName : ""
-                                                                              }`
+                                                                            ? `${row.referralCode} / ${row.name}${row.campaignName ? " · " + row.campaignName : ""
+                                                                            }`
                                                                             : `${row.name}${row.campaignName ? " · " + row.campaignName : ""}`
                                                                     }
                                                                     stroke="#6C48C5"

@@ -1,7 +1,7 @@
 // Configuración general de la aplicación
 
 export const APP_CONFIG = {
-    name: "Takenos Innovahack 2025",
+    name: "Influmetics",
     version: "0.1.0",
     apiUrl: process.env.NEXT_PUBLIC_API_URL || "/api",
     defaultPageSize: 10,

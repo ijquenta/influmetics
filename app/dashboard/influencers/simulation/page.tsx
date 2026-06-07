@@ -404,7 +404,7 @@ export default function InfluencerSimulationPage() {
                                 <CardHeader>
                                     <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Analizar un perfil de TikTok</CardTitle>
                                     <CardDescription className="text-[14px] text-[#6B6B8D]">
-                                        Ingresa un usuario o enlace de perfil para ver un ejemplo de cómo Takenos presenta la información de
+                                        Ingresa un usuario o enlace de perfil para ver un ejemplo de cómo Influmetics presenta la información de
                                         rendimiento.
                                     </CardDescription>
                                 </CardHeader>

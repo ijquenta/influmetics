@@ -19,7 +19,7 @@ import { IconTrendingUp, IconTrendingDown, IconChevronDown, IconX, IconCrown, Ic
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { toast } from "sonner";
 
 interface DashboardStats {
@@ -521,14 +521,13 @@ export default function DashboardPage() {
     };
 
     // Función para exportar a Excel
-    const exportToExcel = () => {
+    const exportToExcel = async () => {
         if (timeline.length === 0) {
             toast.error("No hay datos para exportar");
             return;
         }
 
         try {
-            // Obtener información de campaña y plataformas seleccionadas
             const selectedCampaignName =
                 selectedCampaignId && selectedCampaignId !== "all"
                     ? (campaigns.find((c) => c.id === Number(selectedCampaignId))?.name ?? "Campaña seleccionada")
@@ -542,7 +541,6 @@ export default function DashboardPage() {
                           .join(", ")
                     : "Todas las plataformas";
 
-            // Preparar datos para Excel
             const excelData = timeline.map((item) => {
                 const row: Record<string, string | number> = {
                     Fecha: new Date(item.date).toLocaleDateString("es-ES", {
@@ -552,13 +550,9 @@ export default function DashboardPage() {
                     }),
                 };
 
-                // Agregar columna de Canales/Tipos de canales
                 row["Canales"] = selectedPlatformNames;
-
-                // Agregar columna de Campaña
                 row["Campaña"] = selectedCampaignName;
 
-                // Si hay múltiples plataformas seleccionadas, agregar columnas por plataforma
                 if (selectedPlatformIds.length > 1) {
                     selectedPlatformIds.forEach((platformId) => {
                         const platform = platforms.find((p) => p.id === platformId);
@@ -574,12 +568,11 @@ export default function DashboardPage() {
                             row[`Conversiones ${platform.name}`] = typeof item[conversionsKey] === "number" ? item[conversionsKey] : 0;
                         }
                     });
-                    // Totales
+
                     row["Vistas Totales"] = item.views || 0;
                     row["Engagement Total (%)"] = typeof item.engagement === "number" ? Number(item.engagement.toFixed(2)) : 0;
                     row["Conversiones Totales"] = item.conversions || 0;
                 } else {
-                    // Una sola plataforma o todas - datos consolidados
                     row["Vistas"] = item.views || 0;
                     row["Engagement (%)"] = typeof item.engagement === "number" ? Number(item.engagement.toFixed(2)) : 0;
                     row["Conversiones"] = item.conversions || 0;
@@ -588,23 +581,31 @@ export default function DashboardPage() {
                 return row;
             });
 
-            // Crear workbook y worksheet
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.json_to_sheet(excelData);
-
-            // Configurar anchos de columna
-            const colWidths = Object.keys(excelData[0] || {}).map((key) => ({
-                wch: Math.max(key.length, 15),
-            }));
-            ws["!cols"] = colWidths;
-
-            // Agregar worksheet al workbook
-            // Nota: los nombres de hoja en Excel no pueden exceder 31 caracteres.
+            // Crear workbook y worksheet usando ExcelJS
+            const workbook = new ExcelJS.Workbook();
             const sheetNameBase = "Impacto de campaña";
             const sheetName = sheetNameBase.slice(0, 31);
-            XLSX.utils.book_append_sheet(wb, ws, sheetName);
+            const ws = workbook.addWorksheet(sheetName);
 
-            // Generar nombre del archivo
+            const headers = Object.keys(excelData[0] || {});
+            // Agregar fila de encabezados
+            ws.addRow(headers);
+
+            // Agregar filas
+            for (const rowObj of excelData) {
+                const row = headers.map((h) => (rowObj[h] !== undefined ? rowObj[h] : ""));
+                ws.addRow(row);
+            }
+
+            // Ajustar ancho de columnas
+            headers.forEach((key, idx) => {
+                const maxLen = Math.max(
+                    key.length,
+                    ...excelData.map((r) => String(r[key] ?? "").length)
+                );
+                ws.getColumn(idx + 1).width = Math.min(50, maxLen + 2);
+            });
+
             const monthName = "Rango_fechas";
             const platformNames =
                 selectedPlatformIds.length > 0
@@ -615,8 +616,17 @@ export default function DashboardPage() {
                     : "Todas";
             const fileName = `Evolucion_de_impacto_de_campaña_${monthName}_${platformNames}.xlsx`;
 
-            // Descargar archivo
-            XLSX.writeFile(wb, fileName);
+            const buf = await workbook.xlsx.writeBuffer();
+            const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+
             toast.success("Archivo Excel descargado exitosamente");
         } catch (error) {
             console.error("Error exporting to Excel:", error);

@@ -457,11 +457,11 @@ export default function InfluencersPage() {
                                                                 <div className="flex flex-col gap-2">
                                                                     {(influencer.socialAccounts && influencer.socialAccounts.length > 0
                                                                         ? influencer.socialAccounts.map((account) => ({
-                                                                              id: account.id,
-                                                                              platformCode: account.socialPlatform.code,
-                                                                              handle: account.handle,
-                                                                              isActive: account.isActive,
-                                                                          }))
+                                                                            id: account.id,
+                                                                            platformCode: account.socialPlatform.code,
+                                                                            handle: account.handle,
+                                                                            isActive: account.isActive,
+                                                                        }))
                                                                         : getDummySocialAccounts(influencer)
                                                                     ).map((account) => (
                                                                         <div key={account.id} className="flex items-center gap-2">
@@ -475,13 +475,13 @@ export default function InfluencersPage() {
                                                                                             ? "/logo-tiktok.png"
                                                                                             : account.platformCode.toLowerCase() ===
                                                                                                 "instagram"
-                                                                                              ? "/logo-instragram.png"
-                                                                                              : account.platformCode.toLowerCase() ===
-                                                                                                  "youtube"
-                                                                                                ? "/file.svg"
-                                                                                                : account.platformCode.toLowerCase() === "x"
-                                                                                                  ? "/file.svg"
-                                                                                                  : "/file.svg"
+                                                                                                ? "/logo-instragram.png"
+                                                                                                : account.platformCode.toLowerCase() ===
+                                                                                                    "youtube"
+                                                                                                    ? "/file.svg"
+                                                                                                    : account.platformCode.toLowerCase() === "x"
+                                                                                                        ? "/file.svg"
+                                                                                                        : "/file.svg"
                                                                                     }
                                                                                     alt={getPlatformName(account.platformCode)}
                                                                                     width={64}

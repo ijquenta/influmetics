@@ -1,6 +1,8 @@
 "use client";
 
-import { IconDotsVertical, IconLogout } from "@tabler/icons-react";
+import { useState, useEffect } from "react";
+import { IconDotsVertical, IconLogout, IconSun, IconMoon } from "@tabler/icons-react";
+import { useTheme } from "next-themes";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -26,6 +28,12 @@ export function NavUser({
 }) {
     const { isMobile } = useSidebar();
     const router = useRouter();
+    const { theme, setTheme } = useTheme();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     return (
         <SidebarMenu>
@@ -67,12 +75,26 @@ export function NavUser({
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
+                            <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                                {mounted && theme === "dark" ? (
+                                    <>
+                                        <IconSun className="mr-2 h-4 w-4" />
+                                        <span>Modo claro</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <IconMoon className="mr-2 h-4 w-4" />
+                                        <span>Modo oscuro</span>
+                                    </>
+                                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onClick={() => {
                                     router.push("/");
                                 }}
                             >
-                                <IconLogout />
+                                <IconLogout className="mr-2 h-4 w-4" />
                                 Cerrar sesión
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
@@ -82,3 +104,4 @@ export function NavUser({
         </SidebarMenu>
     );
 }
+

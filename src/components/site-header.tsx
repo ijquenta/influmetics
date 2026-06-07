@@ -15,16 +15,18 @@ export function SiteHeader() {
         if (pathname.startsWith("/dashboard/campaigns/")) return pathname.includes("/new") ? "Nueva Campaña" : "Detalle Campaña";
         if (pathname === "/dashboard/reports") return "Reportes";
         if (pathname === "/dashboard/metrics") return "Cargar Métricas";
-        return "Takenos";
+        return "Influmetics";
     };
 
     return (
-        <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b border-[rgba(108,72,197,0.1)] bg-white transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
+        <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b border-border bg-card transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
             <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
                 <SidebarTrigger className="-ml-1 text-[#6C48C5] hover:text-[#5A3AA8]" />
                 <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-                <h1 className="text-lg font-bold text-[#1A1A2E]">{getPageTitle()}</h1>
+                <h1 className="text-lg font-bold text-foreground">{getPageTitle()}</h1>
             </div>
         </header>
     );
 }
+
+
