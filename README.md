@@ -1,6 +1,6 @@
-# Takenos Innovahack 2025
+# Influmetrics Frontend
 
-Aplicación web construida con Next.js, TypeScript, Prisma, PostgreSQL, Tailwind CSS y shadcn/ui para el dashboard de gestión de influencers de Takenos.
+Aplicación web construida con Next.js, TypeScript, Prisma, PostgreSQL, Tailwind CSS y shadcn/ui para el dashboard de gestión de influencers.
 
 ## 🚀 Stack Técnico
 
@@ -58,7 +58,7 @@ cp .env.example .env
 
 Editar `.env` y configurar la conexión a PostgreSQL:
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/takenos_db?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/influmetics_db?schema=public"
 ```
 
 4. **Generar el cliente de Prisma:**
@@ -119,7 +119,7 @@ Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ## 🎨 Sistema de Diseño
 
-La aplicación usa un sistema de diseño personalizado con la paleta de colores de Takenos:
+La aplicación usa un sistema de diseño personalizado con la paleta de colores:
 
 - **Primario**: `#6C48C5`
 - **Secundario**: `#C68FFF`
@@ -205,4 +205,4 @@ Las funciones de cálculo están en `src/lib/metrics.ts`:
 
 ## 📄 Licencia
 
-Este proyecto fue desarrollado para el Takenos Innovahack 2025.
+Este proyecto fue desarrollado para el Influmetics.
