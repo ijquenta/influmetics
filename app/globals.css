@@ -44,8 +44,9 @@
 }
 
 :root {
-    /* Sistema de Diseño Takenos */
-    --radius: 1.25rem; /* 20px */
+    /* Sistema de Diseño */
+    --radius: 1.25rem;
+    /* 20px */
 
     /* Colores Primarios */
     --primary: #6c48c5;
@@ -137,12 +138,95 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.38 0.189 293.745);
+
+    /* Mapeo de clases de Tailwind con colores hardcodeados */
+    .bg-\[\#F8F7FC\] {
+        background-color: var(--background) !important;
+    }
+    .text-\[\#1A1A2E\] {
+        color: var(--foreground) !important;
+    }
+    .text-\[\#6B6B8D\] {
+        color: var(--muted-foreground) !important;
+    }
+    .bg-white {
+        background-color: var(--card) !important;
+    }
+    .bg-\[\#F9FAFB\] {
+        background-color: var(--muted) !important;
+    }
+    .hover\:bg-\[\#F8F7FC\]:hover {
+        background-color: var(--muted) !important;
+    }
+    .border-\[rgba\(108\,72\,197\,0\.1\)\] {
+        border-color: var(--border) !important;
+    }
+    .border-\[rgba\(108\,72\,197\,0\.08\)\] {
+        border-color: var(--border) !important;
+    }
+    .border-\[\#6C48C5\] {
+        border-color: var(--primary) !important;
+    }
+    .text-\[\#6C48C5\] {
+        color: var(--primary) !important;
+    }
+    .bg-\[\#E8DEFF\] {
+        background-color: color-mix(in srgb, var(--primary) 15%, transparent) !important;
+    }
+    .hover\:bg-\[\#E8DEFF\]:hover {
+        background-color: color-mix(in srgb, var(--primary) 25%, transparent) !important;
+    }
+    .bg-\[rgba\(108\,72\,197\,0\.08\)\] {
+        background-color: color-mix(in srgb, var(--primary) 12%, transparent) !important;
+    }
+    .bg-\[rgba\(108\,72\,197\,0\.03\)\] {
+        background-color: color-mix(in srgb, var(--primary) 6%, transparent) !important;
+    }
+    .bg-\[rgba\(108\,72\,197\,0\.02\)\] {
+        background-color: color-mix(in srgb, var(--primary) 4%, transparent) !important;
+    }
+    .hover\:bg-\[rgba\(108\,72\,197\,0\.05\)\]:hover {
+        background-color: color-mix(in srgb, var(--primary) 10%, transparent) !important;
+    }
+    .bg-\[\#6C48C5\] {
+        background-color: var(--primary) !important;
+    }
+    .hover\:bg-\[\#5B3AB0\]:hover {
+        background-color: color-mix(in srgb, var(--primary) 85%, black) !important;
+    }
+    
+    /* Estados de Alerta y Éxito */
+    .bg-\[\#E8F5E9\] {
+        background-color: color-mix(in srgb, var(--success, #4caf50) 20%, transparent) !important;
+    }
+    .text-\[\#4CAF50\] {
+        color: var(--success, #4caf50) !important;
+    }
+    .bg-\[\#FFEBEE\] {
+        background-color: color-mix(in srgb, var(--destructive, #ef4444) 15%, transparent) !important;
+    }
+    .text-\[\#EF4444\] {
+        color: var(--destructive, #ef4444) !important;
+    }
+    .text-\[\#B91C1C\] {
+        color: var(--destructive, #ef4444) !important;
+    }
+    .text-\[\#7F1D1D\] {
+        color: var(--destructive, #ef4444) !important;
+    }
+    .bg-\[\#FFF3E0\] {
+        background-color: color-mix(in srgb, #ff9800 20%, transparent) !important;
+    }
+    .text-\[\#FF9800\] {
+        color: #ff9800 !important;
+    }
 }
 
 @layer base {
     * {
         @apply border-border outline-ring/50;
     }
+
     body {
         @apply bg-background text-foreground;
         font-family: var(--font-family);
