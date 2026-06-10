@@ -7,6 +7,12 @@ import { SiteHeader } from "@/components/site-header";
 import { PageBreadcrumb } from "@/components/page-breadcrumb";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+    IconBrandTiktok,
+    IconBrandInstagram,
+    IconBrandYoutube,
+    IconBrandX,
+} from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -502,10 +508,23 @@ export default function InfluencerDetailPage() {
                                                                     <Badge
                                                                         key={account.id}
                                                                         variant="outline"
-                                                                        className="text-xs rounded-2xl"
+                                                                        className="gap-1.5 py-1 rounded-2xl"
                                                                     >
+                                                                        {(() => {
+                                                                            const code = account.socialPlatform.code.toLowerCase();
+                                                                            const icons: Record<string, React.ComponentType<{ className?: string }>> = {
+                                                                                tiktok: IconBrandTiktok,
+                                                                                instagram: IconBrandInstagram,
+                                                                                youtube: IconBrandYoutube,
+                                                                                x: IconBrandX,
+                                                                            };
+                                                                            const Icon = icons[code];
+                                                                            return Icon ? <Icon className="size-4" /> : null;
+                                                                        })()}
                                                                         {account.socialPlatform.name}
-                                                                        {account.handle && ` · @${account.handle.replace(/^@/, "")}`}
+                                                                        {account.handle && (
+                                                                            <span className="text-xs">· @{account.handle.replace(/^@/, "")}</span>
+                                                                        )}
                                                                     </Badge>
                                                                 ))}
                                                             </div>

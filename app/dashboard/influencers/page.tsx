@@ -28,7 +28,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import {
     IconSearch,
     IconPlus,
-    IconEdit,
     IconTrash,
     IconUpload,
     IconFile,
@@ -36,23 +35,19 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconEye,
+    IconBrandTiktok,
+    IconBrandInstagram,
+    IconBrandYoutube,
+    IconBrandX,
 } from "@tabler/icons-react";
-import Image from "next/image";
 import { toast } from "sonner";
 import type { InfluencerWithRelations } from "@/shared/types/influencer.types";
 
-const PLATFORM_LOGOS: Record<string, string> = {
-    tiktok: "/logo-tiktok.png",
-    instagram: "/logo-instragram.png",
-    youtube: "/file.svg",
-    x: "/file.svg",
-};
-
-const PLATFORM_NAMES: Record<string, string> = {
-    tiktok: "TikTok",
-    instagram: "Instagram",
-    youtube: "YouTube",
-    x: "X (Twitter)",
+const PLATFORM_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+    tiktok: IconBrandTiktok,
+    instagram: IconBrandInstagram,
+    youtube: IconBrandYoutube,
+    x: IconBrandX,
 };
 
 export default function InfluencersPage() {
@@ -331,12 +326,10 @@ export default function InfluencersPage() {
                                                                             variant="outline"
                                                                             className="gap-1.5 py-1 px-2 border-primary/20"
                                                                         >
-                                                                            <Image
-                                                                                src={PLATFORM_LOGOS[account.platformCode.toLowerCase()] || "/file.svg"}
-                                                                                alt={PLATFORM_NAMES[account.platformCode.toLowerCase()] || account.platformCode}
-                                                                                width={14}
-                                                                                height={14}
-                                                                            />
+                                                                            {(() => {
+                                                                                const Icon = PLATFORM_ICONS[account.platformCode.toLowerCase()];
+                                                                                return Icon ? <Icon className="size-4" /> : null;
+                                                                            })()}
                                                                             <span className="text-xs">
                                                                                 @{account.handle.replace(/^@/, "")}
                                                                             </span>
