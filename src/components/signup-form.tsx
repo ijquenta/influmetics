@@ -2,14 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function LoginForm({ className, ...props }: React.ComponentProps<"form">) {
+export function SignupForm({ className, ...props }: React.ComponentProps<"form">) {
     const router = useRouter();
     const { login } = useAuth();
 
@@ -18,6 +17,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
         const formData = new FormData(e.currentTarget);
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
+        // Crear cuenta y luego iniciar sesión
         await login(email, password);
         router.push("/dashboard");
     };
@@ -26,34 +26,45 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"form">)
         <form className={cn("flex flex-col gap-6", className)} onSubmit={handleSubmit} {...props}>
             <FieldGroup>
                 <div className="flex flex-col items-center gap-1 text-center">
-                    <h1 className="text-2xl font-bold">Inicia sesión</h1>
+                    <h1 className="text-2xl font-bold">Crea tu cuenta</h1>
                     <p className="text-sm text-balance text-muted-foreground">
-                        Ingresa tu correo para acceder a tu cuenta
+                        Completa el formulario para registrarte
                     </p>
                 </div>
                 <Field>
-                    <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
-                    <Input id="email" name="email" type="email" placeholder="admin@influmetics.com" required />
+                    <FieldLabel htmlFor="name">Nombre completo</FieldLabel>
+                    <Input id="name" name="name" type="text" placeholder="Juan Pérez" required />
                 </Field>
                 <Field>
-                    <div className="flex items-center">
-                        <FieldLabel htmlFor="password">Contraseña</FieldLabel>
-                        <Link href="/forgot-password" className="ml-auto text-sm underline-offset-4 hover:underline">
-                            ¿Olvidaste tu contraseña?
-                        </Link>
-                    </div>
+                    <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
+                    <Input id="email" name="email" type="email" placeholder="usuario@ejemplo.com" required />
+                    <FieldDescription>
+                        Usaremos este correo para contactarte. No lo compartiremos con nadie más.
+                    </FieldDescription>
+                </Field>
+                <Field>
+                    <FieldLabel htmlFor="password">Contraseña</FieldLabel>
                     <Input id="password" name="password" type="password" required />
+                    <FieldDescription>
+                        Debe tener al menos 8 caracteres.
+                    </FieldDescription>
+                </Field>
+                <Field>
+                    <FieldLabel htmlFor="confirm-password">Confirmar contraseña</FieldLabel>
+                    <Input id="confirm-password" name="confirm-password" type="password" required />
+                    <FieldDescription>Por favor confirma tu contraseña.</FieldDescription>
                 </Field>
                 <Field>
                     <Button type="submit" className="w-full">
-                        Iniciar sesión
+                        Crear cuenta
                     </Button>
                 </Field>
                 <Field>
+                    
                     <FieldDescription className="text-center">
-                        ¿No tienes una cuenta?{" "}
-                        <Link href="/signup" className="underline underline-offset-4">
-                            Regístrate
+                        ¿Ya tienes una cuenta?{" "}
+                        <Link href="/" className="underline underline-offset-4">
+                            Inicia sesión
                         </Link>
                     </FieldDescription>
                 </Field>

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { IconDotsVertical, IconLogout, IconSun, IconMoon } from "@tabler/icons-react";
+import { IconLogout, IconSun, IconMoon, IconSettings } from "@tabler/icons-react";
+import { ChevronsUpDown } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,8 +15,12 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
-import { useRouter } from "next/navigation";
+import {
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+    useSidebar,
+} from "@/components/ui/sidebar";
 
 export function NavUser({
     user,
@@ -28,12 +33,7 @@ export function NavUser({
 }) {
     const { isMobile } = useSidebar();
     const router = useRouter();
-    const { theme, setTheme } = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const { resolvedTheme, setTheme } = useTheme();
 
     return (
         <SidebarMenu>
@@ -44,15 +44,15 @@ export function NavUser({
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <Avatar className="h-8 w-8 rounded-lg grayscale">
+                            <Avatar className="h-8 w-8 rounded-lg">
                                 <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                <AvatarFallback className="rounded-lg">AD</AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">{user.name}</span>
-                                <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                                <span className="truncate text-xs">{user.email}</span>
                             </div>
-                            <IconDotsVertical className="ml-auto size-4" />
+                            <ChevronsUpDown className="ml-auto size-4" />
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
@@ -65,43 +65,46 @@ export function NavUser({
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="h-8 w-8 rounded-lg">
                                     <AvatarImage src={user.avatar} alt={user.name} />
-                                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                    <AvatarFallback className="rounded-lg">AD</AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">{user.name}</span>
-                                    <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                                    <span className="truncate text-xs">{user.email}</span>
                                 </div>
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuGroup>
-                            <DropdownMenuItem onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                                {mounted && theme === "dark" ? (
+                            <DropdownMenuItem onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
+                                {resolvedTheme === "dark" ? (
                                     <>
-                                        <IconSun className="mr-2 h-4 w-4" />
+                                        <IconSun className="size-4" />
                                         <span>Modo claro</span>
                                     </>
                                 ) : (
                                     <>
-                                        <IconMoon className="mr-2 h-4 w-4" />
+                                        <IconMoon className="size-4" />
                                         <span>Modo oscuro</span>
                                     </>
                                 )}
                             </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    router.push("/");
-                                }}
-                            >
-                                <IconLogout className="mr-2 h-4 w-4" />
-                                Cerrar sesión
+                            <DropdownMenuItem>
+                                <IconSettings className="size-4" />
+                                <span>Configuración</span>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                            onClick={() => {
+                                router.push("/");
+                            }}
+                        >
+                            <IconLogout className="size-4" />
+                            <span>Cerrar sesión</span>
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>
         </SidebarMenu>
     );
 }
-

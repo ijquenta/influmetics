@@ -1,18 +1,19 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import Image from "next/image";
+import Link from "next/link";
 import {
-    IconDashboard,
-    IconInnerShadowTop,
-    IconUsers,
-    IconBrandCampaignmonitor,
-    IconReportAnalytics,
     IconChartInfographic,
+    IconDashboard,
+    IconBrandCampaignmonitor,
+    IconUsers,
+    IconLifebuoy,
+    IconSend,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
 import { NavUser } from "@/components/nav-user";
 import {
     Sidebar,
@@ -26,8 +27,8 @@ import {
 
 const data = {
     user: {
-        name: "Influmetics",
-        email: "user@influmetics.com",
+        name: "admin",
+        email: "admin@influmetics.com",
         avatar: "/profile.png",
     },
     navMain: [
@@ -35,40 +36,62 @@ const data = {
             title: "Dashboard",
             url: "/dashboard",
             icon: IconDashboard,
+            items: [
+                { title: "Resumen", url: "/dashboard" },
+                { title: "Métricas", url: "/dashboard/metrics" },
+            ],
         },
         {
             title: "Influencers",
             url: "/dashboard/influencers",
             icon: IconUsers,
+            items: [
+                { title: "Todos", url: "/dashboard/influencers" },
+                { title: "Nuevo", url: "/dashboard/influencers/new" },
+                { title: "Simulación", url: "/dashboard/influencers/simulation" },
+            ],
         },
         {
             title: "Campañas",
             url: "/dashboard/campaigns",
             icon: IconBrandCampaignmonitor,
+            items: [
+                { title: "Todas", url: "/dashboard/campaigns" },
+                { title: "Nueva", url: "/dashboard/campaigns/new" },
+            ],
         },
         {
             title: "Retorno inversión",
             url: "/dashboard/roi",
             icon: IconChartInfographic,
         },
-        /*{
-      title: "Reportes",
-      url: "/dashboard/reports",
-      icon: IconReportAnalytics,
-    },
-    */
+    ],
+    navSecondary: [
+        { title: "Soporte", url: "#", icon: IconLifebuoy },
+        { title: "Feedback", url: "#", icon: IconSend },
     ],
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
-        <Sidebar collapsible="offcanvas" {...props}>
+        <Sidebar variant="inset" {...props}>
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-                            <Link href="/" className="flex items-center gap-2">
-                                <Image src="/logo-influmetics.png" alt="Influmetics" width={125} height={125} className="rounded-md" priority />
+                        <SidebarMenuButton size="lg" asChild>
+                            <Link href="/dashboard">
+                                <div className="flex items-center justify-center rounded-lg text-sidebar-primary-foreground">
+                                    <Image
+                                        src="/logo-sidebar.png"
+                                        alt="Influmetics"
+                                        width={128}
+                                        height={64}
+                                        className="size-10"
+                                    />
+                                </div>
+                                <div className="grid flex-1 text-left text-sm leading-tight">
+                                    <span className="truncate font-semibold">Influmetics</span>
+                                </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -76,6 +99,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarHeader>
             <SidebarContent>
                 <NavMain items={data.navMain} />
+                <NavSecondary items={data.navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
                 <NavUser user={data.user} />
