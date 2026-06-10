@@ -1,216 +1,109 @@
-# Influmetrics Frontend
+# Influmetics
 
-Aplicación web construida con Next.js, TypeScript, Prisma, PostgreSQL, Tailwind CSS y shadcn/ui para el dashboard de gestión de influencers.
+Dashboard para gestión de influencers y campañas de marketing.
 
-## 🚀 Stack Técnico
+## Stack
 
-- **Next.js 16** con App Router
-- **TypeScript**
-- **Prisma** como ORM
-- **PostgreSQL** como base de datos
-- **Tailwind CSS** para estilos
-- **shadcn/ui** para componentes de interfaz
-- **Recharts** para gráficos
+Next.js 16 (App Router), Prisma + PostgreSQL (Supabase), Tailwind CSS v4, shadcn/ui, Recharts, Tabler Icons.
 
-## 📁 Estructura del Proyecto
+## Quick start
 
-```
-src/
-├── app/                      # Next.js App Router
-│   ├── api/                  # API Routes
-│   │   ├── influencers/      # CRUD de influencers
-│   │   ├── campaigns/        # CRUD de campañas
-│   │   ├── posts/            # CRUD de posts
-│   │   ├── metrics/          # Métricas y carga manual
-│   │   ├── dashboard/        # Endpoints del dashboard
-│   │   └── data/             # Datos de referencia (seed, plataformas, etc.)
-│   └── dashboard/            # Páginas del dashboard
-│       ├── influencers/      # Listado y detalle de influencers
-│       ├── campaigns/        # Listado y detalle de campañas
-│       ├── reports/          # Reportes descargables
-│       └── metrics/          # Formulario de carga de métricas
-├── components/               # Componentes reutilizables
-│   ├── layout/              # Componentes de layout
-│   └── ui/                  # Componentes de shadcn/ui
-├── lib/                     # Utilidades y helpers
-│   ├── prisma.ts            # Cliente de Prisma
-│   └── metrics.ts           # Cálculos de métricas (engagement, ROI, rankings)
-├── shared/                  # Código compartido
-│   ├── constants/          # Constantes y rutas
-│   ├── types/              # Tipos TypeScript
-│   └── utils/              # Utilidades
-└── contexts/               # Contextos de React
-```
-
-## 🛠️ Instalación
-
-1. **Clonar el repositorio** (si aplica)
-
-2. **Instalar dependencias:**
 ```bash
+# 1. Clonar e instalar
 npm install
-```
 
-3. **Configurar variables de entorno:**
-```bash
-cp .env.example .env
-```
+# 2. Variables de entorno (solo necesitas DATABASE_URL)
+cp .env.example .env  # o crea .env con:
+# DATABASE_URL=postgresql://user:pass@host:5432/db
 
-Editar `.env` y configurar la conexión a PostgreSQL:
-```env
-DATABASE_URL="postgresql://user:password@localhost:5432/influmetics_db?schema=public"
-```
-
-4. **Generar el cliente de Prisma:**
-```bash
+# 3. Sincronizar esquema y generar cliente
 npx prisma generate
-```
+npx prisma migrate dev
 
-5. **Ejecutar migraciones:**
-```bash
-npx prisma migrate dev --name init
-```
+# 4. Poblar DB con datos de ejemplo
+npm run prisma:seed  # curl -X POST http://localhost:3000/api/data/seed
 
-6. **Poblar la base de datos con datos de ejemplo:**
-```bash
-# Ejecutar el endpoint de seed (desde el navegador o con curl)
-curl -X POST http://localhost:3000/api/data/seed
-```
-
-O desde el navegador: `http://localhost:3000/api/data/seed`
-
-## 🏃 Desarrollo
-
-```bash
+# 5. Arrancar
 npm run dev
 ```
 
-Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
+## Proyecto
 
-## 📊 Características Principales
-
-### 1. Dashboard Principal
-- KPIs consolidados (Alcance, Engagement, Conversiones, Clics, Revenue)
-- Gráficos de evolución temporal
-- Filtros por campaña e influencer
-- Comparativas mes actual vs mes anterior
-
-### 2. Gestión de Influencers
-- Listado con búsqueda
-- Detalle completo con métricas
-- Creación y edición
-- Visualización de campañas y posts asociados
-
-### 3. Gestión de Campañas
-- Listado de campañas
-- Detalle con rankings de influencers
-- Asociación de influencers a campañas
-- Visualización de posts por campaña
-
-### 4. Carga Manual de Métricas
-- Formulario para cargar métricas de posts
-- Carga masiva (varias métricas a la vez)
-- Cálculo automático de engagement y ROI
-
-### 5. Reportes
-- Exportación de datos en CSV/JSON
-- Comparativas entre TikTok e Instagram
-- Reportes por influencer y campaña
-
-## 🎨 Sistema de Diseño
-
-La aplicación usa un sistema de diseño personalizado con la paleta de colores:
-
-- **Primario**: `#6C48C5`
-- **Secundario**: `#C68FFF`
-- **Acento**: `#FFD700`
-- **Fondo**: `#F8F7FC`
-- **Texto**: `#1A1A2E` / `#6B6B8D`
- - **Primario**: `#1E90FF`
- - **Primario Hover**: `#1A5FD1`
- - **Primario Light**: `#E6F0FF`
- - **Secundario**: `#2EC7FF`
- - **Acento**: `#66D9FF`
- - **Fondo**: `#020B1A`
- - **Card**: `#061A33`
- - **Texto**: `#FFFFFF` / `#A0B8D0`
-
-## 📝 API Routes
-
-### Influencers
-- `GET /api/influencers` - Listar influencers
-- `POST /api/influencers` - Crear influencer
-- `GET /api/influencers/[id]` - Obtener detalle
-- `PUT /api/influencers/[id]` - Actualizar influencer
-- `DELETE /api/influencers/[id]` - Eliminar influencer
-
-### Campañas
-- `GET /api/campaigns` - Listar campañas
-- `POST /api/campaigns` - Crear campaña
-- `GET /api/campaigns/[id]` - Obtener detalle con rankings
-- `PUT /api/campaigns/[id]` - Actualizar campaña
-- `DELETE /api/campaigns/[id]` - Eliminar campaña
-
-### Posts
-- `GET /api/posts` - Listar posts (con filtros)
-- `POST /api/posts` - Crear post
-
-### Métricas
-- `GET /api/metrics` - Listar métricas
-- `POST /api/metrics` - Crear/actualizar métrica
-- `POST /api/metrics/bulk` - Carga masiva de métricas
-
-### Dashboard
-- `GET /api/dashboard/stats` - KPIs consolidados
-- `GET /api/dashboard/timeline` - Datos para gráficos temporales
-
-### Datos de Referencia
-- `GET /api/data/platforms` - Plataformas sociales
-- `GET /api/data/content-types` - Tipos de contenido
-- `GET /api/data/campaign-goals` - Tipos de objetivos
-- `POST /api/data/seed` - Poblar base de datos
-
-## 🔧 Scripts Disponibles
-
-```bash
-npm run dev      # Desarrollo
-npm run build    # Build de producción
-npm run start    # Servidor de producción
-npm run lint     # Linting
+```
+app/                          # App Router (páginas + API)
+├── api/                      # Backend (18 endpoints)
+│   ├── campaigns/            #   CRUD campañas + detalle con rankings
+│   ├── dashboard/            #   stats, timeline, influencer-ranking
+│   ├── influencers/          #   CRUD + upload CSV + import-social
+│   ├── metrics/              #   Métricas de posts (individual + bulk)
+│   ├── posts/                #   Posts CRUD
+│   ├── data/                 #   Datos ref (platforms, seed, etc.)
+│   └── scraping/             #   Proxy a backend externo (TikTok)
+├── dashboard/                # Páginas del dashboard
+│   ├── influencers/          #   Lista (búsqueda + paginación), detalle [id], crear, simulación
+│   ├── campaigns/            #   Lista, detalle [id], crear
+│   ├── metrics/              #   Carga de métricas
+│   └── roi/                  #   Retorno de inversión
+├── forgot-password/
+├── signup/
+├── layout.tsx                # Root layout (AuthProvider, ThemeProvider, Toaster)
+└── page.tsx                  # Login
+src/
+├── components/               # UI components (shadcn + custom)
+│   ├── ui/                   #   29 primitivas shadcn
+│   ├── app-sidebar.tsx       #   Sidebar de navegación
+│   ├── login-form.tsx        #   Formulario login
+│   └── ...                   #   chart-area-interactive, data-table, section-cards, etc.
+├── contexts/AuthContext.tsx  # Auth mock (localStorage, sin backend real)
+├── lib/
+│   ├── prisma.ts             # Cliente singleton
+│   └── metrics.ts            # Cálculos (engagement, ROI, rankings)
+└── shared/                   # Tipos, constantes, utilidades
+prisma/schema.prisma          # 13 modelos PostgreSQL
 ```
 
-## 📚 Prisma
+Nota: hay un `src/app/` duplicado con pages alternativas (login, dashboard simplificado). Las rutas reales están en `app/`.
 
-### Comandos útiles:
+## Scripts
 
 ```bash
-# Generar cliente de Prisma
-npx prisma generate
-
-# Crear nueva migración
-npx prisma migrate dev --name nombre_migracion
-
-# Aplicar migraciones
-npx prisma migrate deploy
-
-# Abrir Prisma Studio (GUI para la base de datos)
-npx prisma studio
-
-# Resetear la base de datos (CUIDADO: elimina todos los datos)
-npx prisma migrate reset
+npm run dev              # next dev
+npm run build            # next build
+npm run prisma:generate  # prisma generate
+npm run prisma:migrate   # prisma migrate dev
+npm run prisma:studio    # prisma studio (GUI DB)
+npm run prisma:seed      # curl POST /api/data/seed
 ```
 
-## 🎯 Cálculos de Métricas
+## API endpoints principales
 
-Las funciones de cálculo están en `src/lib/metrics.ts`:
+| Ruta | Método | Descripción |
+|------|--------|-------------|
+| `/api/influencers` | GET | Lista paginada (search, page, limit, niche) |
+| `/api/influencers` | POST | Crear (valida email único, handles duplicados) |
+| `/api/influencers/upload` | POST | Importar CSV/XLSX |
+| `/api/campaigns` | GET/POST | CRUD campañas |
+| `/api/campaigns/[id]` | GET | Detalle con rankings de influencers |
+| `/api/dashboard/stats` | GET | KPIs (alcance, engagement, conversiones, CTR, revenue) |
+| `/api/dashboard/timeline` | GET | Serie temporal (groupBy day/week/month) |
+| `/api/dashboard/influencer-ranking` | GET | Ranking ponderado de influencers |
+| `/api/metrics/bulk` | POST | Carga masiva de métricas |
+| `/api/data/seed` | POST | Poblar DB con datos de ejemplo |
 
-- **Engagement Rate**: `(likes + shares) / views * 100`
-- **ROI**: `(revenue - cost) / cost * 100`
-- **CTR**: `clicks / views * 100`
-- **Conversion Rate**: `conversions / views * 100`
-- **Rankings**: Ordenamiento por ROI, engagement, reach o conversions
-- **Comparativas**: Mes actual vs mes anterior
+## Auth
 
-## 📄 Licencia
+Mock implementado con React Context + localStorage. `login()` crea un usuario en memoria sin llamar a ningún backend. No hay JWT, sesiones ni verificación real.
 
-Este proyecto fue desarrollado para el Influmetics.
+## DB (Prisma)
+
+13 modelos: `User`, `UserType`, `SocialPlatform`, `Influencer`, `InfluencerSocialAccount`, `Campaign`, `CampaignGoalType`, `InfluencerCampaign`, `ContentType`, `Post`, `PostMetricSnapshot`, `InternalMetricType`, `InternalMetric`.
+
+```bash
+npx prisma migrate dev --name <nombre>
+npx prisma studio        # Explorar datos
+npx prisma migrate reset # Borra todo
+```
+
+## Dependencias clave
+
+`next`, `react`, `prisma`, `@prisma/client`, `@tanstack/react-table`, `recharts`, `@tabler/icons-react`, `@dnd-kit/*`, `exceljs`, `sonner`, `zod`, `date-fns`, `react-day-picker`, `next-themes`, `vaul`.
