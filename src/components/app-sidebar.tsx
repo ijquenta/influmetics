@@ -68,7 +68,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
                             <Link href="/" className="flex items-center gap-2">
-                                <Image src="/logo_color.png" alt="Influmetics" width={128} height={128} className="rounded-md" priority />
+                                <Image src="/logo-influmetics.png" alt="Influmetics" width={125} height={125} className="rounded-md" priority />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

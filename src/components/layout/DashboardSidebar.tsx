@@ -11,8 +11,7 @@ export const DashboardSidebar = () => {
         <aside className="w-64 bg-background border-r h-screen sticky top-0">
             <div className="p-4 border-b">
                 <Link href="/" className="block">
-                    <h2 className="text-xl font-bold">Takenos</h2>
-                    <p className="text-sm text-muted-foreground">Innovahack 2025</p>
+                    <h2 className="text-xl font-bold">Influmetics</h2>
                 </Link>
             </div>
             <nav className="p-4">

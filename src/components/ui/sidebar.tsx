@@ -60,15 +60,20 @@ function SidebarProvider({
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
-    const [_open, _setOpen] = React.useState<boolean>(() => {
+    // Always start with defaultOpen so SSR and the first client render match (avoids hydration mismatch).
+    const [_open, _setOpen] = React.useState<boolean>(defaultOpen);
+    const open = openProp ?? _open;
+
+    React.useEffect(() => {
         try {
             const stored = localStorage.getItem(SIDEBAR_COOKIE_NAME);
-            return stored !== null ? stored === "true" : defaultOpen;
+            if (stored !== null) {
+                _setOpen(stored === "true");
+            }
         } catch (e) {
-            return defaultOpen;
+            // ignore
         }
-    });
-    const open = openProp ?? _open;
+    }, []);
     const setOpen = React.useCallback(
         (value: boolean | ((value: boolean) => boolean)) => {
             const openState = typeof value === "function" ? value(open) : value;

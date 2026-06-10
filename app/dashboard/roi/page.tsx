@@ -248,12 +248,12 @@ export default function RoiPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[var(--background)] min-h-full">
                             {/* Header y filtros */}
                             <div className="flex flex-col gap-4 mb-4">
                                 <div>
-                                    <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Retorno y nuevos clientes por campaña</h1>
-                                    <p className="text-[16px] text-[#6B6B8D]">
+                                    <h1 className="text-[28px] font-bold text-[var(--foreground)] mb-2">Retorno y nuevos clientes por campaña</h1>
+                                    <p className="text-[16px] text-[var(--muted-foreground)]">
                                         Analiza el retorno de la inversión (ROI) por influencer, código de referido y campaña.
                                     </p>
                                 </div>
@@ -261,7 +261,7 @@ export default function RoiPage() {
                                 <div className="flex flex-wrap gap-3 items-center">
                                     {/* Fecha inicio */}
                                     <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[#6B6B8D]">Fecha inicio</Label>
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Fecha inicio</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -292,7 +292,7 @@ export default function RoiPage() {
                                     </div>
                                     {/* Fecha fin */}
                                     <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[#6B6B8D]">Fecha fin</Label>
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Fecha fin</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -324,7 +324,7 @@ export default function RoiPage() {
 
                                     {/* Campaña */}
                                     <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[#6B6B8D]">Campaña</Label>
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Campaña</Label>
                                         <Select
                                             value={selectedCampaignId}
                                             onValueChange={(value) => {
@@ -377,7 +377,7 @@ export default function RoiPage() {
 
                                     {/* Código referido (multi-select) */}
                                     <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[#6B6B8D]">Código referido</Label>
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Código referido</Label>
                                         <Popover>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -395,7 +395,7 @@ export default function RoiPage() {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-[260px] p-3 rounded-2xl">
                                                 <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-xs font-semibold text-[#1A1A2E]">Códigos de referido</span>
+                                                    <span className="text-xs font-semibold text-[var(--foreground)]">Códigos de referido</span>
                                                     {selectedReferralCodes.length > 0 && (
                                                         <Button
                                                             variant="ghost"
@@ -425,7 +425,7 @@ export default function RoiPage() {
                                                         return (
                                                             <div
                                                                 key={code}
-                                                                className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(108,72,197,0.05)] cursor-pointer"
+                                                                className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(46,199,255,0.05)] cursor-pointer"
                                                                 onClick={() => {
                                                                     setSelectedReferralCodes(
                                                                         checked
@@ -444,9 +444,9 @@ export default function RoiPage() {
                                                                                 : selectedReferralCodes.filter((c) => c !== code)
                                                                         );
                                                                     }}
-                                                                    className="border-[#6C48C5] data-[state=checked]:bg-[#6C48C5]"
+                                                                    className="border-[#1E90FF] data-[state=checked]:bg-[#1E90FF]"
                                                                 />
-                                                                <span className="text-xs text-[#1A1A2E]">{label}</span>
+                                                                <span className="text-xs text-[var(--foreground)]">{label}</span>
                                                             </div>
                                                         );
                                                     })}
@@ -460,13 +460,13 @@ export default function RoiPage() {
                             {/* Sección principal: Gráfico arriba y tabla abajo */}
                             <div className="grid grid-cols-1 gap-6">
                                 {/* Gráfico de línea NAU en el tiempo (full width) */}
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader className="flex flex-row items-center justify-between gap-4">
                                         <div>
-                                            <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                                            <CardTitle className="text-[18px] font-bold text-[var(--foreground)]">
                                                 NAU en el tiempo (Top 5 por ROI)
                                             </CardTitle>
-                                            <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
                                                 Evolución diaria del NAU por código referido / influencer.
                                             </CardDescription>
                                         </div>
@@ -482,27 +482,27 @@ export default function RoiPage() {
                                     </CardHeader>
                                     <CardContent className="h-[320px]">
                                         {timeline.length === 0 ? (
-                                            <div className="flex items-center justify-center h-full text-[#6B6B8D] text-sm">
+                                            <div className="flex items-center justify-center h-full text-[var(--muted-foreground)] text-sm">
                                                 No hay datos para mostrar.
                                             </div>
                                         ) : (
                                             <ChartContainer config={chartConfig} className="h-full w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <LineChart data={timeline} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8DEFF" />
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6F0FF" />
                                                         <XAxis
                                                             dataKey="date"
                                                             tickLine={false}
                                                             axisLine={false}
                                                             tickMargin={8}
                                                             minTickGap={32}
-                                                            tick={{ fill: "#6B6B8D", fontSize: 12 }}
+                                                            tick={{ fill: "#A0B8D0", fontSize: 12 }}
                                                             tickFormatter={(value) => formatDate(value as string)}
                                                         />
                                                         <YAxis
                                                             tickLine={false}
                                                             axisLine={false}
-                                                            tick={{ fill: "#6B6B8D", fontSize: 12 }}
+                                                            tick={{ fill: "#A0B8D0", fontSize: 12 }}
                                                             tickFormatter={(value) =>
                                                                 value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toString()
                                                             }
@@ -530,7 +530,7 @@ export default function RoiPage() {
                                                                             }`
                                                                             : `${row.name}${row.campaignName ? " · " + row.campaignName : ""}`
                                                                     }
-                                                                    stroke="#6C48C5"
+                                                                    stroke="#1E90FF"
                                                                     strokeWidth={2}
                                                                     dot={{ r: 3 }}
                                                                     activeDot={{ r: 5 }}
@@ -547,28 +547,28 @@ export default function RoiPage() {
                                 </Card>
 
                                 {/* Tabla dinámica NAU / ROI por influencer (debajo de la gráfica) */}
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader>
-                                        <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">NAU y ROI por Influencer</CardTitle>
-                                        <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                        <CardTitle className="text-[18px] font-bold text-[var(--foreground)]">NAU y ROI por Influencer</CardTitle>
+                                        <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
                                             Código, clientes nuevos y retorno estimado por cada influencer.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         {summary.length === 0 ? (
-                                            <div className="text-center py-8 text-[#6B6B8D] text-sm">
+                                            <div className="text-center py-8 text-[var(--muted-foreground)] text-sm">
                                                 No hay datos para los filtros seleccionados.
                                             </div>
                                         ) : (
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow className="border-[rgba(108,72,197,0.1)]">
-                                                        <TableHead className="text-[#1A1A2E] font-semibold">Código</TableHead>
-                                                        <TableHead className="text-[#1A1A2E] font-semibold">Influencer</TableHead>
-                                                        <TableHead className="text-[#1A1A2E] font-semibold">Username</TableHead>
-                                                        <TableHead className="text-[#1A1A2E] font-semibold">Redes</TableHead>
-                                                        <TableHead className="text-[#1A1A2E] font-semibold">Campaña</TableHead>
-                                                        <TableHead className="text-[#1A1A2E] font-semibold text-right">
+                                                        <TableHead className="text-[var(--foreground)] font-semibold">Código</TableHead>
+                                                        <TableHead className="text-[var(--foreground)] font-semibold">Influencer</TableHead>
+                                                        <TableHead className="text-[var(--foreground)] font-semibold">Username</TableHead>
+                                                        <TableHead className="text-[var(--foreground)] font-semibold">Redes</TableHead>
+                                                        <TableHead className="text-[var(--foreground)] font-semibold">Campaña</TableHead>
+                                                        <TableHead className="text-[var(--foreground)] font-semibold text-right">
                                                             Clientes nuevos (NAU)
                                                         </TableHead>
                                                         <TableHead className="text-[#1A1A2E] font-semibold text-right">ROI</TableHead>
@@ -580,23 +580,23 @@ export default function RoiPage() {
                                                             key={`${row.influencerId}-${row.referralCode ?? "none"}`}
                                                             className="border-[rgba(108,72,197,0.1)]"
                                                         >
-                                                            <TableCell className="text-[#6B6B8D] text-sm">
+                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
                                                                 {row.referralCode ?? "-"}
                                                             </TableCell>
-                                                            <TableCell className="text-sm font-medium text-[#1A1A2E]">{row.name}</TableCell>
-                                                            <TableCell className="text-[#6B6B8D] text-sm">
+                                                            <TableCell className="text-sm font-medium text-[var(--foreground)]">{row.name}</TableCell>
+                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
                                                                 {row.username ?? `@influencer_${row.influencerId}`}
                                                             </TableCell>
-                                                            <TableCell className="text-[#6B6B8D] text-sm">
+                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
                                                                 {(row.socialPlatforms && row.socialPlatforms.length > 0
                                                                     ? row.socialPlatforms
                                                                     : ["TikTok", "Instagram"]
                                                                 ).join(" · ")}
                                                             </TableCell>
-                                                            <TableCell className="text-[#6B6B8D] text-sm">
+                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
                                                                 {row.campaignName ?? "-"}
                                                             </TableCell>
-                                                            <TableCell className="text-right text-sm text-[#1A1A2E]">
+                                                            <TableCell className="text-right text-sm text-[var(--foreground)]">
                                                                 {row.nau.toLocaleString()}
                                                             </TableCell>
                                                             <TableCell className="text-right text-sm">
@@ -623,7 +623,7 @@ export default function RoiPage() {
                             {/* Sección inferior: Alertas */}
                             <div className="grid grid-cols-1 gap-6">
                                 {/* Alertas NAU / ROI */}
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader>
                                         <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Alertas</CardTitle>
                                         <CardDescription className="text-[14px] text-[#6B6B8D]">

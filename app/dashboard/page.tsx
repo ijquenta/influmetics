@@ -473,7 +473,7 @@ export default function DashboardPage() {
 
     // Colores para cada plataforma
     const platformColors: Record<number, string> = {
-        1: "#6C48C5", // TikTok - Púrpura
+        1: "#1E90FF", // TikTok - Primary Blue
         2: "#E4405F", // Instagram - Rosa/Rojo
         3: "#FF0000", // YouTube - Rojo
         4: "#000000", // X - Negro
@@ -483,11 +483,11 @@ export default function DashboardPage() {
     const chartConfig: ChartConfig = {
         views: {
             label: "Vistas",
-            color: "#6C48C5",
+            color: "#1E90FF",
         },
         engagement: {
             label: "Engagement",
-            color: "#C68FFF",
+            color: "#2EC7FF",
         },
         conversions: {
             label: "Conversiones",
@@ -641,7 +641,7 @@ export default function DashboardPage() {
                 <SidebarInset>
                     <SiteHeader />
                     <div className="flex flex-1 flex-col items-center justify-center p-6">
-                        <p className="text-[#6B6B8D]">Cargando...</p>
+                        <p className="text-[var(--muted-foreground)]">Cargando...</p>
                     </div>
                 </SidebarInset>
             </SidebarProvider>
@@ -661,20 +661,20 @@ export default function DashboardPage() {
             <SidebarInset>
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
-                    <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="@container/main flex flex-1 flex-col gap-2">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[var(--background)] min-h-full">
                             {/* Header con filtros */}
                             <div className="flex flex-col gap-4 mb-6">
                                 <div>
-                                    <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Dashboard</h1>
-                                    <p className="text-[16px] text-[#6B6B8D]">Resumen general de métricas y rendimiento</p>
+                                    <h1 className="text-[28px] font-bold text-[var(--foreground)] mb-2">Dashboard</h1>
+                                    <p className="text-[16px] text-[var(--muted-foreground)]">Resumen general de métricas y rendimiento</p>
                                 </div>
 
                                 {/* Filtros */}
                                 <div className="flex gap-3 flex-wrap items-center">
                                     {/* Switch modo fechas / mensual */}
                                     <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[#6B6B8D]">Modo mensual</Label>
+                                        <Label className="text-xs text-[var(--muted-foreground)]">Modo mensual</Label>
                                         <Switch
                                             checked={dateMode === "monthly"}
                                             onCheckedChange={(checked: boolean) => {
@@ -684,7 +684,7 @@ export default function DashboardPage() {
                                                     updateDatesFromMonthSelection(year, selectedMonths);
                                                 }
                                             }}
-                                            className="data-[state=checked]:bg-[#6C48C5]"
+                                            className="data-[state=checked]:bg-[#1E90FF]"
                                         />
                                     </div>
 
@@ -692,7 +692,7 @@ export default function DashboardPage() {
                                         <>
                                             {/* Fecha inicio */}
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[#6B6B8D]">Fecha inicio</Label>
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Fecha inicio</Label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <Button
@@ -724,7 +724,7 @@ export default function DashboardPage() {
 
                                             {/* Fecha fin */}
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[#6B6B8D]">Fecha fin</Label>
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Fecha fin</Label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <Button
@@ -758,7 +758,7 @@ export default function DashboardPage() {
                                         <>
                                             {/* Año */}
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[#6B6B8D]">Año</Label>
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Año</Label>
                                                 <Select
                                                     value={year}
                                                     onValueChange={(value) => {
@@ -781,13 +781,13 @@ export default function DashboardPage() {
 
                                             {/* Meses (multi-select) */}
                                             <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[#6B6B8D]">Meses</Label>
+                                                <Label className="text-xs text-[var(--muted-foreground)]">Meses</Label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
                                                         <Button
                                                             variant="outline"
                                                             role="combobox"
-                                                            className="h-10 w-[220px] justify-between rounded-2xl border-[rgba(108,72,197,0.1)]"
+                                                            className="h-10 w-[220px] justify-between rounded-2xl border-[var(--border)]"
                                                         >
                                                             {selectedMonths.length === 0
                                                                 ? "Seleccionar meses"
@@ -799,12 +799,12 @@ export default function DashboardPage() {
                                                     </PopoverTrigger>
                                                     <PopoverContent className="w-[220px] p-3 rounded-2xl">
                                                         <div className="flex items-center justify-between mb-2">
-                                                            <span className="text-xs font-semibold text-[#1A1A2E]">Meses</span>
+                                                            <span className="text-xs font-semibold text-[var(--foreground)]">Meses</span>
                                                             {selectedMonths.length > 0 && (
-                                                                <Button
+                                                                    <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    className="h-6 px-2 text-[10px] text-[#6C48C5]"
+                                                                    className="h-6 px-2 text-[10px] text-[#1E90FF]"
                                                                     onClick={() => {
                                                                         setSelectedMonths([]);
                                                                         updateDatesFromMonthSelection(year, []);
@@ -820,7 +820,7 @@ export default function DashboardPage() {
                                                                 return (
                                                                     <div
                                                                         key={m.value}
-                                                                        className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(108,72,197,0.05)] cursor-pointer"
+                                                                        className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(46,199,255,0.05)] cursor-pointer"
                                                                         onClick={() => {
                                                                             const next = checked
                                                                                 ? selectedMonths.filter((v) => v !== m.value)
@@ -829,7 +829,7 @@ export default function DashboardPage() {
                                                                             updateDatesFromMonthSelection(year, next);
                                                                         }}
                                                                     >
-                                                                        <Checkbox
+                                                                            <Checkbox
                                                                             checked={checked}
                                                                             onCheckedChange={(value) => {
                                                                                 const isChecked = Boolean(value);
@@ -839,9 +839,9 @@ export default function DashboardPage() {
                                                                                 setSelectedMonths(next);
                                                                                 updateDatesFromMonthSelection(year, next);
                                                                             }}
-                                                                            className="border-[#6C48C5] data-[state=checked]:bg-[#6C48C5]"
+                                                                            className="border-[#1E90FF] data-[state=checked]:bg-[#1E90FF]"
                                                                         />
-                                                                        <span className="text-xs text-[#1A1A2E]">{m.label}</span>
+                                                                        <span className="text-xs text-[var(--foreground)]">{m.label}</span>
                                                                     </div>
                                                                 );
                                                             })}
@@ -859,9 +859,9 @@ export default function DashboardPage() {
                                                 variant="outline"
                                                 role="combobox"
                                                 className={cn(
-                                                    "h-10 w-[220px] justify-between rounded-2xl border-[rgba(108,72,197,0.1)]",
-                                                    selectedPlatformIds.length === 0 && "text-muted-foreground"
-                                                )}
+                                                        "h-10 w-[220px] justify-between rounded-2xl border-[var(--border)]",
+                                                        selectedPlatformIds.length === 0 && "text-muted-foreground"
+                                                    )}
                                             >
                                                 {selectedPlatformIds.length === 0
                                                     ? "Seleccionar canales"
@@ -874,26 +874,26 @@ export default function DashboardPage() {
                                         </PopoverTrigger>
                                         <PopoverContent className="w-[250px] p-4 rounded-2xl">
                                             <div className="space-y-3">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <Label className="text-sm font-semibold text-[#1A1A2E]">Canales de ingreso</Label>
+                                                        <div className="flex items-center justify-between mb-2">
+                                                    <Label className="text-sm font-semibold text-[var(--foreground)]">Canales de ingreso</Label>
                                                     {selectedPlatformIds.length > 0 && (
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-6 px-2 text-xs text-[#6C48C5]"
+                                                            className="h-6 px-2 text-xs text-[#1E90FF]"
                                                             onClick={() => setSelectedPlatformIds([])}
                                                         >
                                                             Limpiar
                                                         </Button>
                                                     )}
                                                 </div>
-                                                {platforms.length > 0 ? (
+                                                        {platforms.length > 0 ? (
                                                     platforms.map((platform) => {
                                                         const isSelected = selectedPlatformIds.includes(platform.id);
                                                         return (
                                                             <div
                                                                 key={platform.id}
-                                                                className="flex items-center space-x-2 p-2 rounded-lg hover:bg-[rgba(108,72,197,0.05)] cursor-pointer"
+                                                                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-[rgba(46,199,255,0.05)] cursor-pointer"
                                                                 onClick={() => {
                                                                     if (isSelected) {
                                                                         setSelectedPlatformIds(
@@ -916,7 +916,7 @@ export default function DashboardPage() {
                                                                             );
                                                                         }
                                                                     }}
-                                                                    className="border-[#6C48C5] data-[state=checked]:bg-[#6C48C5]"
+                                                                            className="border-[#1E90FF] data-[state=checked]:bg-[#1E90FF]"
                                                                 />
                                                                 <Label
                                                                     htmlFor={`platform-${platform.id}`}
@@ -928,7 +928,7 @@ export default function DashboardPage() {
                                                         );
                                                     })
                                                 ) : (
-                                                    <div className="text-sm text-[#6B6B8D] py-2">Cargando plataformas...</div>
+                                                    <div className="text-sm text-[var(--muted-foreground)] py-2">Cargando plataformas...</div>
                                                 )}
                                             </div>
                                         </PopoverContent>
@@ -937,13 +937,13 @@ export default function DashboardPage() {
                                     {/* Mostrar badges de plataformas seleccionadas */}
                                     {selectedPlatformIds.length > 0 && (
                                         <div className="flex flex-wrap gap-2">
-                                            {selectedPlatformIds.map((platformId) => {
+                                                    {selectedPlatformIds.map((platformId) => {
                                                 const platform = platforms.find((p) => p.id === platformId);
                                                 if (!platform) return null;
                                                 return (
                                                     <div
                                                         key={platformId}
-                                                        className="flex items-center gap-1 px-2 py-1 bg-[#E8DEFF] text-[#6C48C5] rounded-lg text-xs font-medium"
+                                                                className="flex items-center gap-1 px-2 py-1 bg-[#E6F0FF] text-[#1E90FF] rounded-lg text-xs font-medium"
                                                     >
                                                         {platform.name}
                                                         <button
@@ -952,7 +952,7 @@ export default function DashboardPage() {
                                                                     selectedPlatformIds.filter((id) => id !== platformId)
                                                                 );
                                                             }}
-                                                            className="ml-1 hover:bg-[#6C48C5] hover:text-white rounded-full p-0.5"
+                                                                    className="ml-1 hover:bg-[#1E90FF] hover:text-white rounded-full p-0.5"
                                                         >
                                                             <IconX className="h-3 w-3" />
                                                         </button>
@@ -982,10 +982,10 @@ export default function DashboardPage() {
                             {/* KPIs Cards */}
                             {stats && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                                    <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                         <CardHeader className="pb-3">
-                                            <CardDescription className="text-[14px] text-[#6B6B8D]">Alcance Total</CardDescription>
-                                            <CardTitle className="text-[24px] font-bold text-[#1A1A2E]">
+                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">Alcance Total</CardDescription>
+                                            <CardTitle className="text-[24px] font-bold text-[var(--foreground)]">
                                                 {stats.reach.value.toLocaleString()}
                                             </CardTitle>
                                         </CardHeader>
@@ -1004,7 +1004,7 @@ export default function DashboardPage() {
                                                             {stats.reach.change > 0 ? "+" : ""}
                                                             {stats.reach.change.toFixed(1)}%
                                                         </span>
-                                                        <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
+                                                        <span className="text-sm text-[var(--muted-foreground)]">vs mes anterior</span>
                                                     </div>
                                                 </TooltipTrigger>
                                                 <TooltipContent>Cambio porcentual de alcance respecto al periodo anterior.</TooltipContent>
@@ -1012,10 +1012,10 @@ export default function DashboardPage() {
                                         </CardContent>
                                     </Card>
 
-                                    <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                        <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                         <CardHeader className="pb-3">
-                                            <CardDescription className="text-[14px] text-[#6B6B8D]">Engagement Rate</CardDescription>
-                                            <CardTitle className="text-[24px] font-bold text-[#1A1A2E]">
+                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">Engagement Rate</CardDescription>
+                                            <CardTitle className="text-[24px] font-bold text-[var(--foreground)]">
                                                 {stats.engagement.value.toFixed(2)}%
                                             </CardTitle>
                                         </CardHeader>
@@ -1034,7 +1034,7 @@ export default function DashboardPage() {
                                                             {stats.engagement.change > 0 ? "+" : ""}
                                                             {stats.engagement.change.toFixed(1)}%
                                                         </span>
-                                                        <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
+                                                        <span className="text-sm text-[var(--muted-foreground)]">vs mes anterior</span>
                                                     </div>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
@@ -1044,10 +1044,10 @@ export default function DashboardPage() {
                                         </CardContent>
                                     </Card>
 
-                                    <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                         <CardHeader className="pb-3">
-                                            <CardDescription className="text-[14px] text-[#6B6B8D]">Conversiones</CardDescription>
-                                            <CardTitle className="text-[24px] font-bold text-[#1A1A2E]">
+                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">Conversiones</CardDescription>
+                                            <CardTitle className="text-[24px] font-bold text-[var(--foreground)]">
                                                 {stats.conversions.value.toLocaleString()}
                                             </CardTitle>
                                         </CardHeader>
@@ -1066,7 +1066,7 @@ export default function DashboardPage() {
                                                             {stats.conversions.change > 0 ? "+" : ""}
                                                             {stats.conversions.change.toFixed(1)}%
                                                         </span>
-                                                        <span className="text-sm text-[#6B6B8D]">vs mes anterior</span>
+                                                        <span className="text-sm text-[var(--muted-foreground)]">vs mes anterior</span>
                                                     </div>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
@@ -1081,19 +1081,19 @@ export default function DashboardPage() {
                             {/* Contenedor principal: Ranking (1/4) + Gráfico (3/4) */}
                             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                                 {/* Ranking de Influencers - 1/4 */}
-                                <Card className="lg:col-span-1 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                <Card className="lg:col-span-1 rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader className="space-y-1">
                                         <CardTitle className="text-[18px] font-bold text-[#1A1A2E] flex items-center gap-2">
                                             <IconTrophy className="w-5 h-5 text-[#FFD700]" />
                                             Ranking Top Influencers
                                         </CardTitle>
-                                        <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                        <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
                                             Desde {startDate} hasta {endDate}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="p-4">
                                         {influencerRanking.length === 0 ? (
-                                            <div className="flex items-center justify-center h-[400px] text-[#6B6B8D] text-sm">
+                                            <div className="flex items-center justify-center h-[400px] text-[var(--muted-foreground)] text-sm">
                                                 <p>No hay datos disponibles</p>
                                             </div>
                                         ) : (
@@ -1102,7 +1102,7 @@ export default function DashboardPage() {
                                                     <div
                                                         key={influencer.id}
                                                         className={cn(
-                                                            "flex items-start gap-3 p-3 rounded-xl transition-all hover:bg-[rgba(108,72,197,0.05)] cursor-pointer",
+                                                            "flex items-start gap-3 p-3 rounded-xl transition-all hover:bg-[rgba(46,199,255,0.05)] cursor-pointer",
                                                             influencer.rank <= 3 &&
                                                                 "bg-gradient-to-r from-[rgba(255,215,0,0.1)] to-transparent border border-[rgba(255,215,0,0.2)]"
                                                         )}
@@ -1118,8 +1118,8 @@ export default function DashboardPage() {
                                                                           ? "#C0C0C0"
                                                                           : influencer.rank === 3
                                                                             ? "#CD7F32"
-                                                                            : "#E8DEFF",
-                                                                color: influencer.rank <= 3 ? "#1A1A2E" : "#6C48C5",
+                                                                            : "#E6F0FF",
+                                                                            color: influencer.rank <= 3 ? "#1A1A2E" : "#1E90FF",
                                                             }}
                                                         >
                                                             {influencer.rank === 1 ? <IconCrown className="w-4 h-4" /> : influencer.rank}
@@ -1129,7 +1129,7 @@ export default function DashboardPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <Avatar className="w-8 h-8">
-                                                                    <AvatarFallback className="bg-[#E8DEFF] text-[#6C48C5] text-xs font-semibold">
+                                                                    <AvatarFallback className="bg-[#E6F0FF] text-[#1E90FF] text-xs font-semibold">
                                                                         {influencer.name
                                                                             .split(" ")
                                                                             .map((n) => n[0])
@@ -1139,11 +1139,11 @@ export default function DashboardPage() {
                                                                     </AvatarFallback>
                                                                 </Avatar>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-sm font-semibold text-[#1A1A2E] truncate">
+                                                                    <p className="text-sm font-semibold text-[var(--foreground)] truncate">
                                                                         {influencer.name}
                                                                     </p>
                                                                     {influencer.niche && (
-                                                                        <p className="text-xs text-[#6B6B8D] truncate">
+                                                                        <p className="text-xs text-[var(--muted-foreground)] truncate">
                                                                             {influencer.niche}
                                                                         </p>
                                                                     )}
@@ -1153,28 +1153,28 @@ export default function DashboardPage() {
                                                             {/* Métricas */}
                                                             <div className="mt-2 space-y-1">
                                                                 <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[#6B6B8D]">Views:</span>
-                                                                    <span className="font-semibold text-[#1A1A2E]">
+                                                                    <span className="text-[var(--muted-foreground)]">Views:</span>
+                                                                    <span className="font-semibold text-[var(--foreground)]">
                                                                         {(influencer.totalViews / 1000).toFixed(0)}k
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[#6B6B8D]">Engagement:</span>
+                                                                    <span className="text-[var(--muted-foreground)]">Engagement:</span>
                                                                     <Badge
                                                                         variant="secondary"
-                                                                        className="text-xs px-1.5 py-0 bg-[#E8DEFF] text-[#6C48C5]"
+                                                                        className="text-xs px-1.5 py-0 bg-[#E6F0FF] text-[#1E90FF]"
                                                                     >
                                                                         {influencer.engagementRate.toFixed(1)}%
                                                                     </Badge>
                                                                 </div>
                                                                 <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[#6B6B8D]">Conversiones:</span>
+                                                                    <span className="text-[var(--muted-foreground)]">Conversiones:</span>
                                                                     <span className="font-semibold text-[#1A1A2E]">
                                                                         {influencer.totalConversions.toLocaleString()}
                                                                     </span>
                                                                 </div>
                                                                 <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[#6B6B8D]">ROI:</span>
+                                                                    <span className="text-[var(--muted-foreground)]">ROI:</span>
                                                                     <Badge
                                                                         variant="secondary"
                                                                         className={cn(
@@ -1200,14 +1200,14 @@ export default function DashboardPage() {
                                 </Card>
 
                                 {/* Gráfico principal - 3/4 */}
-                                <Card className="lg:col-span-3 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                <Card className="lg:col-span-3 rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader>
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
                                                     Evolución del impacto de campaña
                                                 </CardTitle>
-                                                <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                                <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
                                                     Vistas, Engagement y Conversiones por día - desde {startDate} hasta {endDate}
                                                 </CardDescription>
                                             </div>
@@ -1224,7 +1224,7 @@ export default function DashboardPage() {
                                     </CardHeader>
                                     <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
                                         {timeline.length === 0 ? (
-                                            <div className="flex items-center justify-center h-[400px] text-[#6B6B8D]">
+                                            <div className="flex items-center justify-center h-[400px] text-[var(--muted-foreground)]">
                                                 <p>No hay datos disponibles para el período seleccionado</p>
                                             </div>
                                         ) : (
@@ -1276,13 +1276,13 @@ export default function DashboardPage() {
                                                         axisLine={false}
                                                         tickMargin={8}
                                                         minTickGap={32}
-                                                        tick={{ fill: "#6B6B8D", fontSize: 12 }}
+                                                        tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                                                         tickFormatter={(value) => formatDate(value)}
                                                     />
                                                     <YAxis
                                                         tickLine={false}
                                                         axisLine={false}
-                                                        tick={{ fill: "#6B6B8D", fontSize: 12 }}
+                                                        tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
                                                         tickFormatter={(value) => {
                                                             if (value >= 1000) {
                                                                 return `${(value / 1000).toFixed(1)}k`;

@@ -126,6 +126,14 @@ La aplicación usa un sistema de diseño personalizado con la paleta de colores:
 - **Acento**: `#FFD700`
 - **Fondo**: `#F8F7FC`
 - **Texto**: `#1A1A2E` / `#6B6B8D`
+ - **Primario**: `#1E90FF`
+ - **Primario Hover**: `#1A5FD1`
+ - **Primario Light**: `#E6F0FF`
+ - **Secundario**: `#2EC7FF`
+ - **Acento**: `#66D9FF`
+ - **Fondo**: `#020B1A`
+ - **Card**: `#061A33`
+ - **Texto**: `#FFFFFF` / `#A0B8D0`
 
 ## 📝 API Routes
 

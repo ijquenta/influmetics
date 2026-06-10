@@ -395,7 +395,7 @@ export default function InfluencersPage() {
                                     </Button>
                                     <Button
                                         onClick={() => router.push("/dashboard/influencers/new")}
-                                        className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-6"
+                                        className="bg-primary text-white rounded-2xl px-6"
                                     >
                                         <IconPlus className="w-4 h-4 mr-2" />
                                         Nuevo Influencer
