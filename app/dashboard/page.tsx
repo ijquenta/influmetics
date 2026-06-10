@@ -684,7 +684,7 @@ export default function DashboardPage() {
                                                     updateDatesFromMonthSelection(year, selectedMonths);
                                                 }
                                             }}
-                                            className="data-[state=checked]:bg-[#1E90FF]"
+                                            className="data-[state=checked]:bg-primary"
                                         />
                                     </div>
 
@@ -804,7 +804,7 @@ export default function DashboardPage() {
                                                                     <Button
                                                                     variant="ghost"
                                                                     size="sm"
-                                                                    className="h-6 px-2 text-[10px] text-[#1E90FF]"
+                                                                    className="h-6 px-2 text-[10px] text-primary"
                                                                     onClick={() => {
                                                                         setSelectedMonths([]);
                                                                         updateDatesFromMonthSelection(year, []);
@@ -820,7 +820,7 @@ export default function DashboardPage() {
                                                                 return (
                                                                     <div
                                                                         key={m.value}
-                                                                        className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(46,199,255,0.05)] cursor-pointer"
+                                                                        className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-primary/10 cursor-pointer"
                                                                         onClick={() => {
                                                                             const next = checked
                                                                                 ? selectedMonths.filter((v) => v !== m.value)
@@ -839,7 +839,7 @@ export default function DashboardPage() {
                                                                                 setSelectedMonths(next);
                                                                                 updateDatesFromMonthSelection(year, next);
                                                                             }}
-                                                                            className="border-[#1E90FF] data-[state=checked]:bg-[#1E90FF]"
+                                                                            className="border-primary data-[state=checked]:bg-primary"
                                                                         />
                                                                         <span className="text-xs text-[var(--foreground)]">{m.label}</span>
                                                                     </div>
@@ -880,7 +880,7 @@ export default function DashboardPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-6 px-2 text-xs text-[#1E90FF]"
+                                                            className="h-6 px-2 text-xs text-primary"
                                                             onClick={() => setSelectedPlatformIds([])}
                                                         >
                                                             Limpiar
@@ -893,7 +893,7 @@ export default function DashboardPage() {
                                                         return (
                                                             <div
                                                                 key={platform.id}
-                                                                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-[rgba(46,199,255,0.05)] cursor-pointer"
+                                                                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-primary/10 cursor-pointer"
                                                                 onClick={() => {
                                                                     if (isSelected) {
                                                                         setSelectedPlatformIds(
@@ -916,11 +916,11 @@ export default function DashboardPage() {
                                                                             );
                                                                         }
                                                                     }}
-                                                                            className="border-[#1E90FF] data-[state=checked]:bg-[#1E90FF]"
+                                                                            className="border-primary data-[state=checked]:bg-primary"
                                                                 />
                                                                 <Label
                                                                     htmlFor={`platform-${platform.id}`}
-                                                                    className="flex-1 cursor-pointer text-sm text-[#1A1A2E] font-medium"
+                                                                    className="flex-1 cursor-pointer text-sm text-foreground font-medium"
                                                                 >
                                                                     {platform.name}
                                                                 </Label>
@@ -943,7 +943,7 @@ export default function DashboardPage() {
                                                 return (
                                                     <div
                                                         key={platformId}
-                                                                className="flex items-center gap-1 px-2 py-1 bg-[#E6F0FF] text-[#1E90FF] rounded-lg text-xs font-medium"
+                                                                className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium"
                                                     >
                                                         {platform.name}
                                                         <button
@@ -952,7 +952,7 @@ export default function DashboardPage() {
                                                                     selectedPlatformIds.filter((id) => id !== platformId)
                                                                 );
                                                             }}
-                                                                    className="ml-1 hover:bg-[#1E90FF] hover:text-white rounded-full p-0.5"
+                                                                    className="ml-1 hover:bg-primary hover:text-white rounded-full p-0.5"
                                                         >
                                                             <IconX className="h-3 w-3" />
                                                         </button>
@@ -994,12 +994,12 @@ export default function DashboardPage() {
                                                 <TooltipTrigger asChild>
                                                     <div className="flex items-center gap-2 cursor-default">
                                                         {stats.reach.isPositive ? (
-                                                            <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
+                                                            <IconTrendingUp className="w-4 h-4 text-success" />
                                                         ) : (
-                                                            <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
+                                                            <IconTrendingDown className="w-4 h-4 text-destructive" />
                                                         )}
                                                         <span
-                                                            className={`text-sm font-semibold ${stats.reach.isPositive ? "text-[#4CAF50]" : "text-[#EF4444]"}`}
+                                                            className={`text-sm font-semibold ${stats.reach.isPositive ? "text-success" : "text-destructive"}`}
                                                         >
                                                             {stats.reach.change > 0 ? "+" : ""}
                                                             {stats.reach.change.toFixed(1)}%
@@ -1024,12 +1024,12 @@ export default function DashboardPage() {
                                                 <TooltipTrigger asChild>
                                                     <div className="flex items-center gap-2 cursor-default">
                                                         {stats.engagement.isPositive ? (
-                                                            <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
+                                                            <IconTrendingUp className="w-4 h-4 text-success" />
                                                         ) : (
-                                                            <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
+                                                            <IconTrendingDown className="w-4 h-4 text-destructive" />
                                                         )}
                                                         <span
-                                                            className={`text-sm font-semibold ${stats.engagement.isPositive ? "text-[#4CAF50]" : "text-[#EF4444]"}`}
+                                                            className={`text-sm font-semibold ${stats.engagement.isPositive ? "text-success" : "text-destructive"}`}
                                                         >
                                                             {stats.engagement.change > 0 ? "+" : ""}
                                                             {stats.engagement.change.toFixed(1)}%
@@ -1056,12 +1056,12 @@ export default function DashboardPage() {
                                                 <TooltipTrigger asChild>
                                                     <div className="flex items-center gap-2 cursor-default">
                                                         {stats.conversions.isPositive ? (
-                                                            <IconTrendingUp className="w-4 h-4 text-[#4CAF50]" />
+                                                            <IconTrendingUp className="w-4 h-4 text-success" />
                                                         ) : (
-                                                            <IconTrendingDown className="w-4 h-4 text-[#EF4444]" />
+                                                            <IconTrendingDown className="w-4 h-4 text-destructive" />
                                                         )}
                                                         <span
-                                                            className={`text-sm font-semibold ${stats.conversions.isPositive ? "text-[#4CAF50]" : "text-[#EF4444]"}`}
+                                                            className={`text-sm font-semibold ${stats.conversions.isPositive ? "text-success" : "text-destructive"}`}
                                                         >
                                                             {stats.conversions.change > 0 ? "+" : ""}
                                                             {stats.conversions.change.toFixed(1)}%
@@ -1083,8 +1083,8 @@ export default function DashboardPage() {
                                 {/* Ranking de Influencers - 1/4 */}
                                 <Card className="lg:col-span-1 rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader className="space-y-1">
-                                        <CardTitle className="text-[18px] font-bold text-[#1A1A2E] flex items-center gap-2">
-                                            <IconTrophy className="w-5 h-5 text-[#FFD700]" />
+                                        <CardTitle className="text-[18px] font-bold text-foreground flex items-center gap-2">
+                                            <IconTrophy className="w-5 h-5 text-accent" />
                                             Ranking Top Influencers
                                         </CardTitle>
                                         <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
@@ -1102,9 +1102,9 @@ export default function DashboardPage() {
                                                     <div
                                                         key={influencer.id}
                                                         className={cn(
-                                                            "flex items-start gap-3 p-3 rounded-xl transition-all hover:bg-[rgba(46,199,255,0.05)] cursor-pointer",
+                                                            "flex items-start gap-3 p-3 rounded-xl transition-all hover:bg-primary/10 cursor-pointer",
                                                             influencer.rank <= 3 &&
-                                                                "bg-gradient-to-r from-[rgba(255,215,0,0.1)] to-transparent border border-[rgba(255,215,0,0.2)]"
+                                                                "bg-gradient-to-r from-accent/10 to-transparent border border-accent/20"
                                                         )}
                                                     >
                                                         {/* Rank */}
@@ -1129,7 +1129,7 @@ export default function DashboardPage() {
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <Avatar className="w-8 h-8">
-                                                                    <AvatarFallback className="bg-[#E6F0FF] text-[#1E90FF] text-xs font-semibold">
+                                                                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                                                                         {influencer.name
                                                                             .split(" ")
                                                                             .map((n) => n[0])
@@ -1162,14 +1162,14 @@ export default function DashboardPage() {
                                                                     <span className="text-[var(--muted-foreground)]">Engagement:</span>
                                                                     <Badge
                                                                         variant="secondary"
-                                                                        className="text-xs px-1.5 py-0 bg-[#E6F0FF] text-[#1E90FF]"
+                                                                        className="text-xs px-1.5 py-0 bg-primary/10 text-primary"
                                                                     >
                                                                         {influencer.engagementRate.toFixed(1)}%
                                                                     </Badge>
                                                                 </div>
                                                                 <div className="flex items-center justify-between text-xs">
                                                                     <span className="text-[var(--muted-foreground)]">Conversiones:</span>
-                                                                    <span className="font-semibold text-[#1A1A2E]">
+                                                                    <span className="font-semibold text-foreground">
                                                                         {influencer.totalConversions.toLocaleString()}
                                                                     </span>
                                                                 </div>
@@ -1180,10 +1180,10 @@ export default function DashboardPage() {
                                                                         className={cn(
                                                                             "text-xs px-1.5 py-0",
                                                                             influencer.roi > 50
-                                                                                ? "bg-[#E8F5E9] text-[#4CAF50]"
+                                                                                ? "bg-success/10 text-success"
                                                                                 : influencer.roi > 0
-                                                                                  ? "bg-[#FFF3E0] text-[#FF9800]"
-                                                                                  : "bg-[#FFEBEE] text-[#EF4444]"
+                                                                                  ? "bg-accent/10 text-accent"
+                                                                                  : "bg-destructive/10 text-destructive"
                                                                         )}
                                                                     >
                                                                         {influencer.roi > 0 ? "+" : ""}
@@ -1204,7 +1204,7 @@ export default function DashboardPage() {
                                     <CardHeader>
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                                                <CardTitle className="text-[18px] font-bold text-foreground">
                                                     Evolución del impacto de campaña
                                                 </CardTitle>
                                                 <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
@@ -1215,7 +1215,7 @@ export default function DashboardPage() {
                                                 variant="outline"
                                                 onClick={exportToExcel}
                                                 disabled={timeline.length === 0}
-                                                className="h-10 border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF] rounded-2xl px-4"
+                                                className="h-10 border-primary text-primary hover:bg-primary/10 rounded-2xl px-4"
                                             >
                                                 <IconDownload className="w-4 h-4 mr-2" />
                                                 Descargar Excel

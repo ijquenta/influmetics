@@ -176,12 +176,12 @@ export default function NewInfluencerPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
                             {/* Header */}
                             <div className="flex items-center gap-4 mb-6">
                                 <div>
-                                    <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Nuevo Influencer</h1>
-                                    <p className="text-[16px] text-[#6B6B8D]">
+                                    <h1 className="text-[28px] font-bold text-foreground mb-2">Nuevo Influencer</h1>
+                                    <p className="text-[16px] text-muted-foreground">
                                         Completa la información del influencer y sus cuentas de redes sociales
                                     </p>
                                 </div>
@@ -190,17 +190,17 @@ export default function NewInfluencerPage() {
                             <form onSubmit={handleSubmit}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {/* Información Básica */}
-                                    <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                                         <CardHeader>
-                                            <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Información Básica</CardTitle>
-                                            <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                            <CardTitle className="text-[18px] font-bold text-foreground">Información Básica</CardTitle>
+                                            <CardDescription className="text-[14px] text-muted-foreground">
                                                 Datos personales del influencer
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
                                             <div>
-                                                <Label htmlFor="name" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
-                                                    Nombre completo <span className="text-[#EF4444]">*</span>
+                                                <Label htmlFor="name" className="text-[14px] font-semibold text-foreground mb-2 block">
+                                                    Nombre completo <span className="text-destructive">*</span>
                                                 </Label>
                                                 <Input
                                                     id="name"
@@ -213,7 +213,7 @@ export default function NewInfluencerPage() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="email" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                                                <Label htmlFor="email" className="text-[14px] font-semibold text-foreground mb-2 block">
                                                     Email
                                                 </Label>
                                                 <Input
@@ -227,7 +227,7 @@ export default function NewInfluencerPage() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="birthDate" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                                                <Label htmlFor="birthDate" className="text-[14px] font-semibold text-foreground mb-2 block">
                                                     Fecha de nacimiento
                                                 </Label>
                                                 <Input
@@ -240,7 +240,7 @@ export default function NewInfluencerPage() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="niche" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                                                <Label htmlFor="niche" className="text-[14px] font-semibold text-foreground mb-2 block">
                                                     Nicho
                                                 </Label>
                                                 <Input
@@ -255,7 +255,7 @@ export default function NewInfluencerPage() {
                                             <div>
                                                 <Label
                                                     htmlFor="referralCode"
-                                                    className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block"
+                                                    className="text-[14px] font-semibold text-foreground mb-2 block"
                                                 >
                                                     Código de referido
                                                 </Label>
@@ -271,12 +271,12 @@ export default function NewInfluencerPage() {
                                     </Card>
 
                                     {/* Cuentas de Redes Sociales */}
-                                    <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                                         <CardHeader>
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Redes Sociales</CardTitle>
-                                                    <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                                    <CardTitle className="text-[18px] font-bold text-foreground">Redes Sociales</CardTitle>
+                                                    <CardDescription className="text-[14px] text-muted-foreground">
                                                         Agrega las cuentas de redes sociales del influencer
                                                     </CardDescription>
                                                 </div>
@@ -285,7 +285,7 @@ export default function NewInfluencerPage() {
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={addSocialAccount}
-                                                    className="border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF] rounded-2xl"
+                                                    className="border-primary text-primary hover:bg-primary/10 rounded-2xl"
                                                 >
                                                     <IconPlus className="w-4 h-4 mr-1" />
                                                     Agregar
@@ -294,7 +294,7 @@ export default function NewInfluencerPage() {
                                         </CardHeader>
                                         <CardContent>
                                             {socialAccounts.length === 0 ? (
-                                                <div className="text-center py-8 text-[#6B6B8D] text-sm">
+                                                <div className="text-center py-8 text-muted-foreground text-sm">
                                                     <p>No hay cuentas de redes sociales agregadas</p>
                                                     <p className="text-xs mt-2">Haz clic en &quot;Agregar&quot; para añadir una cuenta</p>
                                                 </div>
@@ -303,10 +303,10 @@ export default function NewInfluencerPage() {
                                                     {socialAccounts.map((account, index) => (
                                                         <Card
                                                             key={account.id}
-                                                            className="p-4 rounded-[16px] border-[rgba(108,72,197,0.1)] shadow-sm"
+                                                            className="p-4 rounded-[16px] border-primary/10 shadow-sm"
                                                         >
                                                             <div className="flex items-center justify-between mb-3">
-                                                                <span className="text-sm font-semibold text-[#1A1A2E]">
+                                                                <span className="text-sm font-semibold text-foreground">
                                                                     Cuenta #{index + 1}
                                                                 </span>
                                                                 <Button
@@ -314,15 +314,15 @@ export default function NewInfluencerPage() {
                                                                     variant="ghost"
                                                                     size="sm"
                                                                     onClick={() => removeSocialAccount(account.id)}
-                                                                    className="text-[#EF4444] hover:text-[#DC2626] hover:bg-[#FFEBEE] h-6 w-6 p-0"
+                                                                    className="text-destructive hover:text-destructive/90 hover:bg-destructive/10 h-6 w-6 p-0"
                                                                 >
                                                                     <IconX className="w-4 h-4" />
                                                                 </Button>
                                                             </div>
                                                             <div className="space-y-3">
                                                                 <div>
-                                                                    <Label className="text-xs text-[#6B6B8D] mb-1 block">
-                                                                        Plataforma <span className="text-[#EF4444]">*</span>
+                                                                    <Label className="text-xs text-muted-foreground mb-1 block">
+                                                                        Plataforma <span className="text-destructive">*</span>
                                                                     </Label>
                                                                     <Select
                                                                         value={account.socialPlatformId}
@@ -358,8 +358,8 @@ export default function NewInfluencerPage() {
                                                                 </div>
 
                                                                 <div>
-                                                                    <Label className="text-xs text-[#6B6B8D] mb-1 block">
-                                                                        Handle/Usuario <span className="text-[#EF4444]">*</span>
+                                                                    <Label className="text-xs text-muted-foreground mb-1 block">
+                                                                        Handle/Usuario <span className="text-destructive">*</span>
                                                                     </Label>
                                                                     <Input
                                                                         value={account.handle}
@@ -372,7 +372,7 @@ export default function NewInfluencerPage() {
                                                                 </div>
 
                                                                 <div>
-                                                                    <Label className="text-xs text-[#6B6B8D] mb-1 block">
+                                                                    <Label className="text-xs text-muted-foreground mb-1 block">
                                                                         URL del perfil (opcional)
                                                                     </Label>
                                                                     <Input
@@ -394,11 +394,11 @@ export default function NewInfluencerPage() {
                                                                         onChange={(e) =>
                                                                             updateSocialAccount(account.id, "isActive", e.target.checked)
                                                                         }
-                                                                        className="w-4 h-4 rounded border-[#6C48C5] text-[#6C48C5] focus:ring-[#6C48C5]"
+                                                                        className="w-4 h-4 rounded border-primary text-primary focus:ring-primary"
                                                                     />
                                                                     <Label
                                                                         htmlFor={`active-${account.id}`}
-                                                                        className="text-xs text-[#6B6B8D] cursor-pointer"
+                                                                        className="text-xs text-muted-foreground cursor-pointer"
                                                                     >
                                                                         Cuenta activa
                                                                     </Label>
@@ -420,7 +420,7 @@ export default function NewInfluencerPage() {
                                     <Button
                                         type="submit"
                                         disabled={loading}
-                                        className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-8"
+                                        className="bg-gradient-to-r from-primary/80 to-primary text-white rounded-2xl px-8"
                                     >
                                         {loading ? "Guardando..." : "Crear Influencer"}
                                     </Button>

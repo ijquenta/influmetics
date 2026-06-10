@@ -400,7 +400,7 @@ export default function RoiPage() {
                                                         <Button
                                                             variant="ghost"
                                                             size="sm"
-                                                            className="h-6 px-2 text-[10px] text-[#6C48C5]"
+                                                            className="h-6 px-2 text-[10px] text-primary"
                                                             onClick={() => setSelectedReferralCodes([])}
                                                         >
                                                             Limpiar
@@ -425,7 +425,7 @@ export default function RoiPage() {
                                                         return (
                                                             <div
                                                                 key={code}
-                                                                className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-[rgba(46,199,255,0.05)] cursor-pointer"
+                                                                className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-primary/10 cursor-pointer"
                                                                 onClick={() => {
                                                                     setSelectedReferralCodes(
                                                                         checked
@@ -444,7 +444,7 @@ export default function RoiPage() {
                                                                                 : selectedReferralCodes.filter((c) => c !== code)
                                                                         );
                                                                     }}
-                                                                    className="border-[#1E90FF] data-[state=checked]:bg-[#1E90FF]"
+                                                                    className="border-primary data-[state=checked]:bg-primary"
                                                                 />
                                                                 <span className="text-xs text-[var(--foreground)]">{label}</span>
                                                             </div>
@@ -475,7 +475,7 @@ export default function RoiPage() {
                                             size="sm"
                                             onClick={exportTimelineToExcel}
                                             disabled={timeline.length === 0 || topSummaryForChart.length === 0}
-                                            className="h-9 rounded-2xl border-[#6C48C5] text-[#6C48C5] hover:bg-[#E8DEFF]"
+                                            className="h-9 rounded-2xl border-primary text-primary hover:bg-primary/10"
                                         >
                                             Descargar datos
                                         </Button>
@@ -562,7 +562,7 @@ export default function RoiPage() {
                                         ) : (
                                             <Table>
                                                 <TableHeader>
-                                                    <TableRow className="border-[rgba(108,72,197,0.1)]">
+                                                    <TableRow className="border-primary/10">
                                                         <TableHead className="text-[var(--foreground)] font-semibold">Código</TableHead>
                                                         <TableHead className="text-[var(--foreground)] font-semibold">Influencer</TableHead>
                                                         <TableHead className="text-[var(--foreground)] font-semibold">Username</TableHead>
@@ -571,14 +571,14 @@ export default function RoiPage() {
                                                         <TableHead className="text-[var(--foreground)] font-semibold text-right">
                                                             Clientes nuevos (NAU)
                                                         </TableHead>
-                                                        <TableHead className="text-[#1A1A2E] font-semibold text-right">ROI</TableHead>
+                                                        <TableHead className="text-foreground font-semibold text-right">ROI</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
                                                     {summary.map((row) => (
                                                         <TableRow
                                                             key={`${row.influencerId}-${row.referralCode ?? "none"}`}
-                                                            className="border-[rgba(108,72,197,0.1)]"
+                                                            className="border-primary/10"
                                                         >
                                                             <TableCell className="text-[var(--muted-foreground)] text-sm">
                                                                 {row.referralCode ?? "-"}
@@ -603,8 +603,8 @@ export default function RoiPage() {
                                                                 <span
                                                                     className={
                                                                         row.roi >= 0
-                                                                            ? "text-[#4CAF50] font-semibold"
-                                                                            : "text-[#EF4444] font-semibold"
+                                                                            ? "text-success font-semibold"
+                                                                            : "text-destructive font-semibold"
                                                                     }
                                                                 >
                                                                     {row.roi >= 0 ? "+" : ""}
@@ -625,25 +625,25 @@ export default function RoiPage() {
                                 {/* Alertas NAU / ROI */}
                                 <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
                                     <CardHeader>
-                                        <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Alertas</CardTitle>
-                                        <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                        <CardTitle className="text-[18px] font-bold text-foreground">Alertas</CardTitle>
+                                        <CardDescription className="text-[14px] text-muted-foreground">
                                             Influencers con NAU = 0 o ROI negativo.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
                                         {alerts.length === 0 ? (
-                                            <div className="text-sm text-[#6B6B8D]">No hay alertas para el periodo seleccionado.</div>
+                                            <div className="text-sm text-muted-foreground">No hay alertas para el periodo seleccionado.</div>
                                         ) : (
                                             <div className="space-y-3 max-h-[260px] overflow-y-auto">
                                                 {alerts.map((row) => (
                                                     <div
                                                         key={`${row.influencerId}-${row.referralCode ?? "none"}`}
-                                                        className="p-3 rounded-xl bg-[#FFEBEE] text-[#B91C1C]"
+                                                        className="p-3 rounded-xl bg-destructive/10 text-destructive"
                                                     >
                                                         <p className="text-sm font-semibold">
                                                             {row.name} ({row.referralCode ?? "sin código"})
                                                         </p>
-                                                        <p className="text-sm mt-1 text-[#7F1D1D]">
+                                                        <p className="text-sm mt-1 text-destructive/90">
                                                             {row.username ?? `@influencer_${row.influencerId}`} ·{" "}
                                                             {(row.socialPlatforms && row.socialPlatforms.length > 0
                                                                 ? row.socialPlatforms

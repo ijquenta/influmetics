@@ -64,65 +64,65 @@ export default function CampaignDetailPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
                             <div className="flex items-center gap-4 mb-4">
                                 <div>
                                     <PageBreadcrumb />
-                                    <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-1">{campaign ? campaign.name : "Campaña"}</h1>
-                                    <p className="text-[16px] text-[#6B6B8D]">Detalle de la campaña y distribución de costos</p>
+                                    <h1 className="text-[28px] font-bold text-foreground mb-1">{campaign ? campaign.name : "Campaña"}</h1>
+                                    <p className="text-[16px] text-muted-foreground">Detalle de la campaña y distribución de costos</p>
                                 </div>
                             </div>
 
                             {loading ? (
-                                <div className="text-center py-12 text-[#6B6B8D]">Cargando...</div>
+                                <div className="text-center py-12 text-muted-foreground">Cargando...</div>
                             ) : !campaign ? (
-                                <div className="text-center py-12 text-[#6B6B8D]">No se encontró la campaña.</div>
+                                <div className="text-center py-12 text-muted-foreground">No se encontró la campaña.</div>
                             ) : (
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {/* Card principal de info */}
-                                    <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="lg:col-span-2 rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                                         <CardHeader>
-                                            <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Información general</CardTitle>
-                                            <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                            <CardTitle className="text-[18px] font-bold text-foreground">Información general</CardTitle>
+                                            <CardDescription className="text-[14px] text-muted-foreground">
                                                 Datos básicos de la campaña
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent className="space-y-4">
-                                            {campaign.description && <p className="text-[14px] text-[#6B6B8D]">{campaign.description}</p>}
+                                            {campaign.description && <p className="text-[14px] text-muted-foreground">{campaign.description}</p>}
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 <div>
-                                                    <p className="text-xs text-[#6B6B8D] mb-1">País</p>
-                                                    <p className="text-sm font-semibold text-[#1A1A2E]">{campaign.country || "N/A"}</p>
+                                                    <p className="text-xs text-muted-foreground mb-1">País</p>
+                                                    <p className="text-sm font-semibold text-foreground">{campaign.country || "N/A"}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-[#6B6B8D] mb-1">Objetivo principal</p>
-                                                    <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                    <p className="text-xs text-muted-foreground mb-1">Objetivo principal</p>
+                                                    <p className="text-sm font-semibold text-foreground">
                                                         {campaign.primaryGoalType?.name || "Sin objetivo definido"}
                                                     </p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-[#6B6B8D] mb-1">Fecha de inicio</p>
-                                                    <p className="text-sm font-semibold text-[#1A1A2E]">{formatDate(campaign.startDate)}</p>
+                                                    <p className="text-xs text-muted-foreground mb-1">Fecha de inicio</p>
+                                                    <p className="text-sm font-semibold text-foreground">{formatDate(campaign.startDate)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-[#6B6B8D] mb-1">Fecha de fin</p>
-                                                    <p className="text-sm font-semibold text-[#1A1A2E]">{formatDate(campaign.endDate)}</p>
+                                                    <p className="text-xs text-muted-foreground mb-1">Fecha de fin</p>
+                                                    <p className="text-sm font-semibold text-foreground">{formatDate(campaign.endDate)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-[#6B6B8D] mb-1">Estado</p>
+                                                    <p className="text-xs text-muted-foreground mb-1">Estado</p>
                                                     <Badge
                                                         variant={campaign.isActive ? "default" : "secondary"}
                                                         className={
-                                                            campaign.isActive ? "bg-[#4CAF50] text-white" : "bg-[#6B6B8D] text-white"
+                                                            campaign.isActive ? "bg-success text-white" : "bg-muted text-white"
                                                         }
                                                     >
                                                         {campaign.isActive ? "Activa" : "Finalizada"}
                                                     </Badge>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-[#6B6B8D] mb-1">Influencers asociados</p>
-                                                    <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                    <p className="text-xs text-muted-foreground mb-1">Influencers asociados</p>
+                                                    <p className="text-sm font-semibold text-foreground">
                                                         {campaign._count?.influencerCampaigns ?? 0}
                                                     </p>
                                                 </div>

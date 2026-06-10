@@ -211,16 +211,16 @@ export default function MetricsPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
                             <div className="mb-6">
-                                <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Cargar Métricas</h1>
-                                <p className="text-[16px] text-[#6B6B8D]">Ingresa las métricas de los posts manualmente</p>
+                                <h1 className="text-[28px] font-bold text-foreground mb-2">Cargar Métricas</h1>
+                                <p className="text-[16px] text-muted-foreground">Ingresa las métricas de los posts manualmente</p>
                             </div>
 
-                            <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                            <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
                                 <CardHeader>
-                                    <CardTitle className="text-[20px] font-bold text-[#1A1A2E]">Formulario de Métricas</CardTitle>
-                                    <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                    <CardTitle className="text-[20px] font-bold text-foreground">Formulario de Métricas</CardTitle>
+                                    <CardDescription className="text-[14px] text-muted-foreground">
                                         Completa los campos para cada post. Puedes agregar múltiples filas para cargar varias métricas a la
                                         vez.
                                     </CardDescription>
@@ -230,7 +230,7 @@ export default function MetricsPage() {
                                         {/* Filtros */}
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                                             <div>
-                                                <Label htmlFor="campaign" className="text-[14px] font-semibold text-[#1A1A2E] mb-2">
+                                                <Label htmlFor="campaign" className="text-[14px] font-semibold text-foreground mb-2">
                                                     Campaña (opcional)
                                                 </Label>
                                                 <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
@@ -249,7 +249,7 @@ export default function MetricsPage() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="influencer" className="text-[14px] font-semibold text-[#1A1A2E] mb-2">
+                                                <Label htmlFor="influencer" className="text-[14px] font-semibold text-foreground mb-2">
                                                     Influencer (opcional)
                                                 </Label>
                                                 <Select value={selectedInfluencer} onValueChange={setSelectedInfluencer}>
@@ -271,16 +271,16 @@ export default function MetricsPage() {
                                         {/* Tabla de métricas */}
                                         <div className="space-y-4">
                                             {rows.map((row, index) => (
-                                                <Card key={row.id} className="rounded-2xl border-[rgba(108,72,197,0.1)] p-4">
+                                                <Card key={row.id} className="rounded-2xl border-primary/10 p-4">
                                                     <div className="flex items-center justify-between mb-4">
-                                                        <h3 className="text-[16px] font-semibold text-[#1A1A2E]">Métrica #{index + 1}</h3>
+                                                        <h3 className="text-[16px] font-semibold text-foreground">Métrica #{index + 1}</h3>
                                                         {rows.length > 1 && (
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 onClick={() => removeRow(row.id)}
-                                                                className="text-[#EF4444] hover:text-[#DC2626]"
+                                                                className="text-destructive hover:text-destructive/90"
                                                             >
                                                                 <IconTrash className="w-4 h-4" />
                                                             </Button>
@@ -289,7 +289,7 @@ export default function MetricsPage() {
 
                                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                                                         <div>
-                                                            <Label htmlFor={`post-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`post-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Post *
                                                             </Label>
                                                             <Select
@@ -319,7 +319,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`date-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`date-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Fecha de Medición *
                                                             </Label>
                                                             <Popover>
@@ -356,7 +356,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`views-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`views-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Views
                                                             </Label>
                                                             <Input
@@ -370,7 +370,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`likes-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`likes-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Likes
                                                             </Label>
                                                             <Input
@@ -384,7 +384,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`shares-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`shares-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Shares
                                                             </Label>
                                                             <Input
@@ -398,7 +398,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`clicks-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`clicks-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Clics
                                                             </Label>
                                                             <Input
@@ -412,7 +412,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`conversions-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`conversions-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Conversiones
                                                             </Label>
                                                             <Input
@@ -426,7 +426,7 @@ export default function MetricsPage() {
                                                         </div>
 
                                                         <div>
-                                                            <Label htmlFor={`revenue-${row.id}`} className="text-[12px] text-[#6B6B8D]">
+                                                            <Label htmlFor={`revenue-${row.id}`} className="text-[12px] text-muted-foreground">
                                                                 Revenue ($)
                                                             </Label>
                                                             <Input
@@ -449,7 +449,7 @@ export default function MetricsPage() {
                                                 type="button"
                                                 variant="outline"
                                                 onClick={addRow}
-                                                className="border-[#6C48C5] text-[#6C48C5] rounded-2xl"
+                                                className="border-primary text-primary rounded-2xl"
                                             >
                                                 <IconPlus className="w-4 h-4 mr-2" />
                                                 Agregar Fila
@@ -458,7 +458,7 @@ export default function MetricsPage() {
                                             <Button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-8"
+                                                className="bg-gradient-to-r from-primary/80 to-primary text-white rounded-2xl px-8"
                                             >
                                                 {loading ? "Guardando..." : "Guardar Métricas"}
                                             </Button>

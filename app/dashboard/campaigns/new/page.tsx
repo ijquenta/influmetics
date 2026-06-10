@@ -116,28 +116,28 @@ export default function NewCampaignPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
                             {/* Header */}
                             <div className="flex items-center gap-4 mb-6">
                                 <div>
                                     <PageBreadcrumb />
-                                    <h1 className="text-[28px] font-bold text-[#1A1A2E] mb-2">Nueva Campaña</h1>
-                                    <p className="text-[16px] text-[#6B6B8D]">Define la información principal de la campaña</p>
+                                    <h1 className="text-[28px] font-bold text-foreground mb-2">Nueva Campaña</h1>
+                                    <p className="text-[16px] text-muted-foreground">Define la información principal de la campaña</p>
                                 </div>
                             </div>
 
                             <form onSubmit={handleSubmit}>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.1)] shadow-[0_4px_20px_rgba(108,72,197,0.08)] max-w-4xl">
+                                <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)] max-w-4xl">
                                     <CardHeader>
-                                        <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">Detalles de la Campaña</CardTitle>
-                                        <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                        <CardTitle className="text-[18px] font-bold text-foreground">Detalles de la Campaña</CardTitle>
+                                        <CardDescription className="text-[14px] text-muted-foreground">
                                             Nombre, fechas, país y objetivo principal
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-5">
                                         <div>
-                                            <Label htmlFor="name" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
-                                                Nombre de la campaña <span className="text-[#EF4444]">*</span>
+                                            <Label htmlFor="name" className="text-[14px] font-semibold text-foreground mb-2 block">
+                                                Nombre de la campaña <span className="text-destructive">*</span>
                                             </Label>
                                             <Input
                                                 id="name"
@@ -150,7 +150,7 @@ export default function NewCampaignPage() {
                                         </div>
 
                                         <div>
-                                            <Label htmlFor="description" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                                            <Label htmlFor="description" className="text-[14px] font-semibold text-foreground mb-2 block">
                                                 Descripción
                                             </Label>
                                             <textarea
@@ -158,14 +158,14 @@ export default function NewCampaignPage() {
                                                 value={formData.description}
                                                 onChange={(e) => handleInputChange("description", e.target.value)}
                                                 placeholder="Describe brevemente el objetivo y contexto de la campaña..."
-                                                className="w-full rounded-2xl border border-[rgba(108,72,197,0.1)] bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-[#6C48C5]"
+                                                className="w-full rounded-2xl border border-primary/10 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                                 rows={4}
                                             />
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="country" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                                                <Label htmlFor="country" className="text-[14px] font-semibold text-foreground mb-2 block">
                                                     País
                                                 </Label>
                                                 <Select
@@ -188,7 +188,7 @@ export default function NewCampaignPage() {
                                             <div>
                                                 <Label
                                                     htmlFor="primaryGoalTypeId"
-                                                    className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block"
+                                                    className="text-[14px] font-semibold text-foreground mb-2 block"
                                                 >
                                                     Objetivo principal
                                                 </Label>
@@ -212,8 +212,8 @@ export default function NewCampaignPage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="startDate" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
-                                                    Fecha de inicio <span className="text-[#EF4444]">*</span>
+                                                <Label htmlFor="startDate" className="text-[14px] font-semibold text-foreground mb-2 block">
+                                                    Fecha de inicio <span className="text-destructive">*</span>
                                                 </Label>
                                                 <Popover>
                                                     <PopoverTrigger asChild>
@@ -244,7 +244,7 @@ export default function NewCampaignPage() {
                                             </div>
 
                                             <div>
-                                                <Label htmlFor="endDate" className="text-[14px] font-semibold text-[#1A1A2E] mb-2 block">
+                                                <Label htmlFor="endDate" className="text-[14px] font-semibold text-foreground mb-2 block">
                                                     Fecha de fin
                                                 </Label>
                                                 <Popover>
@@ -288,7 +288,7 @@ export default function NewCampaignPage() {
                                             <Button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="bg-gradient-to-r from-[#8B6FD9] to-[#6C48C5] text-white rounded-2xl px-8"
+                                                className="bg-gradient-to-r from-primary/80 to-primary text-white rounded-2xl px-8"
                                             >
                                                 {loading ? "Guardando..." : "Guardar Campaña"}
                                             </Button>

@@ -406,35 +406,35 @@ export default function InfluencerDetailPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[#F8F7FC] min-h-full">
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
                             <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
                                 <div>
                                     <PageBreadcrumb />
-                                    <h1 className="text-[24px] font-bold text-[#1A1A2E] mb-1">
+                                    <h1 className="text-[24px] font-bold text-foreground mb-1">
                                         {influencer ? influencer.name : "Influencer demo"}
                                     </h1>
-                                    <p className="text-[14px] text-[#6B6B8D]">
+                                    <p className="text-[14px] text-muted-foreground">
                                         Ficha rápida del influencer y resumen de su impacto en redes sociales.
                                     </p>
                                 </div>
                             </div>
 
                             {loading ? (
-                                <div className="text-center py-12 text-[#6B6B8D]">Cargando...</div>
+                                <div className="text-center py-12 text-muted-foreground">Cargando...</div>
                             ) : !influencer ? (
-                                <div className="text-center py-12 text-[#6B6B8D]">No se encontró el influencer.</div>
+                                <div className="text-center py-12 text-muted-foreground">No se encontró el influencer.</div>
                             ) : (
                                 <Tabs defaultValue="details" className="mt-2">
-                                    <TabsList className="bg-[rgba(108,72,197,0.08)] rounded-2xl px-1 py-1 w-fit">
+                                    <TabsList className="bg-primary/10 rounded-2xl px-1 py-1 w-fit">
                                         <TabsTrigger
                                             value="details"
-                                            className="rounded-2xl px-4 py-1 text-xs md:text-sm data-[state=active]:bg-[#6C48C5] data-[state=active]:text-white"
+                                            className="rounded-2xl px-4 py-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white"
                                         >
                                             Detalles
                                         </TabsTrigger>
                                         <TabsTrigger
                                             value="posts"
-                                            className="rounded-2xl px-4 py-1 text-xs md:text-sm data-[state=active]:bg-[#6C48C5] data-[state=active]:text-white"
+                                            className="rounded-2xl px-4 py-1 text-xs md:text-sm data-[state=active]:bg-primary data-[state=active]:text-white"
                                         >
                                             Publicaciones
                                         </TabsTrigger>
@@ -445,57 +445,57 @@ export default function InfluencerDetailPage() {
                                             {/* Información básica + redes */}
                                             <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                                                 <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                                                    <CardTitle className="text-[18px] font-bold text-foreground">
                                                         Resumen del influencer
                                                     </CardTitle>
-                                                    <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                                    <CardDescription className="text-[14px] text-muted-foreground">
                                                         Información clave que ves en el listado: nicho, código, campañas y actividad.
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-4 text-sm">
                                                     <div className="grid grid-cols-1 gap-2">
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <p className="text-xs text-[#6B6B8D]">Nombre</p>
-                                                            <p className="text-sm font-semibold text-[#1A1A2E] truncate">
+                                                            <p className="text-xs text-muted-foreground">Nombre</p>
+                                                            <p className="text-sm font-semibold text-foreground truncate">
                                                                 {influencer.name}
                                                             </p>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <p className="text-xs text-[#6B6B8D]">Nicho</p>
-                                                            <p className="text-sm text-[#1A1A2E] truncate">
-                                                                {influencer.niche || <span className="text-[#6B6B8D]">No definido</span>}
+                                                            <p className="text-xs text-muted-foreground">Nicho</p>
+                                                            <p className="text-sm text-foreground truncate">
+                                                                {influencer.niche || <span className="text-muted-foreground">No definido</span>}
                                                             </p>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <p className="text-xs text-[#6B6B8D]">Código referido</p>
-                                                            <p className="text-sm text-[#1A1A2E]">
+                                                            <p className="text-xs text-muted-foreground">Código referido</p>
+                                                            <p className="text-sm text-foreground">
                                                                 {influencer.referralCode || (
-                                                                    <span className="text-[#6B6B8D]">No definido</span>
+                                                                    <span className="text-muted-foreground">No definido</span>
                                                                 )}
                                                             </p>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <p className="text-xs text-[#6B6B8D]">Campañas</p>
-                                                            <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                            <p className="text-xs text-muted-foreground">Campañas</p>
+                                                            <p className="text-sm font-semibold text-foreground">
                                                                 {influencer._count?.influencerCampaigns ?? 0}
                                                             </p>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <p className="text-xs text-[#6B6B8D]">Posts</p>
-                                                            <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                            <p className="text-xs text-muted-foreground">Posts</p>
+                                                            <p className="text-sm font-semibold text-foreground">
                                                                 {influencer._count?.posts ?? 0}
                                                             </p>
                                                         </div>
                                                         <div className="grid grid-cols-2 gap-2">
-                                                            <p className="text-xs text-[#6B6B8D]">Email</p>
-                                                            <p className="text-sm text-[#1A1A2E] truncate">
-                                                                {influencer.email || <span className="text-[#6B6B8D]">No definido</span>}
+                                                            <p className="text-xs text-muted-foreground">Email</p>
+                                                            <p className="text-sm text-foreground truncate">
+                                                                {influencer.email || <span className="text-muted-foreground">No definido</span>}
                                                             </p>
                                                         </div>
                                                     </div>
 
-                                                    <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-1">
-                                                        <p className="text-xs text-[#6B6B8D] mb-2">Redes sociales</p>
+                                                    <div className="pt-3 border-t border-border mt-1">
+                                                        <p className="text-xs text-muted-foreground mb-2">Redes sociales</p>
                                                         {influencer.socialAccounts && influencer.socialAccounts.length > 0 ? (
                                                             <div className="flex flex-wrap gap-2">
                                                                 {influencer.socialAccounts.map((account) => (
@@ -510,7 +510,7 @@ export default function InfluencerDetailPage() {
                                                                 ))}
                                                             </div>
                                                         ) : (
-                                                            <p className="text-xs text-[#9CA3AF]">
+                                                            <p className="text-xs text-muted-foreground">
                                                                 No hay redes sociales registradas para este influencer.
                                                             </p>
                                                         )}
@@ -521,18 +521,18 @@ export default function InfluencerDetailPage() {
                                             {/* TikTok: perfil y resumen de rendimiento */}
                                             <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                                                 <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                                                    <CardTitle className="text-[18px] font-bold text-foreground">
                                                         Rendimiento en TikTok
                                                     </CardTitle>
-                                                    <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                                    <CardDescription className="text-[14px] text-muted-foreground">
                                                         Perfil y engagement promedio del influencer en TikTok.
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-3 text-sm">
                                                     {scrapeLoading ? (
-                                                        <p className="text-xs text-[#6B6B8D]">Cargando datos de TikTok...</p>
+                                                        <p className="text-xs text-muted-foreground">Cargando datos de TikTok...</p>
                                                     ) : !scraped ? (
-                                                        <p className="text-xs text-[#6B6B8D]">
+                                                        <p className="text-xs text-muted-foreground">
                                                             No se pudieron obtener los datos de TikTok para este influencer.
                                                         </p>
                                                     ) : (
@@ -549,75 +549,75 @@ export default function InfluencerDetailPage() {
                                                                         </AvatarFallback>
                                                                     </Avatar>
                                                                     <div>
-                                                                        <p className="text-xs text-[#6B6B8D] mb-0.5">Usuario</p>
-                                                                        <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                        <p className="text-xs text-muted-foreground mb-0.5">Usuario</p>
+                                                                        <p className="text-sm font-semibold text-foreground">
                                                                             @{scraped.data.profile.username}
                                                                         </p>
                                                                     </div>
                                                                 </div>
-                                                                <Badge className="bg-[#E8DEFF] text-[#6C48C5] text-xs px-2 py-0.5">
+                                                                <Badge className="bg-primary/10 text-primary text-xs px-2 py-0.5">
                                                                     Datos de TikTok
                                                                 </Badge>
                                                             </div>
 
                                                             <div className="grid grid-cols-2 gap-3 pt-2">
                                                                 <div>
-                                                                    <p className="text-xs text-[#6B6B8D] mb-1">Seguidores</p>
-                                                                    <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                    <p className="text-xs text-muted-foreground mb-1">Seguidores</p>
+                                                                    <p className="text-sm font-semibold text-foreground">
                                                                         {formatNumber(scraped.data.profile.followers)}
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-xs text-[#6B6B8D] mb-1">Seguidos</p>
-                                                                    <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                    <p className="text-xs text-muted-foreground mb-1">Seguidos</p>
+                                                                    <p className="text-sm font-semibold text-foreground">
                                                                         {formatNumber(scraped.data.profile.following)}
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-xs text-[#6B6B8D] mb-1">Likes totales</p>
-                                                                    <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                    <p className="text-xs text-muted-foreground mb-1">Likes totales</p>
+                                                                    <p className="text-sm font-semibold text-foreground">
                                                                         {formatNumber(scraped.data.profile.likes)}
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-xs text-[#6B6B8D] mb-1">
+                                                                    <p className="text-xs text-muted-foreground mb-1">
                                                                         Engagement medio (mediana)
                                                                     </p>
-                                                                    <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                    <p className="text-sm font-semibold text-foreground">
                                                                         {formatPercent(scraped.data.profile.engagement_median)}
                                                                     </p>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-2">
-                                                                <p className="text-xs text-[#6B6B8D] mb-1">Rango de engagement estimado</p>
-                                                                <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                            <div className="pt-3 border-t border-border mt-2">
+                                                                <p className="text-xs text-muted-foreground mb-1">Rango de engagement estimado</p>
+                                                                <p className="text-sm font-semibold text-foreground">
                                                                     {formatPercent(scraped.data.profile.engagement_range.low)} –{" "}
                                                                     {formatPercent(scraped.data.profile.engagement_range.high)}
                                                                 </p>
                                                             </div>
 
-                                                            <div className="pt-3 border-t border-[rgba(108,72,197,0.08)] mt-2 space-y-2">
-                                                                <p className="text-xs text-[#6B6B8D]">
+                                                            <div className="pt-3 border-t border-border mt-2 space-y-2">
+                                                                <p className="text-xs text-muted-foreground">
                                                                     Resumen de contenido (últimos {scraped.data.statistics.total_videos}{" "}
                                                                     videos analizados)
                                                                 </p>
                                                                 <div className="grid grid-cols-3 gap-2">
                                                                     <div>
-                                                                        <p className="text-[10px] text-[#6B6B8D] mb-1">Vistas totales</p>
-                                                                        <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                        <p className="text-[10px] text-muted-foreground mb-1">Vistas totales</p>
+                                                                        <p className="text-sm font-semibold text-foreground">
                                                                             {formatNumber(scraped.data.statistics.totals.views)}
                                                                         </p>
                                                                     </div>
                                                                     <div>
-                                                                        <p className="text-[10px] text-[#6B6B8D] mb-1">Likes totales</p>
-                                                                        <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                        <p className="text-[10px] text-muted-foreground mb-1">Likes totales</p>
+                                                                        <p className="text-sm font-semibold text-foreground">
                                                                             {formatNumber(scraped.data.statistics.totals.likes)}
                                                                         </p>
                                                                     </div>
                                                                     <div>
-                                                                        <p className="text-[10px] text-[#6B6B8D] mb-1">Comentarios</p>
-                                                                        <p className="text-sm font-semibold text-[#1A1A2E]">
+                                                                        <p className="text-[10px] text-muted-foreground mb-1">Comentarios</p>
+                                                                        <p className="text-sm font-semibold text-foreground">
                                                                             {formatNumber(scraped.data.statistics.totals.comments)}
                                                                         </p>
                                                                     </div>
@@ -635,18 +635,18 @@ export default function InfluencerDetailPage() {
                                             {/* Top videos (resumen compacto) */}
                                             <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                                                 <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                                                    <CardTitle className="text-[18px] font-bold text-foreground">
                                                         Top videos en TikTok
                                                     </CardTitle>
-                                                    <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                                    <CardDescription className="text-[14px] text-muted-foreground">
                                                         Tres videos clave según alcance, interacción y guardados.
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-4">
                                                     {scrapeLoading ? (
-                                                        <p className="text-xs text-[#6B6B8D]">Cargando datos de videos...</p>
+                                                        <p className="text-xs text-muted-foreground">Cargando datos de videos...</p>
                                                     ) : !scraped ? (
-                                                        <p className="text-xs text-[#6B6B8D]">
+                                                        <p className="text-xs text-muted-foreground">
                                                             No hay datos disponibles para mostrar los top videos.
                                                         </p>
                                                     ) : (
@@ -672,38 +672,38 @@ export default function InfluencerDetailPage() {
                                                             ).map(({ key, label, video }) => (
                                                                 <div
                                                                     key={key}
-                                                                    className="p-3 rounded-xl bg-[rgba(108,72,197,0.03)] flex flex-col gap-2"
+                                                                    className="p-3 rounded-xl bg-primary/5 flex flex-col gap-2"
                                                                 >
                                                                     <div className="flex items-center justify-between gap-2">
-                                                                        <span className="text-xs font-semibold text-[#1A1A2E]">
+                                                                        <span className="text-xs font-semibold text-foreground">
                                                                             {label}
                                                                         </span>
                                                                         <Badge
                                                                             variant="secondary"
-                                                                            className="text-[10px] bg-[#E8DEFF] text-[#6C48C5] px-2 py-0.5"
+                                                                            className="text-[10px] bg-primary/10 text-primary px-2 py-0.5"
                                                                         >
                                                                             Score {video.score_100}/100
                                                                         </Badge>
                                                                     </div>
-                                                                    <p className="text-xs text-[#6B6B8D] line-clamp-3 min-h-[2.5rem]">
+                                                                    <p className="text-xs text-muted-foreground line-clamp-3 min-h-[2.5rem]">
                                                                         {video.desc || "Sin descripción"}
                                                                     </p>
                                                                     <div className="grid grid-cols-3 gap-2 text-[10px]">
                                                                         <div>
-                                                                            <p className="text-[#6B6B8D]">Vistas</p>
-                                                                            <p className="font-semibold text-[#1A1A2E]">
+                                                                            <p className="text-muted-foreground">Vistas</p>
+                                                                            <p className="font-semibold text-foreground">
                                                                                 {formatNumber(video.views)}
                                                                             </p>
                                                                         </div>
                                                                         <div>
-                                                                            <p className="text-[#6B6B8D]">Engagement</p>
-                                                                            <p className="font-semibold text-[#1A1A2E]">
+                                                                            <p className="text-muted-foreground">Engagement</p>
+                                                                            <p className="font-semibold text-foreground">
                                                                                 {formatPercent(video.engagement_rate)}
                                                                             </p>
                                                                         </div>
                                                                         <div>
-                                                                            <p className="text-[#6B6B8D]">Nivel</p>
-                                                                            <p className="font-semibold text-[#1A1A2E]">
+                                                                            <p className="text-muted-foreground">Nivel</p>
+                                                                            <p className="font-semibold text-foreground">
                                                                                 {video.engagement_level}
                                                                             </p>
                                                                         </div>
@@ -718,24 +718,24 @@ export default function InfluencerDetailPage() {
                                             {/* Videos y comentarios (vista compacta para marketing) */}
                                             <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                                                 <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-[#1A1A2E]">
+                                                    <CardTitle className="text-[18px] font-bold text-foreground">
                                                         Videos y preguntas de la comunidad
                                                     </CardTitle>
-                                                    <CardDescription className="text-[14px] text-[#6B6B8D]">
+                                                    <CardDescription className="text-[14px] text-muted-foreground">
                                                         Lista de videos para que marketing identifique dónde se concentran las
                                                         conversaciones.
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-3 text-sm">
                                                     {scrapeLoading ? (
-                                                        <p className="text-xs text-[#6B6B8D]">Cargando lista de videos...</p>
+                                                        <p className="text-xs text-muted-foreground">Cargando lista de videos...</p>
                                                     ) : !scraped || scraped.data.videos.length === 0 ? (
-                                                        <p className="text-xs text-[#6B6B8D]">
+                                                        <p className="text-xs text-muted-foreground">
                                                             Todavía no hay videos disponibles para analizar las conversaciones.
                                                         </p>
                                                     ) : (
                                                         <>
-                                                            <div className="grid grid-cols-5 gap-2 text-[11px] text-[#9CA3AF]">
+                                                            <div className="grid grid-cols-5 gap-2 text-[11px] text-muted-foreground">
                                                                 <span>Video</span>
                                                                 <span>Vistas</span>
                                                                 <span>Comentarios</span>
@@ -749,25 +749,25 @@ export default function InfluencerDetailPage() {
                                                                         className="grid grid-cols-5 gap-2 items-start rounded-xl bg-[rgba(108,72,197,0.02)] px-3 py-2"
                                                                     >
                                                                         <div className="pr-2">
-                                                                            <p className="text-xs font-medium text-[#1A1A2E] truncate">
+                                                                            <p className="text-xs font-medium text-foreground truncate">
                                                                                 {video.desc || "Sin descripción"}
                                                                             </p>
-                                                                            <p className="text-[11px] text-[#9CA3AF]">
+                                                                            <p className="text-[11px] text-muted-foreground">
                                                                                 ID:{" "}
                                                                                 <span className="font-mono">{video.id.slice(0, 8)}...</span>
                                                                             </p>
                                                                         </div>
-                                                                        <p className="text-xs font-semibold text-[#1A1A2E]">
+                                                                        <p className="text-xs font-semibold text-foreground">
                                                                             {formatNumber(video.views)}
                                                                         </p>
-                                                                        <p className="text-xs font-semibold text-[#1A1A2E]">
+                                                                        <p className="text-xs font-semibold text-foreground">
                                                                             {video.comments.toLocaleString("es-ES")}
                                                                         </p>
                                                                         <div className="flex flex-col gap-0.5 items-start">
-                                                                            <span className="text-xs font-semibold text-[#1A1A2E]">
+                                                                            <span className="text-xs font-semibold text-foreground">
                                                                                 {formatPercent(video.engagement_rate)}
                                                                             </span>
-                                                                            <span className="text-[11px] text-[#6B6B8D]">
+                                                                            <span className="text-[11px] text-muted-foreground">
                                                                                 Nivel {video.engagement_level}
                                                                             </span>
                                                                         </div>
@@ -775,7 +775,7 @@ export default function InfluencerDetailPage() {
                                                                             <Button
                                                                                 type="button"
                                                                                 size="sm"
-                                                                                className="h-7 text-[11px] rounded-2xl bg-[#6C48C5] hover:bg-[#5B3AB0] text-white border-0"
+                                                                                className="h-7 text-[11px] rounded-2xl bg-primary hover:bg-primary/90 text-white border-0"
                                                                                 onClick={() =>
                                                                                     router.push(
                                                                                         `/dashboard/influencers/${influencer.id}/posts/${video.id}`
@@ -788,7 +788,7 @@ export default function InfluencerDetailPage() {
                                                                     </div>
                                                                 ))}
                                                             </div>
-                                                            <p className="text-[11px] text-[#9CA3AF] pt-1">
+                                                            <p className="text-[11px] text-muted-foreground pt-1">
                                                                 En una siguiente versión podrás ver aquí las preguntas más frecuentes y un
                                                                 resumen automático para el equipo de marketing.
                                                             </p>
