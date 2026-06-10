@@ -6,6 +6,9 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get("search");
     const niche = searchParams.get("niche");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10", 10)));
+    const skip = (page - 1) * limit;
 
     try {
         const where: Prisma.InfluencerWhereInput = {};
@@ -22,32 +25,37 @@ export async function GET(request: NextRequest) {
             where.niche = niche;
         }
 
-        const influencers = await prisma.influencer.findMany({
-            where,
-            include: {
-                socialAccounts: {
-                    include: {
-                        socialPlatform: true,
+        const [influencers, total] = await Promise.all([
+            prisma.influencer.findMany({
+                where,
+                skip,
+                take: limit,
+                include: {
+                    socialAccounts: {
+                        include: {
+                            socialPlatform: true,
+                        },
+                    },
+                    influencerCampaigns: {
+                        include: {
+                            campaign: true,
+                        },
+                    },
+                    _count: {
+                        select: {
+                            posts: true,
+                            influencerCampaigns: true,
+                        },
                     },
                 },
-                influencerCampaigns: {
-                    include: {
-                        campaign: true,
-                    },
+                orderBy: {
+                    createdAt: "desc",
                 },
-                _count: {
-                    select: {
-                        posts: true,
-                        influencerCampaigns: true,
-                    },
-                },
-            },
-            orderBy: {
-                createdAt: "desc",
-            },
-        });
+            }),
+            prisma.influencer.count({ where }),
+        ]);
 
-        return NextResponse.json({ data: influencers });
+        return NextResponse.json({ data: influencers, total, page, limit });
     } catch (error) {
         console.error("Error fetching influencers:", error);
         return NextResponse.json({ error: "Error al obtener influencers" }, { status: 500 });
