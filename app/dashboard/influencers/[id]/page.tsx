@@ -12,294 +12,98 @@ import {
     IconBrandInstagram,
     IconBrandYoutube,
     IconBrandX,
+    IconRefresh,
+    IconLoader2,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { InfluencerWithRelations } from "@/shared/types/influencer.types";
+import { toast } from "sonner";
 
-interface ScrapedVideo {
-    id: string;
-    desc: string;
-    views: number;
+interface TikTokProfile {
+    username: string;
+    nickName: string;
+    avatar: string;
+    verified: boolean;
+    signature: string;
+    fans: number;
+    following: number;
+    heart: number;
+    video: number;
+    scrapedAt: string | null;
+}
+
+interface TikTokVideo {
+    id: number;
+    tiktokVideoId: string;
+    caption: string;
+    publishedAt: string;
+    coverUrl: string;
+    duration: number;
+    playCount: number;
     likes: number;
     comments: number;
+    shares: number;
     saves: number;
-    duration: number;
-    engagement_rate: number;
-    engagement_level: string;
-    percentile: string;
-    score_100: number;
-    is_most_viewed: number;
-    is_most_saved: number;
-    is_highest_engagement: number;
-    is_top_percentile: number;
+    hashtags: string[];
+    webVideoUrl: string;
 }
 
-interface ScrapedProfileData {
-    profile: {
-        username: string;
-        avatar_url?: string;
-        followers: number;
-        following: number;
-        likes: number;
-        engagement_median: number;
-        engagement_range: { low: number; high: number };
-    };
-    statistics: {
-        total_videos: number;
-        median_engagement: number;
-        average_engagement: number;
-        totals: {
-            views: string;
-            likes: string;
-            comments: string;
-        };
-    };
-    top_videos: {
-        most_saved: ScrapedVideo;
-        most_viewed: ScrapedVideo;
-        highest_engagement: ScrapedVideo;
-    };
-    videos: ScrapedVideo[];
-    scraped_at: string;
-}
-
-interface ScrapedResponse {
-    success: boolean;
-    data: ScrapedProfileData;
-    message: string;
-    timestamp: string;
-}
-
-const DUMMY_NAMES = [
-    "María García",
-    "Carlos Rodríguez",
-    "Ana Martínez",
-    "Luis Fernández",
-    "Sofía Herrera",
-    "Diego López",
-    "Valentina Torres",
-    "Javier Morales",
-];
-
-const DUMMY_NICHES = ["Beauty & Skincare", "Tech & Gadgets", "Fitness & Wellness", "Lifestyle", "Gastronomía", "Educación y tips"];
-
-const createDummyInfluencer = (id: number): InfluencerWithRelations => {
-    const name = DUMMY_NAMES[id % DUMMY_NAMES.length];
-    const niche = DUMMY_NICHES[id % DUMMY_NICHES.length];
-    const slug = name.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ".");
-
+function buildTikTokProfile(account: InfluencerWithRelations["socialAccounts"][number]): TikTokProfile | null {
+    if (!account || account.socialPlatform.code !== "tiktok") return null;
     return {
-        id,
-        name,
-        email: `${slug}@influmetics.com`,
-        birthDate: null,
-        niche,
-        referralCode: `INFLUMETICS${2000 + id}`,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        socialAccounts: [],
-        influencerCampaigns: [],
-        posts: [],
-        _count: {
-            posts: 0,
-            influencerCampaigns: 0,
-        },
+        username: account.handle,
+        nickName: account.nickName || account.handle,
+        avatar: account.avatar || "",
+        verified: account.verified || false,
+        signature: account.signature || "",
+        fans: account.fans || 0,
+        following: account.following || 0,
+        heart: account.heart || 0,
+        video: account.video || 0,
+        scrapedAt: account.scrapedAt ? new Date(account.scrapedAt).toISOString() : null,
     };
-};
+}
 
-type DummyJson = {
-    data?: {
-        profile?: {
-            username?: string;
-            avatar_url?: string;
-            followers?: number;
-            following?: number;
-            likes?: number;
-        };
-        videos?: Array<Record<string, unknown>>;
-    };
-};
+function buildTikTokVideos(posts: InfluencerWithRelations["posts"]): TikTokVideo[] {
+    return posts
+        .filter((p) => p.tiktokVideoId)
+        .map((p) => {
+            const metric = p.metrics?.[0];
+            return {
+                id: p.id,
+                tiktokVideoId: p.tiktokVideoId || "",
+                caption: p.caption || "",
+                publishedAt: new Date(p.publishedAt).toISOString(),
+                coverUrl: p.coverUrl || "",
+                duration: p.duration || 0,
+                playCount: metric?.playCount ?? metric?.views ?? 0,
+                likes: metric?.likes ?? 0,
+                comments: metric?.commentCount ?? 0,
+                shares: metric?.shares ?? 0,
+                saves: metric?.saves ?? 0,
+                hashtags: p.hashtags?.map((h) => h.name) || [],
+                webVideoUrl: p.webVideoUrl || p.url,
+            };
+        });
+}
 
-const buildScrapedFromDummyJson = (id: number, raw: DummyJson): ScrapedResponse => {
-    const profile = raw?.data?.profile ?? {};
-    const allVideos: Record<string, unknown>[] = raw?.data?.videos ?? [];
+function formatNumber(value: number | string): string {
+    const num = typeof value === "string" ? Number(value) : value;
+    if (Number.isNaN(num)) return "-";
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return num.toLocaleString("es-ES");
+}
 
-    if (!allVideos.length) {
-        return {
-            success: true,
-            message: "Sin videos en datos dummy.",
-            timestamp: new Date().toISOString(),
-            data: {
-                profile: {
-                    username: profile.username ?? `demo_${id}`,
-                    avatar_url: profile.avatar_url ?? "/profile.png",
-                    followers: profile.followers ?? 0,
-                    following: profile.following ?? 0,
-                    likes: profile.likes ?? 0,
-                    engagement_median: 0,
-                    engagement_range: { low: 0, high: 0 },
-                },
-                statistics: {
-                    total_videos: 0,
-                    median_engagement: 0,
-                    average_engagement: 0,
-                    totals: { views: "0", likes: "0", comments: "0" },
-                },
-                top_videos: {
-                    most_saved: {
-                        id: "",
-                        desc: "",
-                        views: 0,
-                        likes: 0,
-                        comments: 0,
-                        saves: 0,
-                        duration: 0,
-                        engagement_rate: 0,
-                        engagement_level: "bajo",
-                        percentile: "0.00",
-                        score_100: 0,
-                        is_most_viewed: 0,
-                        is_most_saved: 0,
-                        is_highest_engagement: 0,
-                        is_top_percentile: 0,
-                    },
-                    most_viewed: {
-                        id: "",
-                        desc: "",
-                        views: 0,
-                        likes: 0,
-                        comments: 0,
-                        saves: 0,
-                        duration: 0,
-                        engagement_rate: 0,
-                        engagement_level: "bajo",
-                        percentile: "0.00",
-                        score_100: 0,
-                        is_most_viewed: 0,
-                        is_most_saved: 0,
-                        is_highest_engagement: 0,
-                        is_top_percentile: 0,
-                    },
-                    highest_engagement: {
-                        id: "",
-                        desc: "",
-                        views: 0,
-                        likes: 0,
-                        comments: 0,
-                        saves: 0,
-                        duration: 0,
-                        engagement_rate: 0,
-                        engagement_level: "bajo",
-                        percentile: "0.00",
-                        score_100: 0,
-                        is_most_viewed: 0,
-                        is_most_saved: 0,
-                        is_highest_engagement: 0,
-                        is_top_percentile: 0,
-                    },
-                },
-                videos: [],
-                scraped_at: new Date().toISOString(),
-            },
-        };
-    }
-
-    // Para dummy: usar siempre los primeros N videos para todos los influencers
-    const videosForInfluencer = allVideos.slice(0, 20);
-
-    const mappedVideos: ScrapedVideo[] = videosForInfluencer.map((v) => {
-        const views = Number(v.views ?? 0);
-        const likes = Number(v.likes ?? 0);
-        const comments = Number(v.comments ?? 0);
-        const saves = Number(v.saves ?? 0);
-        const engagementRate = Number(v.engagement_rate ?? 0);
-        const engagementLevel = (v.engagement_level as string | undefined) ?? "estándar";
-        const percentile = typeof v.percentile === "number" || typeof v.percentile === "string" ? String(v.percentile) : "0.00";
-        const score100 = Number(v.score_100 ?? 0);
-
-        return {
-            id: String(v.id),
-            desc: (v.desc as string | undefined) ?? "",
-            views,
-            likes,
-            comments,
-            saves,
-            duration: Number(v.duration ?? 0),
-            engagement_rate: engagementRate,
-            engagement_level: engagementLevel,
-            percentile,
-            score_100: score100,
-            is_most_viewed: 0,
-            is_most_saved: 0,
-            is_highest_engagement: 0,
-            is_top_percentile: Number(percentile) >= 90 ? 1 : 0,
-        };
-    });
-    const engagements = mappedVideos.map((v) => v.engagement_rate).sort((a, b) => a - b);
-    const totalVideos = mappedVideos.length;
-
-    const median =
-        engagements.length === 0
-            ? 0
-            : engagements.length % 2 !== 0
-                ? engagements[Math.floor(engagements.length / 2)]
-                : (engagements[engagements.length / 2 - 1] + engagements[engagements.length / 2]) / 2;
-
-    const average = engagements.length === 0 ? 0 : engagements.reduce((a, b) => a + b, 0) / engagements.length;
-
-    const totalsViews = mappedVideos.reduce((sum, v) => sum + (v.views ?? 0), 0);
-    const totalsLikes = mappedVideos.reduce((sum, v) => sum + (v.likes ?? 0), 0);
-    const totalsComments = mappedVideos.reduce((sum, v) => sum + (v.comments ?? 0), 0);
-
-    const mostViewed = mappedVideos.reduce((best, v) => (v.views > best.views ? v : best), mappedVideos[0]) ?? mappedVideos[0];
-    const mostSaved = mappedVideos.reduce((best, v) => (v.saves > best.saves ? v : best), mappedVideos[0]) ?? mappedVideos[0];
-    const highestEngagement =
-        mappedVideos.reduce((best, v) => (v.engagement_rate > best.engagement_rate ? v : best), mappedVideos[0]) ?? mappedVideos[0];
-
-    // Marcar flags en los videos
-    mappedVideos.forEach((v) => {
-        v.is_most_viewed = v.id === mostViewed.id ? 1 : 0;
-        v.is_most_saved = v.id === mostSaved.id ? 1 : 0;
-        v.is_highest_engagement = v.id === highestEngagement.id ? 1 : 0;
-    });
-
-    return {
-        success: true,
-        message: "Datos de ejemplo obtenidos desde la fuente de TikTok",
-        timestamp: new Date().toISOString(),
-        data: {
-            profile: {
-                username: profile.username ?? `demo_${id}`,
-                avatar_url: profile.avatar_url ?? "/profile.png",
-                followers: profile.followers ?? 0,
-                following: profile.following ?? 0,
-                likes: profile.likes ?? 0,
-                engagement_median: median,
-                engagement_range: { low: median * 0.8, high: median * 1.2 },
-            },
-            statistics: {
-                total_videos: totalVideos,
-                median_engagement: median,
-                average_engagement: average,
-                totals: {
-                    views: String(totalsViews),
-                    likes: String(totalsLikes),
-                    comments: String(totalsComments),
-                },
-            },
-            top_videos: {
-                most_saved: mostSaved,
-                most_viewed: mostViewed,
-                highest_engagement: highestEngagement,
-            },
-            videos: mappedVideos,
-            scraped_at: new Date().toISOString(),
-        },
-    };
-};
+function formatDuration(seconds: number): string {
+    if (!seconds) return "-";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+}
 
 export default function InfluencerDetailPage() {
     const params = useParams();
@@ -308,95 +112,71 @@ export default function InfluencerDetailPage() {
 
     const [influencer, setInfluencer] = useState<InfluencerWithRelations | null>(null);
     const [loading, setLoading] = useState(true);
-
-    const [scraped, setScraped] = useState<ScrapedResponse | null>(null);
-    const [scrapeLoading, setScrapeLoading] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
     useEffect(() => {
         if (!id || Number.isNaN(id)) return;
         fetchInfluencer();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id]);
 
-    const fetchInfluencer = async (): Promise<void> => {
+    const fetchInfluencer = async () => {
         try {
             const res = await fetch(`/api/influencers/${id}`);
-            if (!res.ok) {
-                // Modo dummy si la API devuelve error o 404
-                const dummyRes = await fetch("/json-influencers.json");
-                const dummyJson = (await dummyRes.json()) as DummyJson;
-                setInfluencer(createDummyInfluencer(id));
-                setScraped(buildScrapedFromDummyJson(id, dummyJson));
-                return;
-            }
-
-            type InfluencerResponse = { data?: InfluencerWithRelations | null };
-            const data: InfluencerResponse = await res.json();
-            const item = data.data ?? null;
-            setInfluencer(item);
-
-            if (item) {
-                fetchScrapedData(item);
-            }
+            if (!res.ok) throw new Error("Not found");
+            const data = await res.json();
+            setInfluencer(data.data ?? null);
         } catch (error) {
-            console.error("Error fetching influencer detail:", error);
-            // Modo dummy en caso de error
-            try {
-                const dummyRes = await fetch("/json-influencers.json");
-                const dummyJson = (await dummyRes.json()) as DummyJson;
-                setInfluencer(createDummyInfluencer(id));
-                setScraped(buildScrapedFromDummyJson(id, dummyJson));
-            } catch {
-                setInfluencer(createDummyInfluencer(id));
-                setScraped(null);
-            }
+            console.error("Error fetching influencer:", error);
+            setInfluencer(null);
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchScrapedData = async (item: InfluencerWithRelations) => {
+    const handleRefresh = async () => {
+        if (!influencer) return;
+        setRefreshing(true);
+
+        const tiktokAccount = influencer.socialAccounts?.find(
+            (acc) => acc.socialPlatform.code.toLowerCase() === "tiktok"
+        );
+        const username = tiktokAccount?.handle || influencer.name;
+
         try {
-            setScrapeLoading(true);
-
-            // Obtener handle de TikTok si existe; si no, usar el nombre como referencia
-            const tiktokAccount = item.socialAccounts?.find((acc) => acc.socialPlatform.code.toLowerCase() === "tiktok");
-
-            const value =
-                tiktokAccount && tiktokAccount.handle
-                    ? `@${tiktokAccount.handle.replace(/^@/, "")}`
-                    : `@${item.name.replace(/\s+/g, "").toLowerCase()}`;
-
-            const res = await fetch("/api/scraping/tiktok", {
+            const res = await fetch("/api/influencers/save-scraped", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    username: value,
-                }),
+                body: JSON.stringify({ profileInput: username }),
             });
 
-            if (!res.ok) return;
+            if (!res.ok) {
+                const err = await res.json();
+                toast.error(err?.error || "Error al refrescar datos");
+                return;
+            }
 
-            const data = await res.json();
-            // El endpoint devuelve el objeto de scraping completo en la raíz:
-            // { success, data: { profile, statistics, top_videos, videos }, message, timestamp }
-            setScraped(data as ScrapedResponse);
-        } catch (error) {
-            console.error("Error obteniendo datos de TikTok:", error);
-            setScraped(null);
+            toast.success("Datos de TikTok actualizados");
+            await fetchInfluencer();
+        } catch {
+            toast.error("Error al refrescar datos de TikTok");
         } finally {
-            setScrapeLoading(false);
+            setRefreshing(false);
         }
     };
 
-    const formatNumber = (value: number | string) => {
-        const num = typeof value === "string" ? Number(value) : value;
-        if (Number.isNaN(num)) return "-";
-        if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
-        return num.toLocaleString("es-ES");
-    };
+    const tiktokAccount = influencer?.socialAccounts?.find(
+        (acc) => acc.socialPlatform.code.toLowerCase() === "tiktok"
+    );
+    const tikTokProfile = tiktokAccount ? buildTikTokProfile(tiktokAccount) : null;
+    const tikTokVideos = influencer?.posts ? buildTikTokVideos(influencer.posts) : [];
 
-    const formatPercent = (value: number) => `${(value * 100).toFixed(1)}%`;
+    const totalViews = tikTokVideos.reduce((sum, v) => sum + v.playCount, 0);
+    const totalLikes = tikTokVideos.reduce((sum, v) => sum + v.likes, 0);
+    const totalComments = tikTokVideos.reduce((sum, v) => sum + v.comments, 0);
+
+    const topViewed = [...tikTokVideos].sort((a, b) => b.playCount - a.playCount).slice(0, 1);
+    const topLiked = [...tikTokVideos].sort((a, b) => b.likes - a.likes).slice(0, 1);
+    const topSaved = [...tikTokVideos].sort((a, b) => b.saves - a.saves).slice(0, 1);
 
     return (
         <SidebarProvider
@@ -417,10 +197,10 @@ export default function InfluencerDetailPage() {
                                 <div>
                                     <PageBreadcrumb />
                                     <h1 className="text-[24px] font-bold text-foreground mb-1">
-                                        {influencer ? influencer.name : "Influencer demo"}
+                                        {influencer ? influencer.name : "Influencer"}
                                     </h1>
                                     <p className="text-[14px] text-muted-foreground">
-                                        Ficha rápida del influencer y resumen de su impacto en redes sociales.
+                                        Ficha rápida del influencer con datos de TikTok.
                                     </p>
                                 </div>
                             </div>
@@ -448,14 +228,14 @@ export default function InfluencerDetailPage() {
 
                                     <TabsContent value="details" className="mt-4">
                                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            {/* Información básica + redes */}
+                                            {/* Basic info */}
                                             <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                                                 <CardHeader>
                                                     <CardTitle className="text-[18px] font-bold text-foreground">
                                                         Resumen del influencer
                                                     </CardTitle>
                                                     <CardDescription className="text-[14px] text-muted-foreground">
-                                                        Información clave que ves en el listado: nicho, código, campañas y actividad.
+                                                        Información clave: nicho, código, campañas y actividad.
                                                     </CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-4 text-sm">
@@ -500,9 +280,9 @@ export default function InfluencerDetailPage() {
                                                         </div>
                                                     </div>
 
-                                                    <div className="pt-3 border-t border-border mt-1">
-                                                        <p className="text-xs text-muted-foreground mb-2">Redes sociales</p>
-                                                        {influencer.socialAccounts && influencer.socialAccounts.length > 0 ? (
+                                                    {influencer.socialAccounts && influencer.socialAccounts.length > 0 && (
+                                                        <div className="pt-3 border-t border-border mt-1">
+                                                            <p className="text-xs text-muted-foreground mb-2">Redes sociales</p>
                                                             <div className="flex flex-wrap gap-2">
                                                                 {influencer.socialAccounts.map((account) => (
                                                                     <Badge
@@ -528,31 +308,49 @@ export default function InfluencerDetailPage() {
                                                                     </Badge>
                                                                 ))}
                                                             </div>
-                                                        ) : (
-                                                            <p className="text-xs text-muted-foreground">
-                                                                No hay redes sociales registradas para este influencer.
-                                                            </p>
-                                                        )}
-                                                    </div>
+                                                        </div>
+                                                    )}
                                                 </CardContent>
                                             </Card>
 
-                                            {/* TikTok: perfil y resumen de rendimiento */}
+                                            {/* TikTok profile card */}
                                             <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                                <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-foreground">
-                                                        Rendimiento en TikTok
-                                                    </CardTitle>
-                                                    <CardDescription className="text-[14px] text-muted-foreground">
-                                                        Perfil y engagement promedio del influencer en TikTok.
-                                                    </CardDescription>
+                                                <CardHeader className="flex flex-row items-start justify-between">
+                                                    <div>
+                                                        <CardTitle className="text-[18px] font-bold text-foreground">
+                                                            Rendimiento en TikTok
+                                                        </CardTitle>
+                                                        <CardDescription className="text-[14px] text-muted-foreground">
+                                                            Perfil y engagement del influencer en TikTok.
+                                                        </CardDescription>
+                                                    </div>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={handleRefresh}
+                                                        disabled={refreshing}
+                                                        className="rounded-2xl gap-2"
+                                                    >
+                                                        {refreshing ? (
+                                                            <IconLoader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <IconRefresh className="w-4 h-4" />
+                                                        )}
+                                                        {refreshing ? "Actualizando..." : "Actualizar"}
+                                                    </Button>
                                                 </CardHeader>
                                                 <CardContent className="space-y-3 text-sm">
-                                                    {scrapeLoading ? (
-                                                        <p className="text-xs text-muted-foreground">Cargando datos de TikTok...</p>
-                                                    ) : !scraped ? (
+                                                    {!tikTokProfile ? (
                                                         <p className="text-xs text-muted-foreground">
-                                                            No se pudieron obtener los datos de TikTok para este influencer.
+                                                            Este influencer no tiene cuenta de TikTok registrada. Usa la
+                                                            página de{" "}
+                                                            <a
+                                                                href="/dashboard/influencers/simulation"
+                                                                className="text-primary underline"
+                                                            >
+                                                                simulación
+                                                            </a>{" "}
+                                                            para scrapear y guardar su perfil.
                                                         </p>
                                                     ) : (
                                                         <>
@@ -560,88 +358,104 @@ export default function InfluencerDetailPage() {
                                                                 <div className="flex items-center gap-3">
                                                                     <Avatar className="h-24 w-24">
                                                                         <AvatarImage
-                                                                            src={scraped.data.profile.avatar_url}
-                                                                            alt={scraped.data.profile.username}
+                                                                            src={tikTokProfile.avatar}
+                                                                            alt={tikTokProfile.username}
                                                                         />
                                                                         <AvatarFallback className="text-xs">
-                                                                            {scraped.data.profile.username.slice(0, 2).toUpperCase()}
+                                                                            {tikTokProfile.username.slice(0, 2).toUpperCase()}
                                                                         </AvatarFallback>
                                                                     </Avatar>
                                                                     <div>
                                                                         <p className="text-xs text-muted-foreground mb-0.5">Usuario</p>
                                                                         <p className="text-sm font-semibold text-foreground">
-                                                                            @{scraped.data.profile.username}
+                                                                            @{tikTokProfile.username}
                                                                         </p>
+                                                                        {tikTokProfile.nickName && (
+                                                                            <p className="text-xs text-muted-foreground">
+                                                                                {tikTokProfile.nickName}
+                                                                            </p>
+                                                                        )}
+                                                                        {tikTokProfile.verified && (
+                                                                            <Badge className="bg-blue-100 text-blue-700 text-[10px] mt-1">
+                                                                                Verificado
+                                                                            </Badge>
+                                                                        )}
                                                                     </div>
                                                                 </div>
-                                                                <Badge className="bg-primary/10 text-primary text-xs px-2 py-0.5">
-                                                                    Datos de TikTok
-                                                                </Badge>
                                                             </div>
+
+                                                            {tikTokProfile.signature && (
+                                                                <p className="text-xs text-muted-foreground italic">
+                                                                    &ldquo;{tikTokProfile.signature}&rdquo;
+                                                                </p>
+                                                            )}
 
                                                             <div className="grid grid-cols-2 gap-3 pt-2">
                                                                 <div>
                                                                     <p className="text-xs text-muted-foreground mb-1">Seguidores</p>
                                                                     <p className="text-sm font-semibold text-foreground">
-                                                                        {formatNumber(scraped.data.profile.followers)}
+                                                                        {formatNumber(tikTokProfile.fans)}
                                                                     </p>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-xs text-muted-foreground mb-1">Seguidos</p>
                                                                     <p className="text-sm font-semibold text-foreground">
-                                                                        {formatNumber(scraped.data.profile.following)}
+                                                                        {formatNumber(tikTokProfile.following)}
                                                                     </p>
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-xs text-muted-foreground mb-1">Likes totales</p>
                                                                     <p className="text-sm font-semibold text-foreground">
-                                                                        {formatNumber(scraped.data.profile.likes)}
+                                                                        {formatNumber(tikTokProfile.heart)}
                                                                     </p>
                                                                 </div>
                                                                 <div>
-                                                                    <p className="text-xs text-muted-foreground mb-1">
-                                                                        Engagement medio (mediana)
-                                                                    </p>
+                                                                    <p className="text-xs text-muted-foreground mb-1">Videos totales</p>
                                                                     <p className="text-sm font-semibold text-foreground">
-                                                                        {formatPercent(scraped.data.profile.engagement_median)}
+                                                                        {formatNumber(tikTokProfile.video)}
                                                                     </p>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="pt-3 border-t border-border mt-2">
-                                                                <p className="text-xs text-muted-foreground mb-1">Rango de engagement estimado</p>
-                                                                <p className="text-sm font-semibold text-foreground">
-                                                                    {formatPercent(scraped.data.profile.engagement_range.low)} –{" "}
-                                                                    {formatPercent(scraped.data.profile.engagement_range.high)}
-                                                                </p>
-                                                            </div>
-
-                                                            <div className="pt-3 border-t border-border mt-2 space-y-2">
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    Resumen de contenido (últimos {scraped.data.statistics.total_videos}{" "}
-                                                                    videos analizados)
-                                                                </p>
-                                                                <div className="grid grid-cols-3 gap-2">
-                                                                    <div>
-                                                                        <p className="text-[10px] text-muted-foreground mb-1">Vistas totales</p>
-                                                                        <p className="text-sm font-semibold text-foreground">
-                                                                            {formatNumber(scraped.data.statistics.totals.views)}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-muted-foreground mb-1">Likes totales</p>
-                                                                        <p className="text-sm font-semibold text-foreground">
-                                                                            {formatNumber(scraped.data.statistics.totals.likes)}
-                                                                        </p>
-                                                                    </div>
-                                                                    <div>
-                                                                        <p className="text-[10px] text-muted-foreground mb-1">Comentarios</p>
-                                                                        <p className="text-sm font-semibold text-foreground">
-                                                                            {formatNumber(scraped.data.statistics.totals.comments)}
-                                                                        </p>
+                                                            {tikTokVideos.length > 0 && (
+                                                                <div className="pt-3 border-t border-border mt-2 space-y-2">
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        Resumen de contenido ({tikTokVideos.length} videos scrapeados)
+                                                                    </p>
+                                                                    <div className="grid grid-cols-3 gap-2">
+                                                                        <div>
+                                                                            <p className="text-[10px] text-muted-foreground mb-1">
+                                                                                Vistas totales
+                                                                            </p>
+                                                                            <p className="text-sm font-semibold text-foreground">
+                                                                                {formatNumber(totalViews)}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-muted-foreground mb-1">
+                                                                                Likes totales
+                                                                            </p>
+                                                                            <p className="text-sm font-semibold text-foreground">
+                                                                                {formatNumber(totalLikes)}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-[10px] text-muted-foreground mb-1">
+                                                                                Comentarios
+                                                                            </p>
+                                                                            <p className="text-sm font-semibold text-foreground">
+                                                                                {formatNumber(totalComments)}
+                                                                            </p>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
-                                                            </div>
+                                                            )}
+
+                                                            {tikTokProfile.scrapedAt && (
+                                                                <p className="text-[10px] text-muted-foreground pt-2 border-t border-border">
+                                                                    Última actualización: {new Date(tikTokProfile.scrapedAt).toLocaleString("es-ES")}
+                                                                </p>
+                                                            )}
                                                         </>
                                                     )}
                                                 </CardContent>
@@ -650,168 +464,161 @@ export default function InfluencerDetailPage() {
                                     </TabsContent>
 
                                     <TabsContent value="posts" className="mt-4">
-                                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                            {/* Top videos (resumen compacto) */}
-                                            <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                                <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-foreground">
-                                                        Top videos en TikTok
-                                                    </CardTitle>
-                                                    <CardDescription className="text-[14px] text-muted-foreground">
-                                                        Tres videos clave según alcance, interacción y guardados.
-                                                    </CardDescription>
-                                                </CardHeader>
-                                                <CardContent className="space-y-4">
-                                                    {scrapeLoading ? (
-                                                        <p className="text-xs text-muted-foreground">Cargando datos de videos...</p>
-                                                    ) : !scraped ? (
-                                                        <p className="text-xs text-muted-foreground">
-                                                            No hay datos disponibles para mostrar los top videos.
-                                                        </p>
-                                                    ) : (
+                                        <div className="grid grid-cols-1 gap-6">
+                                            {/* Top videos */}
+                                            {tikTokVideos.length > 0 && (
+                                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                                    <CardHeader>
+                                                        <CardTitle className="text-[18px] font-bold text-foreground">
+                                                            Top videos en TikTok
+                                                        </CardTitle>
+                                                        <CardDescription className="text-[14px] text-muted-foreground">
+                                                            Videos destacados según rendimiento.
+                                                        </CardDescription>
+                                                    </CardHeader>
+                                                    <CardContent>
                                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                            {(
-                                                                [
-                                                                    {
-                                                                        key: "most_viewed",
-                                                                        label: "Más visto",
-                                                                        video: scraped.data.top_videos.most_viewed,
-                                                                    },
-                                                                    {
-                                                                        key: "highest_engagement",
-                                                                        label: "Mayor engagement",
-                                                                        video: scraped.data.top_videos.highest_engagement,
-                                                                    },
-                                                                    {
-                                                                        key: "most_saved",
-                                                                        label: "Más guardado",
-                                                                        video: scraped.data.top_videos.most_saved,
-                                                                    },
-                                                                ] as const
-                                                            ).map(({ key, label, video }) => (
-                                                                <div
-                                                                    key={key}
-                                                                    className="p-3 rounded-xl bg-primary/5 flex flex-col gap-2"
-                                                                >
-                                                                    <div className="flex items-center justify-between gap-2">
-                                                                        <span className="text-xs font-semibold text-foreground">
-                                                                            {label}
-                                                                        </span>
-                                                                        <Badge
-                                                                            variant="secondary"
-                                                                            className="text-[10px] bg-primary/10 text-primary px-2 py-0.5"
-                                                                        >
-                                                                            Score {video.score_100}/100
-                                                                        </Badge>
-                                                                    </div>
-                                                                    <p className="text-xs text-muted-foreground line-clamp-3 min-h-[2.5rem]">
-                                                                        {video.desc || "Sin descripción"}
+                                                            {topViewed.length > 0 && (
+                                                                <div className="p-3 rounded-xl bg-primary/5 flex flex-col gap-2">
+                                                                    <span className="text-xs font-semibold text-foreground">Más visto</span>
+                                                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                                                        {topViewed[0].caption || "Sin descripción"}
                                                                     </p>
-                                                                    <div className="grid grid-cols-3 gap-2 text-[10px]">
+                                                                    <div className="grid grid-cols-2 gap-2 text-[10px]">
                                                                         <div>
                                                                             <p className="text-muted-foreground">Vistas</p>
                                                                             <p className="font-semibold text-foreground">
-                                                                                {formatNumber(video.views)}
+                                                                                {formatNumber(topViewed[0].playCount)}
                                                                             </p>
                                                                         </div>
                                                                         <div>
-                                                                            <p className="text-muted-foreground">Engagement</p>
+                                                                            <p className="text-muted-foreground">Likes</p>
                                                                             <p className="font-semibold text-foreground">
-                                                                                {formatPercent(video.engagement_rate)}
-                                                                            </p>
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-muted-foreground">Nivel</p>
-                                                                            <p className="font-semibold text-foreground">
-                                                                                {video.engagement_level}
+                                                                                {formatNumber(topViewed[0].likes)}
                                                                             </p>
                                                                         </div>
                                                                     </div>
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </CardContent>
-                                            </Card>
-
-                                            {/* Videos y comentarios (vista compacta para marketing) */}
-                                            <Card className="lg:col-span-2 rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                                <CardHeader>
-                                                    <CardTitle className="text-[18px] font-bold text-foreground">
-                                                        Videos y preguntas de la comunidad
-                                                    </CardTitle>
-                                                    <CardDescription className="text-[14px] text-muted-foreground">
-                                                        Lista de videos para que marketing identifique dónde se concentran las
-                                                        conversaciones.
-                                                    </CardDescription>
-                                                </CardHeader>
-                                                <CardContent className="space-y-3 text-sm">
-                                                    {scrapeLoading ? (
-                                                        <p className="text-xs text-muted-foreground">Cargando lista de videos...</p>
-                                                    ) : !scraped || scraped.data.videos.length === 0 ? (
-                                                        <p className="text-xs text-muted-foreground">
-                                                            Todavía no hay videos disponibles para analizar las conversaciones.
-                                                        </p>
-                                                    ) : (
-                                                        <>
-                                                            <div className="grid grid-cols-5 gap-2 text-[11px] text-muted-foreground">
-                                                                <span>Video</span>
-                                                                <span>Vistas</span>
-                                                                <span>Comentarios</span>
-                                                                <span>Engagement</span>
-                                                                <span>Acción</span>
-                                                            </div>
-                                                            <div className="space-y-2">
-                                                                {scraped.data.videos.map((video) => (
-                                                                    <div
-                                                                        key={video.id}
-                                                                        className="grid grid-cols-5 gap-2 items-start rounded-xl bg-[rgba(108,72,197,0.02)] px-3 py-2"
-                                                                    >
-                                                                        <div className="pr-2">
-                                                                            <p className="text-xs font-medium text-foreground truncate">
-                                                                                {video.desc || "Sin descripción"}
-                                                                            </p>
-                                                                            <p className="text-[11px] text-muted-foreground">
-                                                                                ID:{" "}
-                                                                                <span className="font-mono">{video.id.slice(0, 8)}...</span>
+                                                            )}
+                                                            {topLiked.length > 0 && (
+                                                                <div className="p-3 rounded-xl bg-primary/5 flex flex-col gap-2">
+                                                                    <span className="text-xs font-semibold text-foreground">Más likes</span>
+                                                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                                                        {topLiked[0].caption || "Sin descripción"}
+                                                                    </p>
+                                                                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                                                        <div>
+                                                                            <p className="text-muted-foreground">Vistas</p>
+                                                                            <p className="font-semibold text-foreground">
+                                                                                {formatNumber(topLiked[0].playCount)}
                                                                             </p>
                                                                         </div>
-                                                                        <p className="text-xs font-semibold text-foreground">
-                                                                            {formatNumber(video.views)}
-                                                                        </p>
-                                                                        <p className="text-xs font-semibold text-foreground">
-                                                                            {video.comments.toLocaleString("es-ES")}
-                                                                        </p>
-                                                                        <div className="flex flex-col gap-0.5 items-start">
-                                                                            <span className="text-xs font-semibold text-foreground">
-                                                                                {formatPercent(video.engagement_rate)}
-                                                                            </span>
-                                                                            <span className="text-[11px] text-muted-foreground">
-                                                                                Nivel {video.engagement_level}
-                                                                            </span>
-                                                                        </div>
-                                                                        <div className="flex items-center">
-                                                                            <Button
-                                                                                type="button"
-                                                                                size="sm"
-                                                                                className="h-7 text-[11px] rounded-2xl bg-primary hover:bg-primary/90 text-white border-0"
-                                                                                onClick={() =>
-                                                                                    router.push(
-                                                                                        `/dashboard/influencers/${influencer.id}/posts/${video.id}`
-                                                                                    )
-                                                                                }
-                                                                            >
-                                                                                Ver comentarios
-                                                                            </Button>
+                                                                        <div>
+                                                                            <p className="text-muted-foreground">Likes</p>
+                                                                            <p className="font-semibold text-foreground">
+                                                                                {formatNumber(topLiked[0].likes)}
+                                                                            </p>
                                                                         </div>
                                                                     </div>
-                                                                ))}
-                                                            </div>
-                                                            <p className="text-[11px] text-muted-foreground pt-1">
-                                                                En una siguiente versión podrás ver aquí las preguntas más frecuentes y un
-                                                                resumen automático para el equipo de marketing.
-                                                            </p>
-                                                        </>
+                                                                </div>
+                                                            )}
+                                                            {topSaved.length > 0 && (
+                                                                <div className="p-3 rounded-xl bg-primary/5 flex flex-col gap-2">
+                                                                    <span className="text-xs font-semibold text-foreground">Más guardado</span>
+                                                                    <p className="text-xs text-muted-foreground line-clamp-2">
+                                                                        {topSaved[0].caption || "Sin descripción"}
+                                                                    </p>
+                                                                    <div className="grid grid-cols-2 gap-2 text-[10px]">
+                                                                        <div>
+                                                                            <p className="text-muted-foreground">Vistas</p>
+                                                                            <p className="font-semibold text-foreground">
+                                                                                {formatNumber(topSaved[0].playCount)}
+                                                                            </p>
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="text-muted-foreground">Guardados</p>
+                                                                            <p className="font-semibold text-foreground">
+                                                                                {formatNumber(topSaved[0].saves)}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+                                            )}
+
+                                            {/* Video list */}
+                                            <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                                <CardHeader>
+                                                    <CardTitle className="text-[18px] font-bold text-foreground">
+                                                        Videos ({tikTokVideos.length})
+                                                    </CardTitle>
+                                                    <CardDescription className="text-[14px] text-muted-foreground">
+                                                        Lista de videos scrapeados de TikTok.
+                                                    </CardDescription>
+                                                </CardHeader>
+                                                <CardContent>
+                                                    {tikTokVideos.length === 0 ? (
+                                                        <p className="text-xs text-muted-foreground">
+                                                            No hay videos scrapeados. Usa el botón "Actualizar" para obtener datos de TikTok.
+                                                        </p>
+                                                    ) : (
+                                                        <div className="space-y-2">
+                                                            {tikTokVideos.map((video) => (
+                                                                <div
+                                                                    key={video.id}
+                                                                    className="grid grid-cols-6 gap-2 items-start rounded-xl bg-[rgba(108,72,197,0.02)] px-3 py-2"
+                                                                >
+                                                                    <div className="col-span-2">
+                                                                        <p className="text-xs font-medium text-foreground truncate">
+                                                                            {video.caption || "Sin descripción"}
+                                                                        </p>
+                                                                        <div className="flex gap-2 text-[10px] text-muted-foreground mt-1">
+                                                                            <span>{formatDuration(video.duration)}</span>
+                                                                            {video.hashtags.length > 0 && (
+                                                                                <span className="truncate">
+                                                                                    {video.hashtags.slice(0, 3).join(", ")}
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <p className="text-[10px] text-muted-foreground">Vistas</p>
+                                                                        <p className="text-xs font-semibold text-foreground">
+                                                                            {formatNumber(video.playCount)}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <p className="text-[10px] text-muted-foreground">Likes</p>
+                                                                        <p className="text-xs font-semibold text-foreground">
+                                                                            {formatNumber(video.likes)}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="text-center">
+                                                                        <p className="text-[10px] text-muted-foreground">Coment.</p>
+                                                                        <p className="text-xs font-semibold text-foreground">
+                                                                            {formatNumber(video.comments)}
+                                                                        </p>
+                                                                    </div>
+                                                                    <div className="flex items-center justify-center">
+                                                                        <Button
+                                                                            type="button"
+                                                                            size="sm"
+                                                                            className="h-7 text-[11px] rounded-2xl"
+                                                                            onClick={() =>
+                                                                                router.push(
+                                                                                    `/dashboard/influencers/${influencer.id}/posts/${video.tiktokVideoId}`
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            Ver
+                                                                        </Button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
                                                     )}
                                                 </CardContent>
                                             </Card>

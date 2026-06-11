@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
@@ -16,12 +17,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { IconSearch, IconLoader2, IconCopy } from "@tabler/icons-react";
+import { IconSearch, IconLoader2, IconCopy, IconDeviceFloppy } from "@tabler/icons-react";
+import { toast } from "sonner";
 
 export default function InfluencerSimulationPage() {
+    const router = useRouter();
     const [value, setValue] = useState("");
     const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
     const [jsonResult, setJsonResult] = useState<string | null>(null);
+    const [savedInfluencerId, setSavedInfluencerId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
 
@@ -33,6 +38,7 @@ export default function InfluencerSimulationPage() {
         }
         setError(null);
         setJsonResult(null);
+        setSavedInfluencerId(null);
         setLoading(true);
 
         try {
@@ -54,6 +60,36 @@ export default function InfluencerSimulationPage() {
             setError("Ocurrió un error al obtener los datos.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSaveToDb = async () => {
+        if (!jsonResult) return;
+        setSaving(true);
+        try {
+            const parsedData = JSON.parse(jsonResult);
+            const res = await fetch("/api/influencers/save-scraped", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ scrapedData: parsedData }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data?.error || "Error al guardar en la base de datos.");
+                return;
+            }
+
+            const influencerId = data?.data?.id;
+            if (influencerId) {
+                setSavedInfluencerId(influencerId);
+                toast.success("Datos guardados correctamente en la base de datos.");
+            }
+        } catch {
+            toast.error("Error al guardar los datos.");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -102,7 +138,7 @@ export default function InfluencerSimulationPage() {
                                             Analizar perfil de TikTok
                                         </h1>
                                         <p className="text-[16px] text-muted-foreground">
-                                            Ingresa un usuario o enlace de perfil para obtener los datos en JSON.
+                                            Ingresa un usuario o enlace de perfil para obtener y guardar los datos.
                                         </p>
                                     </div>
                                 </div>
@@ -113,16 +149,14 @@ export default function InfluencerSimulationPage() {
                                 <CardHeader>
                                     <CardTitle className="text-[18px] font-bold text-foreground">Analizar un perfil de TikTok</CardTitle>
                                     <CardDescription className="text-[14px] text-muted-foreground">
-                                        Ingresa un usuario o enlace de perfil para ver un ejemplo de cómo Influmetics
-                                        presenta la información de rendimiento.
+                                        Ingresa un usuario o enlace de perfil para scrapear, ver el JSON y guardar los datos en la base de
+                                        datos.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <div className="grid grid-cols-1 gap-4">
                                         <div>
-                                            <Label className="text-[14px] font-semibold text-foreground mb-2 block">
-                                                TikTok
-                                            </Label>
+                                            <Label className="text-[14px] font-semibold text-foreground mb-2 block">TikTok</Label>
                                             <div className="relative">
                                                 <IconSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                                                 <Input
@@ -139,7 +173,7 @@ export default function InfluencerSimulationPage() {
                                         </div>
                                     </div>
                                     {error && <p className="text-xs text-destructive">{error}</p>}
-                                    <div className="flex justify-end">
+                                    <div className="flex gap-2 justify-end">
                                         <Button
                                             onClick={handleScrape}
                                             disabled={loading}
@@ -168,15 +202,47 @@ export default function InfluencerSimulationPage() {
                                                 Datos obtenidos del scraper de TikTok.
                                             </CardDescription>
                                         </div>
-                                        <Button variant="outline" size="sm" onClick={handleCopy} className="rounded-2xl gap-2">
-                                            <IconCopy className="w-4 h-4" />
-                                            {copied ? "Copiado" : "Copiar"}
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" onClick={handleCopy} className="rounded-2xl gap-2">
+                                                <IconCopy className="w-4 h-4" />
+                                                {copied ? "Copiado" : "Copiar"}
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={handleSaveToDb}
+                                                disabled={saving}
+                                                className="rounded-2xl gap-2 bg-primary text-white"
+                                            >
+                                                {saving ? (
+                                                    <IconLoader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <IconDeviceFloppy className="w-4 h-4" />
+                                                )}
+                                                {saving ? "Guardando..." : "Guardar en BD"}
+                                            </Button>
+                                        </div>
                                     </CardHeader>
                                     <CardContent>
                                         <pre className="bg-muted p-4 rounded-xl overflow-auto max-h-[600px] text-xs leading-relaxed">
                                             {jsonResult}
                                         </pre>
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {/* Saved confirmation */}
+                            {savedInfluencerId && (
+                                <Card className="rounded-[20px] border-green-200 bg-green-50 dark:bg-green-950/20 shadow-sm">
+                                    <CardContent className="p-4 flex items-center justify-between">
+                                        <p className="text-sm text-green-700 dark:text-green-300">
+                                            Datos guardados correctamente. El influencer ya está en la base de datos.
+                                        </p>
+                                        <Button
+                                            onClick={() => router.push(`/dashboard/influencers/${savedInfluencerId}`)}
+                                            className="rounded-2xl"
+                                        >
+                                            Ver detalle del influencer
+                                        </Button>
                                     </CardContent>
                                 </Card>
                             )}

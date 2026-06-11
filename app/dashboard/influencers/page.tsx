@@ -50,6 +50,14 @@ const PLATFORM_ICONS: Record<string, React.ComponentType<{ className?: string }>
     x: IconBrandX,
 };
 
+const formatNumber = (value: number | string): string => {
+    const num = typeof value === "string" ? Number(value) : value;
+    if (Number.isNaN(num)) return "-";
+    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+    if (num >= 1000) return `${(num / 1000).toFixed(1)}k`;
+    return num.toLocaleString("es-ES");
+};
+
 export default function InfluencersPage() {
     const router = useRouter();
     const [influencers, setInfluencers] = useState<InfluencerWithRelations[]>([]);
@@ -304,90 +312,102 @@ export default function InfluencersPage() {
                                                             Código
                                                         </TableHead>
                                                         <TableHead className="text-foreground font-semibold">Redes Sociales</TableHead>
+                                                        <TableHead className="text-foreground font-semibold text-center w-24">Seguidores TT</TableHead>
                                                         <TableHead className="text-foreground font-semibold text-center w-20">Posts</TableHead>
                                                         <TableHead className="text-foreground font-semibold text-right w-28">Acciones</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {influencers.map((influencer) => (
-                                                        <TableRow key={influencer.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}>
-                                                            <TableCell className="font-medium text-foreground">{influencer.name}</TableCell>
-                                                            <TableCell className="text-muted-foreground hidden md:table-cell">
-                                                                {influencer.niche || <span className="text-muted-foreground/50">—</span>}
-                                                            </TableCell>
-                                                            <TableCell className="text-muted-foreground hidden lg:table-cell">
-                                                                {influencer.referralCode || <span className="text-muted-foreground/50">—</span>}
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <div className="flex flex-wrap gap-2">
-                                                                    {getSocialAccounts(influencer).map((account) => (
-                                                                        <Badge
-                                                                            key={account.id}
-                                                                            variant="outline"
-                                                                            className="gap-1.5 py-1 px-2 border-primary/20"
-                                                                        >
-                                                                            {(() => {
-                                                                                const Icon = PLATFORM_ICONS[account.platformCode.toLowerCase()];
-                                                                                return Icon ? <Icon className="size-4" /> : null;
-                                                                            })()}
-                                                                            <span className="text-xs">
-                                                                                @{account.handle.replace(/^@/, "")}
-                                                                            </span>
-                                                                        </Badge>
-                                                                    ))}
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell className="text-center text-muted-foreground">
-                                                                {influencer._count?.posts ?? "—"}
-                                                            </TableCell>
-                                                            <TableCell className="text-right">
-                                                                <div className="flex justify-end gap-1">
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            router.push(`/dashboard/influencers/${influencer.id}`);
-                                                                        }}
-                                                                        className="text-primary hover:text-primary/90"
-                                                                    >
-                                                                        <IconEye className="w-4 h-4" />
-                                                                    </Button>
-                                                                    <AlertDialog>
-                                                                        <AlertDialogTrigger asChild>
-                                                                            <Button
-                                                                                variant="ghost"
-                                                                                size="sm"
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setDeleteId(influencer.id);
-                                                                                }}
-                                                                                className="text-destructive hover:text-destructive/90"
+                                                    {influencers.map((influencer) => {
+                                                        const tiktokAccount = influencer.socialAccounts?.find(
+                                                            (a) => a.socialPlatform.code.toLowerCase() === "tiktok"
+                                                        );
+                                                        const followers = tiktokAccount
+                                                            ? ((tiktokAccount as any).fans ?? (tiktokAccount as any).followers ?? (tiktokAccount as any).metrics?.fans ?? null)
+                                                            : null;
+                                                        return (
+                                                            <TableRow key={influencer.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}>
+                                                                <TableCell className="font-medium text-foreground">{influencer.name}</TableCell>
+                                                                <TableCell className="text-muted-foreground hidden md:table-cell">
+                                                                    {influencer.niche || <span className="text-muted-foreground/50">—</span>}
+                                                                </TableCell>
+                                                                <TableCell className="text-muted-foreground hidden lg:table-cell">
+                                                                    {influencer.referralCode || <span className="text-muted-foreground/50">—</span>}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {getSocialAccounts(influencer).map((account) => (
+                                                                            <Badge
+                                                                                key={account.id}
+                                                                                variant="outline"
+                                                                                className="gap-1.5 py-1 px-2 border-primary/20"
                                                                             >
-                                                                                <IconTrash className="w-4 h-4" />
-                                                                            </Button>
-                                                                        </AlertDialogTrigger>
-                                                                        <AlertDialogContent className="rounded-[20px]">
-                                                                            <AlertDialogHeader>
-                                                                                <AlertDialogTitle>Eliminar influencer</AlertDialogTitle>
-                                                                                <AlertDialogDescription>
-                                                                                    ¿Estás seguro de eliminar a <strong>{influencer.name}</strong>? Esta acción no se puede deshacer.
-                                                                                </AlertDialogDescription>
-                                                                            </AlertDialogHeader>
-                                                                            <AlertDialogFooter>
-                                                                                <AlertDialogCancel className="rounded-2xl" onClick={() => setDeleteId(null)}>
-                                                                                    Cancelar
-                                                                                </AlertDialogCancel>
-                                                                                <AlertDialogAction onClick={handleDelete} className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                                                    Eliminar
-                                                                                </AlertDialogAction>
-                                                                            </AlertDialogFooter>
-                                                                        </AlertDialogContent>
-                                                                    </AlertDialog>
-                                                                </div>
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    ))}
+                                                                                {(() => {
+                                                                                    const Icon = PLATFORM_ICONS[account.platformCode.toLowerCase()];
+                                                                                    return Icon ? <Icon className="size-4" /> : null;
+                                                                                })()}
+                                                                                <span className="text-xs">
+                                                                                    @{account.handle.replace(/^@/, "")}
+                                                                                </span>
+                                                                            </Badge>
+                                                                        ))}
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-muted-foreground">
+                                                                    {followers != null ? formatNumber(followers) : "—"}
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-muted-foreground">
+                                                                    {influencer._count?.posts ?? "—"}
+                                                                </TableCell>
+                                                                <TableCell className="text-right">
+                                                                    <div className="flex justify-end gap-1">
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                router.push(`/dashboard/influencers/${influencer.id}`);
+                                                                            }}
+                                                                            className="text-primary hover:text-primary/90"
+                                                                        >
+                                                                            <IconEye className="w-4 h-4" />
+                                                                        </Button>
+                                                                        <AlertDialog>
+                                                                            <AlertDialogTrigger asChild>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="sm"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        setDeleteId(influencer.id);
+                                                                                    }}
+                                                                                    className="text-destructive hover:text-destructive/90"
+                                                                                >
+                                                                                    <IconTrash className="w-4 h-4" />
+                                                                                </Button>
+                                                                            </AlertDialogTrigger>
+                                                                            <AlertDialogContent className="rounded-[20px]">
+                                                                                <AlertDialogHeader>
+                                                                                    <AlertDialogTitle>Eliminar influencer</AlertDialogTitle>
+                                                                                    <AlertDialogDescription>
+                                                                                        ¿Estás seguro de eliminar a <strong>{influencer.name}</strong>? Esta acción no se puede deshacer.
+                                                                                    </AlertDialogDescription>
+                                                                                </AlertDialogHeader>
+                                                                                <AlertDialogFooter>
+                                                                                    <AlertDialogCancel className="rounded-2xl" onClick={() => setDeleteId(null)}>
+                                                                                        Cancelar
+                                                                                    </AlertDialogCancel>
+                                                                                    <AlertDialogAction onClick={handleDelete} className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                                                        Eliminar
+                                                                                    </AlertDialogAction>
+                                                                                </AlertDialogFooter>
+                                                                            </AlertDialogContent>
+                                                                        </AlertDialog>
+                                                                    </div>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
                                                 </TableBody>
                                             </Table>
 
