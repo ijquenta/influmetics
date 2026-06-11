@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
             },
             body: JSON.stringify({
                 profiles: [username],
-                resultsPerPage: 12,
+                resultsPerPage: 1,
                 shouldDownloadVideos: false,
                 shouldDownloadCovers: false,
                 shouldDownloadSlideshowImages: false,
