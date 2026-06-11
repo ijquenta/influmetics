@@ -8,19 +8,19 @@ generator client {
 }
 
 model UserType {
-  id    Int    @id @default(autoincrement())
-  code  String @unique
-  name  String
+  id   Int    @id @default(autoincrement())
+  code String @unique
+  name String
 
   users User[]
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  country   String?
-  userType  UserType @relation(fields: [userTypeId], references: [id])
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String   @unique
+  country    String?
+  userType   UserType @relation(fields: [userTypeId], references: [id])
   userTypeId Int
 
   createdAt DateTime @default(now())
@@ -28,26 +28,26 @@ model User {
 }
 
 model SocialPlatform {
-  id    Int    @id @default(autoincrement())
-  code  String @unique // 'tiktok', 'instagram'
-  name  String
+  id   Int    @id @default(autoincrement())
+  code String @unique // 'tiktok', 'instagram'
+  name String
 
   socialAccounts InfluencerSocialAccount[]
   posts          Post[]
 }
 
 model Influencer {
-  id            Int                      @id @default(autoincrement())
-  name          String
-  email         String?
-  birthDate     DateTime?
-  niche         String?
-  referralCode  String?
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String?
+  birthDate    DateTime?
+  niche        String?
+  referralCode String?
 
-  socialAccounts        InfluencerSocialAccount[]
-  influencerCampaigns   InfluencerCampaign[]
-  posts                 Post[]
-  internalMetrics       InternalMetric[]
+  socialAccounts      InfluencerSocialAccount[]
+  influencerCampaigns InfluencerCampaign[]
+  posts               Post[]
+  internalMetrics     InternalMetric[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -64,8 +64,26 @@ model InfluencerSocialAccount {
   profileUrl String?
   isActive   Boolean @default(true)
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  // TikTok scraper profile data
+  tiktokUserId   String?
+  nickName       String?
+  verified       Boolean?  @default(false)
+  signature      String?
+  bioLink        String?
+  avatar         String?
+  following      Int?      @default(0)
+  friends        Int?      @default(0)
+  fans           Int?      @default(0)
+  heart          Int?      @default(0)
+  video          Int?      @default(0)
+  digg           Int?      @default(0)
+  privateAccount Boolean?  @default(false)
+  ttSeller       Boolean?  @default(false)
+  commerceUser   Boolean?  @default(false)
+  scrapedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([influencerId, socialPlatformId])
 }
@@ -79,13 +97,13 @@ model CampaignGoalType {
 }
 
 model Campaign {
-  id          Int              @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   description String?
   country     String?
   startDate   DateTime
   endDate     DateTime?
-  isActive    Boolean @default(true)
+  isActive    Boolean   @default(true)
 
   primaryGoalType   CampaignGoalType? @relation(fields: [primaryGoalTypeId], references: [id])
   primaryGoalTypeId Int?
@@ -99,15 +117,15 @@ model Campaign {
 }
 
 model InfluencerCampaign {
-  id            Int         @id @default(autoincrement())
-  influencer    Influencer  @relation(fields: [influencerId], references: [id])
-  influencerId  Int
-  campaign      Campaign    @relation(fields: [campaignId], references: [id])
-  campaignId    Int
+  id           Int        @id @default(autoincrement())
+  influencer   Influencer @relation(fields: [influencerId], references: [id])
+  influencerId Int
+  campaign     Campaign   @relation(fields: [campaignId], references: [id])
+  campaignId   Int
 
-  agreedCost    Decimal?    @db.Decimal(12, 2)
-  notes         String?
-  createdAt     DateTime    @default(now())
+  agreedCost Decimal? @db.Decimal(12, 2)
+  notes      String?
+  createdAt  DateTime @default(now())
 
   @@unique([influencerId, campaignId])
 }
@@ -121,34 +139,58 @@ model ContentType {
 }
 
 model Post {
-  id               Int             @id @default(autoincrement())
-  influencer       Influencer      @relation(fields: [influencerId], references: [id])
-  influencerId     Int
+  id           Int        @id @default(autoincrement())
+  influencer   Influencer @relation(fields: [influencerId], references: [id])
+  influencerId Int
 
-  campaign         Campaign?       @relation(fields: [campaignId], references: [id])
-  campaignId       Int?
+  campaign   Campaign? @relation(fields: [campaignId], references: [id])
+  campaignId Int?
 
-  socialPlatform   SocialPlatform  @relation(fields: [socialPlatformId], references: [id])
+  socialPlatform   SocialPlatform @relation(fields: [socialPlatformId], references: [id])
   socialPlatformId Int
 
-  contentType      ContentType?    @relation(fields: [contentTypeId], references: [id])
-  contentTypeId    Int?
+  contentType   ContentType? @relation(fields: [contentTypeId], references: [id])
+  contentTypeId Int?
 
-  url         String
-  caption     String?
-  publishedAt DateTime
-  isTakenosContent Boolean @default(false)
+  url              String
+  caption          String?
+  publishedAt      DateTime
+  isTakenosContent Boolean  @default(false)
 
-  metrics    PostMetricSnapshot[]
+  // TikTok scraper video data
+  tiktokVideoId      String?
+  textLanguage       String?
+  isAd               Boolean? @default(false)
+  duration           Int?
+  width              Int?
+  height             Int?
+  coverUrl           String?
+  definition         String?
+  format             String?
+  webVideoUrl        String?
+  musicName          String?
+  musicAuthor        String?
+  musicPlayUrl       String?
+  musicId            String?
+  isSlideshow        Boolean? @default(false)
+  isPinned           Boolean? @default(false)
+  isSponsored        Boolean? @default(false)
+  fromProfileSection String?
+  commentsDatasetUrl String?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  metrics   PostMetricSnapshot[]
+  hashtags  PostHashtag[]
+  mentions  PostMention[]
+  subtitles PostSubtitle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PostMetricSnapshot {
-  id          Int    @id @default(autoincrement())
-  post        Post   @relation(fields: [postId], references: [id])
-  postId      Int
+  id           Int      @id @default(autoincrement())
+  post         Post     @relation(fields: [postId], references: [id])
+  postId       Int
   snapshotDate DateTime
 
   views       Int?
@@ -159,35 +201,73 @@ model PostMetricSnapshot {
   revenue     Decimal? @db.Decimal(14, 2)
   roi         Decimal? @db.Decimal(10, 4)
 
-  createdAt   DateTime @default(now())
+  // TikTok scraper metrics
+  saves       Int?    @default(0)
+  reposts     Int?    @default(0)
+  playCount   Int?    @default(0)
+  commentCount Int?   @default(0)
+
+  createdAt DateTime @default(now())
 
   @@unique([postId, snapshotDate])
 }
 
+model PostHashtag {
+  id     Int    @id @default(autoincrement())
+  post   Post   @relation(fields: [postId], references: [id])
+  postId Int
+  name   String
+
+  createdAt DateTime @default(now())
+}
+
+model PostMention {
+  id              Int     @id @default(autoincrement())
+  post            Post    @relation(fields: [postId], references: [id])
+  postId          Int
+  mentionedUserId String?
+  mentionedName   String?
+  nickName        String?
+  profileUrl      String?
+
+  createdAt DateTime @default(now())
+}
+
+model PostSubtitle {
+  id           Int     @id @default(autoincrement())
+  post         Post    @relation(fields: [postId], references: [id])
+  postId       Int
+  language     String
+  downloadLink String?
+  source       String?
+
+  createdAt DateTime @default(now())
+}
+
 model InternalMetricType {
-  id          Int             @id @default(autoincrement())
-  code        String          @unique  // 'NUA', 'NU', 'NAU', etc.
+  id          Int     @id @default(autoincrement())
+  code        String  @unique // 'NUA', 'NU', 'NAU', etc.
   name        String
   description String?
 
-  metrics     InternalMetric[]
+  metrics InternalMetric[]
 }
 
 model InternalMetric {
-  id            Int               @id @default(autoincrement())
-  campaign      Campaign          @relation(fields: [campaignId], references: [id])
-  campaignId    Int
+  id         Int      @id @default(autoincrement())
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  campaignId Int
 
-  influencer    Influencer?       @relation(fields: [influencerId], references: [id])
-  influencerId  Int?
+  influencer   Influencer? @relation(fields: [influencerId], references: [id])
+  influencerId Int?
 
-  metricType    InternalMetricType @relation(fields: [metricTypeId], references: [id])
-  metricTypeId  Int
+  metricType   InternalMetricType @relation(fields: [metricTypeId], references: [id])
+  metricTypeId Int
 
-  metricDate    DateTime
-  value         Decimal @db.Decimal(14, 4)
+  metricDate DateTime
+  value      Decimal  @db.Decimal(14, 4)
 
-  createdAt     DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([campaignId, influencerId, metricTypeId, metricDate])
 }

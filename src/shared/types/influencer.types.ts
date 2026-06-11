@@ -1,6 +1,4 @@
-// Tipos relacionados con influencers
-
-import type { Influencer, InfluencerSocialAccount, Post, PostMetricSnapshot, Campaign, InfluencerCampaign } from "@prisma/client";
+import type { Influencer, InfluencerSocialAccount, Post, PostMetricSnapshot, Campaign, InfluencerCampaign, PostHashtag, PostSubtitle, PostMention } from "@prisma/client";
 
 export interface InfluencerWithRelations extends Influencer {
     socialAccounts: (InfluencerSocialAccount & {
@@ -9,7 +7,12 @@ export interface InfluencerWithRelations extends Influencer {
     influencerCampaigns: (InfluencerCampaign & {
         campaign: Campaign;
     })[];
-    posts: Post[];
+    posts: (Post & {
+        metrics: PostMetricSnapshot[];
+        hashtags: PostHashtag[];
+        mentions: PostMention[];
+        subtitles: PostSubtitle[];
+    })[];
     _count?: {
         posts: number;
         influencerCampaigns: number;
@@ -46,6 +49,9 @@ export interface MetricInput {
     conversions?: number | null;
     revenue?: number | null;
     roi?: number | null;
+    saves?: number | null;
+    reposts?: number | null;
+    playCount?: number | null;
 }
 
 export interface DashboardFilters {
