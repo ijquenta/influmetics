@@ -48,7 +48,7 @@ const data = {
             items: [
                 { title: "Todos", url: "/dashboard/influencers" },
                 { title: "Nuevo", url: "/dashboard/influencers/new" },
-                { title: "Simulación", url: "/dashboard/influencers/simulation" },
+                { title: "Análisis de perfil", url: "/dashboard/influencers/simulation" },
             ],
         },
         {
