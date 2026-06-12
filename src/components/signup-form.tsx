@@ -2,18 +2,22 @@
 
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function SignupForm({ className, ...props }: React.ComponentProps<"form">) {
     const router = useRouter();
     const { login } = useAuth();
+    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setLoading(true);
         const formData = new FormData(e.currentTarget);
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
@@ -55,7 +59,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
                     <FieldDescription>Por favor confirma tu contraseña.</FieldDescription>
                 </Field>
                 <Field>
-                    <Button type="submit" className="w-full">
+                    <Button type="submit" className="w-full" disabled={loading}>
+                        {loading && <Spinner data-icon="inline-start" />}
                         Crear cuenta
                     </Button>
                 </Field>

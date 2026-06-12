@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import { toast } from "sonner";
@@ -65,7 +66,8 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                 </Field>
                 <Field>
                     <Button type="submit" className="w-full" disabled={loading}>
-                        {loading ? "Enviando..." : "Enviar instrucciones"}
+                        {loading && <Spinner data-icon="inline-start" />}
+                        Enviar instrucciones
                     </Button>
                 </Field>
                 <Field>
