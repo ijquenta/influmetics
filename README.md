@@ -30,39 +30,51 @@ npm run dev
 ## Proyecto
 
 ```
-app/                          # App Router (páginas + API)
-├── api/                      # Backend (18 endpoints)
-│   ├── campaigns/            #   CRUD campañas + detalle con rankings
+app/                          # App Router (rutas + API)
+├── api/                      # API endpoints
+│   ├── campaigns/            #   CRUD campañas + detalle [id]
 │   ├── dashboard/            #   stats, timeline, influencer-ranking
-│   ├── influencers/          #   CRUD + upload CSV + import-social
-│   ├── metrics/              #   Métricas de posts (individual + bulk)
-│   ├── posts/                #   Posts CRUD
-│   ├── data/                 #   Datos ref (platforms, seed, etc.)
-│   └── scraping/             #   Proxy a backend externo (TikTok)
+│   ├── influencers/          #   CRUD + upload CSV, import-social, save-scraped
+│   ├── metrics/              #   Métricas (individual + bulk)
+│   ├── posts/                #   Posts
+│   ├── data/                 #   Datos ref (platforms, seed, campaign-goals, content-types)
+│   ├── scraping/             #   Proxy scraping TikTok
+│   └── health/               #   Health check
 ├── dashboard/                # Páginas del dashboard
-│   ├── influencers/          #   Lista (búsqueda + paginación), detalle [id], crear, simulación
+│   ├── influencers/          #   Lista, detalle [id], crear, simulación
 │   ├── campaigns/            #   Lista, detalle [id], crear
 │   ├── metrics/              #   Carga de métricas
-│   └── roi/                  #   Retorno de inversión
+│   ├── roi/                  #   Retorno de inversión
+│   └── page.tsx              #   Dashboard principal
 ├── forgot-password/
 ├── signup/
+├── globals.css               # Estilos globales
 ├── layout.tsx                # Root layout (AuthProvider, ThemeProvider, Toaster)
 └── page.tsx                  # Login
-src/
-├── components/               # UI components (shadcn + custom)
+src/                          # Código compartido (alias @/* → ./src/*)
+├── components/               # Componentes React (shadcn/ui + custom)
 │   ├── ui/                   #   29 primitivas shadcn
-│   ├── app-sidebar.tsx       #   Sidebar de navegación
-│   ├── login-form.tsx        #   Formulario login
+│   ├── app-sidebar.tsx
+│   ├── login-form.tsx
 │   └── ...                   #   chart-area-interactive, data-table, section-cards, etc.
-├── contexts/AuthContext.tsx  # Auth mock (localStorage, sin backend real)
-├── lib/
-│   ├── prisma.ts             # Cliente singleton
-│   └── metrics.ts            # Cálculos (engagement, ROI, rankings)
-└── shared/                   # Tipos, constantes, utilidades
+├── contexts/                 # Contextos React
+│   ├── AuthContext.tsx       #   Auth mock (localStorage)
+│   └── index.ts
+├── hooks/                    # Hooks personalizados
+│   └── use-mobile.ts
+├── lib/                      # Utilidades y lógica de negocio
+│   ├── api/                  #   Cliente API
+│   ├── metrics.ts            #   Cálculos (engagement, ROI, rankings)
+│   ├── prisma.ts             #   Cliente singleton
+│   └── utils.ts              #   Utilidades generales
+└── shared/                   # Tipos, constantes, utilidades compartidas
+    ├── constants/
+    ├── types/
+    └── utils/
 prisma/schema.prisma          # 13 modelos PostgreSQL
 ```
 
-Nota: hay un `src/app/` duplicado con pages alternativas (login, dashboard simplificado). Las rutas reales están en `app/`.
+> **Patrón:** `app/` contiene exclusivamente rutas y API (App Router). Todo el código compartido (componentes, lógica, hooks, tipos) vive en `src/`, accesible mediante el alias `@/*` → `./src/*` configurado en `tsconfig.json`.
 
 ## Scripts
 
