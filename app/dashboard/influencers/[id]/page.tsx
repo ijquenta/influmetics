@@ -14,9 +14,14 @@ import {
     IconBrandX,
     IconRefresh,
     IconLoader2,
+    IconEdit,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import type { InfluencerWithRelations } from "@/shared/types/influencer.types";
@@ -113,6 +118,9 @@ export default function InfluencerDetailPage() {
     const [influencer, setInfluencer] = useState<InfluencerWithRelations | null>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [editOpen, setEditOpen] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [editForm, setEditForm] = useState({ name: "", email: "", niche: "", referralCode: "" });
 
     useEffect(() => {
         if (!id || Number.isNaN(id)) return;
@@ -130,6 +138,37 @@ export default function InfluencerDetailPage() {
             setInfluencer(null);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const openEdit = () => {
+        if (!influencer) return;
+        setEditForm({
+            name: influencer.name,
+            email: influencer.email || "",
+            niche: influencer.niche || "",
+            referralCode: influencer.referralCode || "",
+        });
+        setEditOpen(true);
+    };
+
+    const handleSave = async () => {
+        if (!influencer) return;
+        setSaving(true);
+        try {
+            const res = await fetch(`/api/influencers/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(editForm),
+            });
+            if (!res.ok) throw new Error();
+            toast.success("Influencer actualizado");
+            setEditOpen(false);
+            await fetchInfluencer();
+        } catch {
+            toast.error("Error al actualizar");
+        } finally {
+            setSaving(false);
         }
     };
 
@@ -178,6 +217,58 @@ export default function InfluencerDetailPage() {
     const topLiked = [...tikTokVideos].sort((a, b) => b.likes - a.likes).slice(0, 1);
     const topSaved = [...tikTokVideos].sort((a, b) => b.saves - a.saves).slice(0, 1);
 
+    if (loading) {
+        return (
+            <SidebarProvider
+                style={
+                    {
+                        "--sidebar-width": "calc(var(--spacing) * 72)",
+                        "--header-height": "calc(var(--spacing) * 12)",
+                    } as React.CSSProperties
+                }
+            >
+                <AppSidebar variant="inset" />
+                <SidebarInset>
+                    <SiteHeader />
+                    <div className="flex flex-1 flex-col">
+                        <div className="@container/main flex flex-1 flex-col gap-2">
+                            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
+                                <Skeleton className="h-5 w-48 rounded-xl mb-2" />
+                                <Skeleton className="h-8 w-72 rounded-xl mb-1" />
+                                <Skeleton className="h-4 w-64 rounded-xl mb-6" />
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                    <Skeleton className="h-64 rounded-[20px]" />
+                                    <Skeleton className="h-64 rounded-[20px]" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </SidebarInset>
+            </SidebarProvider>
+        );
+    }
+
+    if (!influencer) {
+        return (
+            <SidebarProvider
+                style={
+                    {
+                        "--sidebar-width": "calc(var(--spacing) * 72)",
+                        "--header-height": "calc(var(--spacing) * 12)",
+                    } as React.CSSProperties
+                }
+            >
+                <AppSidebar variant="inset" />
+                <SidebarInset>
+                    <SiteHeader />
+                    <div className="flex flex-1 items-center justify-center p-6">
+                        <p className="text-muted-foreground">No se encontró el influencer.</p>
+                    </div>
+                </SidebarInset>
+            </SidebarProvider>
+        );
+    }
+
     return (
         <SidebarProvider
             style={
@@ -196,20 +287,50 @@ export default function InfluencerDetailPage() {
                             <div className="flex items-center justify-between mb-4 flex-wrap gap-4">
                                 <div>
                                     <PageBreadcrumb />
-                                    <h1 className="text-[24px] font-bold text-foreground mb-1">
-                                        {influencer ? influencer.name : "Influencer"}
-                                    </h1>
+                                    <h1 className="text-[24px] font-bold text-foreground mb-1">{influencer.name}</h1>
                                     <p className="text-[14px] text-muted-foreground">
                                         Ficha rápida del influencer con datos de TikTok.
                                     </p>
                                 </div>
+                                <Button variant="outline" size="sm" onClick={openEdit} className="rounded-2xl gap-2">
+                                    <IconEdit className="w-4 h-4" />
+                                    Editar
+                                </Button>
                             </div>
 
-                            {loading ? (
-                                <div className="text-center py-12 text-muted-foreground">Cargando...</div>
-                            ) : !influencer ? (
-                                <div className="text-center py-12 text-muted-foreground">No se encontró el influencer.</div>
-                            ) : (
+                            <Dialog open={editOpen} onOpenChange={setEditOpen}>
+                                    <DialogContent className="rounded-[20px] max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Editar influencer</DialogTitle>
+                                            <DialogDescription>Actualiza la información básica del influencer</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 py-4">
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Nombre</Label>
+                                                <Input value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} className="rounded-2xl h-10" />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Email</Label>
+                                                <Input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="rounded-2xl h-10" />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Nicho</Label>
+                                                <Input value={editForm.niche} onChange={(e) => setEditForm({ ...editForm, niche: e.target.value })} className="rounded-2xl h-10" />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Código de referido</Label>
+                                                <Input value={editForm.referralCode} onChange={(e) => setEditForm({ ...editForm, referralCode: e.target.value })} className="rounded-2xl h-10" />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setEditOpen(false)} className="rounded-2xl">Cancelar</Button>
+                                            <Button onClick={handleSave} disabled={saving} className="rounded-2xl">
+                                                {saving ? "Guardando..." : "Guardar"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+
                                 <Tabs defaultValue="details" className="mt-2">
                                     <TabsList className="bg-primary/10 rounded-2xl px-1 py-1 w-fit">
                                         <TabsTrigger
@@ -318,10 +439,10 @@ export default function InfluencerDetailPage() {
                                                 <CardHeader className="flex flex-row items-start justify-between">
                                                     <div>
                                                         <CardTitle className="text-[18px] font-bold text-foreground">
-                                                            Rendimiento en TikTok
+                                                            Rendimiento en redes
                                                         </CardTitle>
                                                         <CardDescription className="text-[14px] text-muted-foreground">
-                                                            Perfil y engagement del influencer en TikTok.
+                                                            {tikTokProfile ? "Perfil y engagement del influencer en TikTok." : "Datos disponibles del influencer en sus redes sociales."}
                                                         </CardDescription>
                                                     </div>
                                                     <Button
@@ -625,8 +746,7 @@ export default function InfluencerDetailPage() {
                                         </div>
                                     </TabsContent>
                                 </Tabs>
-                            )}
-                        </div>
+                            </div>
                     </div>
                 </div>
             </SidebarInset>

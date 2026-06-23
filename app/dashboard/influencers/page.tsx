@@ -41,7 +41,7 @@ import {
     IconBrandX,
 } from "@tabler/icons-react";
 import { toast } from "sonner";
-import type { InfluencerWithRelations } from "@/shared/types/influencer.types";
+import type { InfluencerWithRelations, SocialAccountWithPlatform } from "@/shared/types/influencer.types";
 
 const PLATFORM_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
     tiktok: IconBrandTiktok,
@@ -160,20 +160,9 @@ export default function InfluencersPage() {
         }
     };
 
-    const getSocialAccounts = (influencer: InfluencerWithRelations) => {
-        if (influencer.socialAccounts?.length) {
-            return influencer.socialAccounts.map((a) => ({
-                id: a.id,
-                platformCode: a.socialPlatform.code,
-                handle: a.handle,
-                isActive: a.isActive,
-            }));
-        }
-        const base = influencer.referralCode?.toLowerCase() || influencer.name.split(" ")[0]?.toLowerCase() || `inf${influencer.id}`;
-        return [
-            { id: `${influencer.id}-tt`, platformCode: "tiktok", handle: `${base}_tt`, isActive: true },
-            { id: `${influencer.id}-ig`, platformCode: "instagram", handle: `${base}_ig`, isActive: true },
-        ];
+    const getTikTokFollowers = (accounts: SocialAccountWithPlatform[]): number | null => {
+        const tt = accounts.find((a) => a.socialPlatform.code.toLowerCase() === "tiktok");
+        return tt?.fans ?? null;
     };
 
     return (
@@ -319,12 +308,8 @@ export default function InfluencersPage() {
                                                 </TableHeader>
                                                 <TableBody>
                                                     {influencers.map((influencer) => {
-                                                        const tiktokAccount = influencer.socialAccounts?.find(
-                                                            (a) => a.socialPlatform.code.toLowerCase() === "tiktok"
-                                                        );
-                                                        const followers = tiktokAccount
-                                                            ? ((tiktokAccount as any).fans ?? (tiktokAccount as any).followers ?? (tiktokAccount as any).metrics?.fans ?? null)
-                                                            : null;
+                                                        const socialAccounts = influencer.socialAccounts || [];
+                                                        const followers = getTikTokFollowers(socialAccounts);
                                                         return (
                                                             <TableRow key={influencer.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}>
                                                                 <TableCell className="font-medium text-foreground">{influencer.name}</TableCell>
@@ -336,21 +321,25 @@ export default function InfluencersPage() {
                                                                 </TableCell>
                                                                 <TableCell>
                                                                     <div className="flex flex-wrap gap-2">
-                                                                        {getSocialAccounts(influencer).map((account) => (
-                                                                            <Badge
-                                                                                key={account.id}
-                                                                                variant="outline"
-                                                                                className="gap-1.5 py-1 px-2 border-primary/20"
-                                                                            >
-                                                                                {(() => {
-                                                                                    const Icon = PLATFORM_ICONS[account.platformCode.toLowerCase()];
-                                                                                    return Icon ? <Icon className="size-4" /> : null;
-                                                                                })()}
-                                                                                <span className="text-xs">
-                                                                                    @{account.handle.replace(/^@/, "")}
-                                                                                </span>
-                                                                            </Badge>
-                                                                        ))}
+                                                                        {socialAccounts.length === 0 ? (
+                                                                            <span className="text-xs text-muted-foreground">—</span>
+                                                                        ) : (
+                                                                            socialAccounts.map((account) => (
+                                                                                <Badge
+                                                                                    key={account.id}
+                                                                                    variant="outline"
+                                                                                    className="gap-1.5 py-1 px-2 border-primary/20"
+                                                                                >
+                                                                                    {(() => {
+                                                                                        const Icon = PLATFORM_ICONS[account.socialPlatform.code.toLowerCase()];
+                                                                                        return Icon ? <Icon className="size-4" /> : null;
+                                                                                    })()}
+                                                                                    <span className="text-xs">
+                                                                                        @{account.handle.replace(/^@/, "")}
+                                                                                    </span>
+                                                                                </Badge>
+                                                                            ))
+                                                                        )}
                                                                     </div>
                                                                 </TableCell>
                                                                 <TableCell className="text-center text-muted-foreground">
@@ -416,35 +405,34 @@ export default function InfluencersPage() {
                                                     <p className="text-sm text-muted-foreground">
                                                         {total} resultado{total !== 1 ? "s" : ""} · Página {page} de {totalPages}
                                                     </p>
-                                                    <div className="flex items-center gap-2">
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setPage((p) => Math.max(1, p - 1))}
-                                                            disabled={page <= 1}
-                                                            className="rounded-2xl"
-                                                        >
+                                                    <div className="flex items-center gap-1">
+                                                        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded-2xl">
                                                             <IconChevronLeft className="w-4 h-4" />
                                                         </Button>
-                                                        <Select value={page.toString()} onValueChange={(v) => setPage(parseInt(v))}>
-                                                            <SelectTrigger className="w-16 h-8 rounded-2xl">
-                                                                <SelectValue />
-                                                            </SelectTrigger>
-                                                            <SelectContent>
-                                                                {Array.from({ length: totalPages }, (_, i) => (
-                                                                    <SelectItem key={i + 1} value={(i + 1).toString()}>
-                                                                        {i + 1}
-                                                                    </SelectItem>
-                                                                ))}
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                                                            disabled={page >= totalPages}
-                                                            className="rounded-2xl"
-                                                        >
+                                                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                                                            let pageNum: number;
+                                                            if (totalPages <= 7) {
+                                                                pageNum = i + 1;
+                                                            } else if (page <= 4) {
+                                                                pageNum = i + 1;
+                                                            } else if (page >= totalPages - 3) {
+                                                                pageNum = totalPages - 6 + i;
+                                                            } else {
+                                                                pageNum = page - 3 + i;
+                                                            }
+                                                            return (
+                                                                <Button
+                                                                    key={pageNum}
+                                                                    variant={page === pageNum ? "default" : "outline"}
+                                                                    size="sm"
+                                                                    onClick={() => setPage(pageNum)}
+                                                                    className="rounded-2xl min-w-[32px]"
+                                                                >
+                                                                    {pageNum}
+                                                                </Button>
+                                                            );
+                                                        })}
+                                                        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded-2xl">
                                                             <IconChevronRight className="w-4 h-4" />
                                                         </Button>
                                                     </div>

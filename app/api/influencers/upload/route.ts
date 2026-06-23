@@ -126,88 +126,93 @@ export async function POST(request: NextRequest) {
             platformMap[p.code.toLowerCase()] = p.id;
         });
 
-        let successCount = 0;
-        let errorCount = 0;
-        const errors: string[] = [];
+        // Procesar cada fila en una transacción
+        const results = await prisma.$transaction(async (tx) => {
+            let successCount = 0;
+            let errorCount = 0;
+            const errors: string[] = [];
 
-        // Procesar cada fila (empezar desde la segunda fila, ya que la primera son encabezados)
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
 
-            if (row.length === 0 || !row[nameIdx]) {
-                continue; // Saltar filas vacías
+                if (row.length === 0 || !row[nameIdx]) {
+                    continue;
+                }
+
+                try {
+                    const influencer = await tx.influencer.create({
+                        data: {
+                            name: row[nameIdx] || "",
+                            email: emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : null,
+                            niche: nicheIdx !== -1 && row[nicheIdx] ? row[nicheIdx] : null,
+                            referralCode: referralCodeIdx !== -1 && row[referralCodeIdx] ? row[referralCodeIdx] : null,
+                        },
+                    });
+
+                    const socialAccounts: {
+                        influencerId: number;
+                        socialPlatformId: number;
+                        handle: string;
+                        isActive: boolean;
+                    }[] = [];
+
+                    if (tiktokHandleIdx !== -1 && row[tiktokHandleIdx] && platformMap["tiktok"]) {
+                        socialAccounts.push({
+                            influencerId: influencer.id,
+                            socialPlatformId: platformMap["tiktok"],
+                            handle: row[tiktokHandleIdx].replace("@", ""),
+                            isActive: true,
+                        });
+                    }
+
+                    if (instagramHandleIdx !== -1 && row[instagramHandleIdx] && platformMap["instagram"]) {
+                        socialAccounts.push({
+                            influencerId: influencer.id,
+                            socialPlatformId: platformMap["instagram"],
+                            handle: row[instagramHandleIdx].replace("@", ""),
+                            isActive: true,
+                        });
+                    }
+
+                    if (youtubeHandleIdx !== -1 && row[youtubeHandleIdx] && platformMap["youtube"]) {
+                        socialAccounts.push({
+                            influencerId: influencer.id,
+                            socialPlatformId: platformMap["youtube"],
+                            handle: row[youtubeHandleIdx].replace("@", ""),
+                            isActive: true,
+                        });
+                    }
+
+                    if (xHandleIdx !== -1 && row[xHandleIdx] && platformMap["x"]) {
+                        socialAccounts.push({
+                            influencerId: influencer.id,
+                            socialPlatformId: platformMap["x"],
+                            handle: row[xHandleIdx].replace("@", ""),
+                            isActive: true,
+                        });
+                    }
+
+                    if (socialAccounts.length > 0) {
+                        await tx.influencerSocialAccount.createMany({
+                            data: socialAccounts,
+                        });
+                    }
+
+                    successCount++;
+                } catch (error: any) {
+                    errorCount++;
+                    errors.push(`Fila ${i + 1}: ${error.message || "Error desconocido"}`);
+                }
             }
 
-            try {
-                // Crear influencer
-                const influencer = await prisma.influencer.create({
-                    data: {
-                        name: row[nameIdx] || "",
-                        email: emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : null,
-                        niche: nicheIdx !== -1 && row[nicheIdx] ? row[nicheIdx] : null,
-                        referralCode: referralCodeIdx !== -1 && row[referralCodeIdx] ? row[referralCodeIdx] : null,
-                    },
-                });
-
-                // Crear cuentas de redes sociales
-                const socialAccounts = [];
-
-                if (tiktokHandleIdx !== -1 && row[tiktokHandleIdx] && platformMap["tiktok"]) {
-                    socialAccounts.push({
-                        influencerId: influencer.id,
-                        socialPlatformId: platformMap["tiktok"],
-                        handle: row[tiktokHandleIdx].replace("@", ""),
-                        isActive: true,
-                    });
-                }
-
-                if (instagramHandleIdx !== -1 && row[instagramHandleIdx] && platformMap["instagram"]) {
-                    socialAccounts.push({
-                        influencerId: influencer.id,
-                        socialPlatformId: platformMap["instagram"],
-                        handle: row[instagramHandleIdx].replace("@", ""),
-                        isActive: true,
-                    });
-                }
-
-                if (youtubeHandleIdx !== -1 && row[youtubeHandleIdx] && platformMap["youtube"]) {
-                    socialAccounts.push({
-                        influencerId: influencer.id,
-                        socialPlatformId: platformMap["youtube"],
-                        handle: row[youtubeHandleIdx].replace("@", ""),
-                        isActive: true,
-                    });
-                }
-
-                if (xHandleIdx !== -1 && row[xHandleIdx] && platformMap["x"]) {
-                    socialAccounts.push({
-                        influencerId: influencer.id,
-                        socialPlatformId: platformMap["x"],
-                        handle: row[xHandleIdx].replace("@", ""),
-                        isActive: true,
-                    });
-                }
-
-                // Crear todas las cuentas sociales
-                if (socialAccounts.length > 0) {
-                    await prisma.influencerSocialAccount.createMany({
-                        data: socialAccounts,
-                    });
-                }
-
-                successCount++;
-            } catch (error: any) {
-                errorCount++;
-                errors.push(`Fila ${i + 1}: ${error.message || "Error desconocido"}`);
-                console.error(`Error procesando fila ${i + 1}:`, error);
-            }
-        }
+            return { successCount, errorCount, errors };
+        });
 
         return NextResponse.json({
-            message: `Importación completada: ${successCount} influencers creados exitosamente`,
-            count: successCount,
-            errors: errorCount > 0 ? errors.slice(0, 10) : [], // Mostrar máximo 10 errores
-            errorCount,
+            message: `Importación completada: ${results.successCount} influencers creados exitosamente`,
+            count: results.successCount,
+            errors: results.errorCount > 0 ? results.errors.slice(0, 10) : [],
+            errorCount: results.errorCount,
         });
     } catch (error: any) {
         console.error("Error uploading file:", error);
