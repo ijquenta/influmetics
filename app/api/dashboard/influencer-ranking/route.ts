@@ -25,67 +25,57 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
 
     try {
-        interface PostWhere {
-            campaignId?: number;
-            socialPlatformId?: number;
-            OR?: Array<{ socialPlatformId: number }>;
-        }
+        const snapshotFilter: { snapshotDate?: { gte?: Date; lte?: Date } } = {};
+        if (startDate) snapshotFilter.snapshotDate = { ...snapshotFilter.snapshotDate, gte: new Date(startDate) };
+        if (endDate) snapshotFilter.snapshotDate = { ...snapshotFilter.snapshotDate, lte: new Date(endDate) };
 
-        const postWhere: PostWhere = {};
+        const postsFilter: { campaignId?: number; socialPlatformId?: number; OR?: { socialPlatformId: number }[] } = {};
 
-        if (campaignId) {
-            const cid = parseInt(campaignId);
-            if (!isNaN(cid)) {
-                postWhere.campaignId = cid;
-            }
+        if (campaignId && !isNaN(parseInt(campaignId))) {
+            postsFilter.campaignId = parseInt(campaignId);
         }
 
         if (socialPlatformId) {
-            const platformIds = socialPlatformId
-                .split(",")
-                .map((id) => parseInt(id))
-                .filter((id) => !isNaN(id));
+            const platformIds = socialPlatformId.split(",").map((id) => parseInt(id)).filter((id) => !isNaN(id));
             if (platformIds.length === 1) {
-                postWhere.socialPlatformId = platformIds[0];
+                postsFilter.socialPlatformId = platformIds[0];
             } else if (platformIds.length > 1) {
-                postWhere.OR = platformIds.map((id) => ({ socialPlatformId: id }));
-            }
-        }
-
-        interface MetricWhere {
-            post: PostWhere;
-            snapshotDate?: {
-                gte?: Date;
-                lte?: Date;
-            };
-        }
-
-        const metricWhere: MetricWhere = {
-            post: postWhere,
-        };
-
-        if (startDate || endDate) {
-            metricWhere.snapshotDate = {};
-            if (startDate) {
-                metricWhere.snapshotDate.gte = new Date(startDate);
-            }
-            if (endDate) {
-                metricWhere.snapshotDate.lte = new Date(endDate);
+                postsFilter.OR = platformIds.map((id) => ({ socialPlatformId: id }));
             }
         }
 
         const influencers = await prisma.influencer.findMany({
-            include: {
+            where: {
                 posts: {
-                    include: {
-                        metrics: {
-                            where: metricWhere,
-                        },
+                    some: {
+                        ...postsFilter,
+                        metrics: { some: snapshotFilter },
                     },
                 },
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                niche: true,
                 influencerCampaigns: {
-                    include: {
-                        campaign: true,
+                    select: { agreedCost: true },
+                },
+                posts: {
+                    where: postsFilter,
+                    select: {
+                        socialPlatformId: true,
+                        metrics: {
+                            where: snapshotFilter,
+                            select: {
+                                views: true,
+                                likes: true,
+                                shares: true,
+                                clicks: true,
+                                conversions: true,
+                                revenue: true,
+                            },
+                        },
                     },
                 },
             },
@@ -99,11 +89,7 @@ export async function GET(request: NextRequest) {
                     const platformIds = socialPlatformId.split(",").map((id) => parseInt(id));
                     const filteredPosts = influencer.posts.filter((post) => platformIds.includes(post.socialPlatformId));
                     const filteredMetrics = filteredPosts.flatMap((post) => post.metrics);
-                    return {
-                        ...influencer,
-                        posts: filteredPosts,
-                        allMetrics: filteredMetrics,
-                    };
+                    return { ...influencer, allMetrics: filteredMetrics };
                 }
 
                 return { ...influencer, allMetrics };

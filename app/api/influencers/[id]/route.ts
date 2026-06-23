@@ -34,9 +34,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                             },
                             take: 1,
                         },
-                        hashtags: true,
-                        mentions: true,
-                        subtitles: true,
                     },
                     orderBy: {
                         publishedAt: "desc",

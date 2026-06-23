@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
     try {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
         const socialPlatformId = searchParams.get("socialPlatformId");
         const isTakenosContent = searchParams.get("isTakenosContent");
 
-        const where: any = {};
+        const where: Prisma.PostWhereInput = {};
 
         if (influencerId) {
             where.influencerId = parseInt(influencerId);

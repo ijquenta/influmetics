@@ -71,18 +71,28 @@ export async function GET(request: NextRequest) {
         const [currentMetrics, previousMetrics] = await Promise.all([
             prisma.postMetricSnapshot.findMany({
                 where: metricWhere,
-                include: {
+                select: {
+                    views: true,
+                    likes: true,
+                    shares: true,
+                    clicks: true,
+                    conversions: true,
+                    revenue: true,
                     post: {
-                        include: {
-                            influencer: true,
-                            campaign: true,
-                            socialPlatform: true,
-                        },
+                        select: { socialPlatformId: true },
                     },
                 },
             }),
             prisma.postMetricSnapshot.findMany({
                 where: previousMetricWhere,
+                select: {
+                    views: true,
+                    likes: true,
+                    shares: true,
+                    clicks: true,
+                    conversions: true,
+                    revenue: true,
+                },
             }),
         ]);
 
@@ -91,14 +101,14 @@ export async function GET(request: NextRequest) {
 
         const comparison = comparePeriods(
             {
-                views: currentAggregated.total.views,
+                views: currentAggregated.total.views ?? 0,
                 engagement: currentAggregated.engagementRate,
-                conversions: currentAggregated.total.conversions,
+                conversions: currentAggregated.total.conversions ?? 0,
             },
             {
-                views: previousAggregated.total.views,
+                views: previousAggregated.total.views ?? 0,
                 engagement: previousAggregated.engagementRate,
-                conversions: previousAggregated.total.conversions,
+                conversions: previousAggregated.total.conversions ?? 0,
             }
         );
 

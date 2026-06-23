@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Decimal } from "@prisma/client/runtime/library";
 
+import { Prisma } from "@prisma/client";
+
 export async function GET(request: NextRequest) {
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -9,7 +11,7 @@ export async function GET(request: NextRequest) {
         const startDate = searchParams.get("startDate");
         const endDate = searchParams.get("endDate");
 
-        const where: any = {};
+        const where: Prisma.PostMetricSnapshotWhereInput = {};
 
         if (postId) {
             where.postId = parseInt(postId);
@@ -53,68 +55,38 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
         const { postId, snapshotDate, views, likes, shares, clicks, conversions, revenue, roi } = body;
 
-        // Si ya existe un snapshot para esta fecha y post, actualizar
-        const existing = await prisma.postMetricSnapshot.findUnique({
+        const metric = await prisma.postMetricSnapshot.upsert({
             where: {
                 postId_snapshotDate: {
                     postId: parseInt(postId),
                     snapshotDate: new Date(snapshotDate),
                 },
             },
+            create: {
+                postId: parseInt(postId),
+                snapshotDate: new Date(snapshotDate),
+                views: views || null,
+                likes: likes || null,
+                shares: shares || null,
+                clicks: clicks || null,
+                conversions: conversions || null,
+                revenue: revenue !== undefined ? new Decimal(revenue) : null,
+                roi: roi !== undefined ? new Decimal(roi) : null,
+            },
+            update: {
+                views: views !== undefined ? views : undefined,
+                likes: likes !== undefined ? likes : undefined,
+                shares: shares !== undefined ? shares : undefined,
+                clicks: clicks !== undefined ? clicks : undefined,
+                conversions: conversions !== undefined ? conversions : undefined,
+                revenue: revenue !== undefined ? new Decimal(revenue) : undefined,
+                roi: roi !== undefined ? new Decimal(roi) : undefined,
+            },
         });
 
-        let metric;
-
-        if (existing) {
-            metric = await prisma.postMetricSnapshot.update({
-                where: { id: existing.id },
-                data: {
-                    views: views !== undefined ? views : existing.views,
-                    likes: likes !== undefined ? likes : existing.likes,
-                    shares: shares !== undefined ? shares : existing.shares,
-                    clicks: clicks !== undefined ? clicks : existing.clicks,
-                    conversions: conversions !== undefined ? conversions : existing.conversions,
-                    revenue: revenue !== undefined ? new Decimal(revenue) : existing.revenue,
-                    roi: roi !== undefined ? new Decimal(roi) : existing.roi,
-                },
-                include: {
-                    post: {
-                        include: {
-                            influencer: true,
-                            campaign: true,
-                            socialPlatform: true,
-                        },
-                    },
-                },
-            });
-        } else {
-            metric = await prisma.postMetricSnapshot.create({
-                data: {
-                    postId: parseInt(postId),
-                    snapshotDate: new Date(snapshotDate),
-                    views: views || null,
-                    likes: likes || null,
-                    shares: shares || null,
-                    clicks: clicks || null,
-                    conversions: conversions || null,
-                    revenue: revenue !== undefined ? new Decimal(revenue) : null,
-                    roi: roi !== undefined ? new Decimal(roi) : null,
-                },
-                include: {
-                    post: {
-                        include: {
-                            influencer: true,
-                            campaign: true,
-                            socialPlatform: true,
-                        },
-                    },
-                },
-            });
-        }
-
-        return NextResponse.json({ data: metric }, { status: existing ? 200 : 201 });
+        return NextResponse.json({ data: metric }, { status: 200 });
     } catch (error) {
-        console.error("Error creating/updating metric:", error);
+        console.error("Error upserting metric:", error);
         return NextResponse.json({ error: "Error al guardar métrica" }, { status: 500 });
     }
 }
