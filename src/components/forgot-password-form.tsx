@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { IconArrowLeft, IconMail } from "@tabler/icons-react";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"form">) {
     const [sent, setSent] = useState(false);
@@ -25,9 +26,17 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
         }
 
         setLoading(true);
-        // Simula envío de correo
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        const supabase = createClient();
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        });
         setLoading(false);
+
+        if (error) {
+            toast.error(error.message);
+            return;
+        }
+
         setSent(true);
         toast.success("Si el correo existe, recibirás instrucciones");
     };
