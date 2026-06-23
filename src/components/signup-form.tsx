@@ -12,17 +12,17 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function SignupForm({ className, ...props }: React.ComponentProps<"form">) {
     const router = useRouter();
-    const { login } = useAuth();
+    const { signup } = useAuth();
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setLoading(true);
         const formData = new FormData(e.currentTarget);
+        const name = formData.get("name") as string;
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
-        // Crear cuenta y luego iniciar sesión
-        await login(email, password);
+        await signup(email, password, name);
         router.push("/dashboard");
     };
 
