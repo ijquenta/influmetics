@@ -2,13 +2,15 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getProfile, type Profile } from "@/lib/supabase/profile";
 import type { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
+  profile: Profile | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
+  signup: (email: string, password: string, name: string, role?: string, company?: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -17,19 +19,30 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+      const user = session?.user ?? null;
+      setUser(user);
+      if (user) {
+        getProfile(user.id).then(setProfile);
+      }
       setIsLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
+        const user = session?.user ?? null;
+        setUser(user);
+        if (user) {
+          getProfile(user.id).then(setProfile);
+        } else {
+          setProfile(null);
+        }
       }
     );
 
@@ -42,12 +55,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (error) throw error;
   };
 
-  const signup = async (email: string, password: string, name: string) => {
+  const signup = async (email: string, password: string, name: string, role = "growth_manager", company = "") => {
     const supabase = createClient();
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: name } },
+      options: {
+        data: { full_name: name, role, company },
+      },
     });
     if (error) throw error;
   };
@@ -56,12 +71,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
+    setProfile(null);
   };
 
   return (
     <AuthContext.Provider
       value={{
         user,
+        profile,
         isLoading,
         login,
         signup,
