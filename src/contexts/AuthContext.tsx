@@ -12,6 +12,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, role?: string, company?: string) => Promise<void>;
   logout: () => Promise<void>;
+  updatePassword: (password: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -29,7 +30,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const user = session?.user ?? null;
       setUser(user);
       if (user) {
-        getProfile(user.id).then(setProfile);
+        getProfile(user.id).then(setProfile).catch(() => setProfile(null));
       }
       setIsLoading(false);
     });
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const user = session?.user ?? null;
         setUser(user);
         if (user) {
-          getProfile(user.id).then(setProfile);
+          getProfile(user.id).then(setProfile).catch(() => setProfile(null));
         } else {
           setProfile(null);
         }
@@ -74,6 +75,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfile(null);
   };
 
+  const updatePassword = async (password: string) => {
+    const supabase = createClient();
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -83,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         signup,
         logout,
+        updatePassword,
         isAuthenticated: !!user,
       }}
     >
