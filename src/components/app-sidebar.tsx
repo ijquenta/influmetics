@@ -10,6 +10,7 @@ import {
     IconUsers,
     IconLifebuoy,
     IconSend,
+    IconShield,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -24,14 +25,13 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/AuthContext";
 
-const data = {
-    user: {
-        name: "admin",
-        email: "admin@influmetics.com",
-        avatar: "/profile.png",
-    },
-    navMain: [
+export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { profile } = useAuth();
+    const role = profile?.role || "growth_manager";
+
+    const navMain = [
         {
             title: "Dashboard",
             url: "/dashboard",
@@ -47,7 +47,9 @@ const data = {
             icon: IconUsers,
             items: [
                 { title: "Todos", url: "/dashboard/influencers" },
-                { title: "Nuevo", url: "/dashboard/influencers/new" },
+                ...(role !== "viewer"
+                    ? [{ title: "Nuevo", url: "/dashboard/influencers/new" as const }]
+                    : []),
                 { title: "Análisis de perfil", url: "/dashboard/influencers/simulation" },
             ],
         },
@@ -57,7 +59,9 @@ const data = {
             icon: IconBrandCampaignmonitor,
             items: [
                 { title: "Todas", url: "/dashboard/campaigns" },
-                { title: "Nueva", url: "/dashboard/campaigns/new" },
+                ...(role !== "viewer"
+                    ? [{ title: "Nueva", url: "/dashboard/campaigns/new" as const }]
+                    : []),
             ],
         },
         {
@@ -65,14 +69,23 @@ const data = {
             url: "/dashboard/roi",
             icon: IconChartInfographic,
         },
-    ],
-    navSecondary: [
+        ...(role === "admin"
+            ? [
+                  {
+                      title: "Administración",
+                      url: "/dashboard/admin",
+                      icon: IconShield,
+                      items: [{ title: "Usuarios", url: "/dashboard/admin/users" as const }],
+                  },
+              ]
+            : []),
+    ];
+
+    const navSecondary = [
         { title: "Soporte", url: "#", icon: IconLifebuoy },
         { title: "Feedback", url: "#", icon: IconSend },
-    ],
-};
+    ];
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return (
         <Sidebar variant="inset" {...props}>
             <SidebarHeader>
@@ -98,11 +111,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain items={data.navMain} />
-                <NavSecondary items={data.navSecondary} className="mt-auto" />
+                <NavMain items={navMain} />
+                <NavSecondary items={navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
-                <NavUser user={data.user} />
+                <NavUser />
             </SidebarFooter>
         </Sidebar>
     );
