@@ -7,6 +7,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 export const DashboardHeader = () => {
     const { user, logout } = useAuth();
 
+    const displayName = user?.user_metadata?.full_name as string | undefined;
+    const displayEmail = user?.email ?? "";
+
     const getInitials = (name: string) => {
         return name
             .split(" ")
@@ -28,9 +31,9 @@ export const DashboardHeader = () => {
                             <DropdownMenuTrigger asChild>
                                 <button className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                        <AvatarFallback>{getInitials(displayName || displayEmail)}</AvatarFallback>
                                     </Avatar>
-                                    <span className="hidden md:block">{user.name}</span>
+                                    <span className="hidden md:block">{displayName || displayEmail}</span>
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
