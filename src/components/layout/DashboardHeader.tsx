@@ -5,10 +5,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export const DashboardHeader = () => {
-    const { user, logout } = useAuth();
+    const { user, profile, logout } = useAuth();
 
-    const displayName = user?.user_metadata?.full_name as string | undefined;
-    const displayEmail = user?.email ?? "";
+    const displayName = profile?.name || (user?.user_metadata?.full_name as string) || user?.email || "";
+    const role = profile?.role || "growth_manager";
 
     const getInitials = (name: string) => {
         return name
@@ -31,14 +31,16 @@ export const DashboardHeader = () => {
                             <DropdownMenuTrigger asChild>
                                 <button className="flex items-center gap-3">
                                     <Avatar>
-                                        <AvatarFallback>{getInitials(displayName || displayEmail)}</AvatarFallback>
+                                        <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
                                     </Avatar>
-                                    <span className="hidden md:block">{displayName || displayEmail}</span>
+                                    <div className="hidden md:block text-left">
+                                        <p className="text-sm font-medium leading-none">{displayName}</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5 capitalize">{role.replace("_", " ")}</p>
+                                    </div>
                                 </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem>Perfil</DropdownMenuItem>
-                                <DropdownMenuItem>Configuración</DropdownMenuItem>
                                 <DropdownMenuItem onClick={logout}>Cerrar sesión</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
