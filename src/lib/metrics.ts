@@ -1,7 +1,15 @@
 // Helpers para cálculos de métricas
 
-import type { PostMetricSnapshot } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
+
+interface MetricSnapshotLike {
+    views: number | null;
+    likes: number | null;
+    shares: number | null;
+    clicks?: number | null;
+    conversions: number | null;
+    revenue: Decimal | number | null;
+}
 
 /**
  * Calcula el engagement rate: (likes + shares) / views
@@ -25,9 +33,17 @@ export function calculateROI(revenue: Decimal | number | null, cost: Decimal | n
 /**
  * Calcula métricas agregadas de una lista de snapshots
  */
-export function aggregateMetrics(snapshots: PostMetricSnapshot[]) {
+interface AggregatedMetrics {
+    total: { views: number; likes: number; shares: number; clicks: number; conversions: number; revenue: number };
+    latest: MetricSnapshotLike | undefined;
+    engagementRate: number;
+    conversionRate: number;
+    ctr: number;
+}
+
+export function aggregateMetrics(snapshots: MetricSnapshotLike[]): AggregatedMetrics {
     const latest = snapshots[snapshots.length - 1];
-    const total = snapshots.reduce(
+    const total = snapshots.reduce<{ views: number; likes: number; shares: number; clicks: number; conversions: number; revenue: number }>(
         (acc, snap) => ({
             views: acc.views + (snap.views || 0),
             likes: acc.likes + (snap.likes || 0),
@@ -57,7 +73,7 @@ export function rankInfluencers(
     influencers: Array<{
         id: number;
         name: string;
-        metrics: PostMetricSnapshot[];
+        metrics: MetricSnapshotLike[];
         cost?: Decimal | number | null;
     }>,
     metric: "roi" | "engagement" | "reach" | "conversions"
