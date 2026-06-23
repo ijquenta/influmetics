@@ -13,9 +13,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Calendar } from "@/components/ui/calendar";
-import { CartesianGrid, XAxis, YAxis, Area, AreaChart, LabelList } from "recharts";
+import { CartesianGrid, XAxis, YAxis, Area, AreaChart, Bar, BarChart } from "recharts";
 import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { IconTrendingUp, IconTrendingDown, IconChevronDown, IconX, IconCrown, IconTrophy, IconDownload } from "@tabler/icons-react";
+import { IconTrendingUp, IconTrendingDown, IconChevronDown, IconX, IconCrown, IconDownload, IconEye, IconHeart, IconShare, IconClick, IconArrowsShuffle, IconCurrencyDollar, IconUsers, IconFilter, IconCalendar, IconLoader2 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -34,9 +34,14 @@ interface DashboardStats {
 interface TimelineData {
     date: string;
     views: number;
-    engagement: number;
+    likes: number;
+    shares: number;
+    clicks: number;
     conversions: number;
-    [key: string]: string | number; // Para permitir datos dinámicos por plataforma
+    revenue: number;
+    engagement: number;
+    ctr: number;
+    [key: string]: string | number;
 }
 
 interface InfluencerRanking {
@@ -51,6 +56,29 @@ interface InfluencerRanking {
     totalRevenue: number;
     engagementRate: number;
     roi: number;
+}
+
+const MONTHS = [
+    { value: "1", label: "Ene" },
+    { value: "2", label: "Feb" },
+    { value: "3", label: "Mar" },
+    { value: "4", label: "Abr" },
+    { value: "5", label: "May" },
+    { value: "6", label: "Jun" },
+    { value: "7", label: "Jul" },
+    { value: "8", label: "Ago" },
+    { value: "9", label: "Sep" },
+    { value: "10", label: "Oct" },
+    { value: "11", label: "Nov" },
+    { value: "12", label: "Dic" },
+];
+
+function fmt(n: number, style?: "currency" | "percent"): string {
+    if (style === "currency") return `$${n.toLocaleString("es-ES", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+    if (style === "percent") return `${n.toFixed(2)}%`;
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
+    return n.toLocaleString("es-ES");
 }
 
 export default function DashboardPage() {
@@ -70,41 +98,30 @@ export default function DashboardPage() {
     const [endDate, setEndDate] = useState<string>(today.toISOString().split("T")[0]);
     const [year, setYear] = useState<string>(currentYear.toString());
     const [selectedMonths, setSelectedMonths] = useState<string[]>([currentMonth.toString()]);
-    const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]); // canales seleccionados
-    const [selectedCampaignId, setSelectedCampaignId] = useState<string>("all"); // campaña para stats / gráfica / ranking
+    const [selectedPlatformIds, setSelectedPlatformIds] = useState<number[]>([]);
+    const [selectedCampaignId, setSelectedCampaignId] = useState<string>("all");
     const [platformsOpen, setPlatformsOpen] = useState(false);
-
+    const [chartMetric, setChartMetric] = useState<string>("views");
     const [loading, setLoading] = useState(true);
 
     const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
-    const months = [
-        { value: "1", label: "Ene" },
-        { value: "2", label: "Feb" },
-        { value: "3", label: "Mar" },
-        { value: "4", label: "Abr" },
-        { value: "5", label: "May" },
-        { value: "6", label: "Jun" },
-        { value: "7", label: "Jul" },
-        { value: "8", label: "Ago" },
-        { value: "9", label: "Sep" },
-        { value: "10", label: "Oct" },
-        { value: "11", label: "Nov" },
-        { value: "12", label: "Dic" },
-    ];
-
     const updateDatesFromMonthSelection = (yearValue: string, monthsValues: string[]) => {
         const yearNum = parseInt(yearValue || currentYear.toString(), 10);
         const monthNums = monthsValues.length > 0 ? monthsValues.map((m) => parseInt(m, 10)).sort((a, b) => a - b) : [currentMonth];
-
         const firstMonth = monthNums[0];
         const lastMonth = monthNums[monthNums.length - 1];
-
         const rangeStart = new Date(yearNum, firstMonth - 1, 1);
         const rangeEnd = new Date(yearNum, lastMonth, 0);
-
         setStartDate(rangeStart.toISOString().split("T")[0]);
         setEndDate(rangeEnd.toISOString().split("T")[0]);
+    };
+
+    const platformColors: Record<number, string> = {
+        1: "#1E90FF",
+        2: "#E4405F",
+        3: "#FF0000",
+        4: "#000000",
     };
 
     const fetchPlatforms = async () => {
@@ -112,18 +129,13 @@ export default function DashboardPage() {
             const res = await fetch("/api/data/platforms");
             const data = await res.json();
             const platformsData: Array<{ id: number; code: string; name: string }> = data.data || [];
-            console.log("Platforms fetched:", platformsData); // Debug
             setPlatforms(platformsData);
-
-            // Seleccionar TikTok por defecto si existe, sino la primera plataforma
             if (platformsData.length > 0 && selectedPlatformIds.length === 0) {
                 const tiktok = platformsData.find((p) => p.code.toLowerCase() === "tiktok");
                 const defaultId = tiktok ? tiktok.id : platformsData[0].id;
                 setSelectedPlatformIds([defaultId]);
             }
-        } catch (error) {
-            console.error("Error fetching platforms:", error);
-            // En caso de error, establecer plataformas por defecto
+        } catch {
             const fallback = [
                 { id: 1, code: "tiktok", name: "TikTok" },
                 { id: 2, code: "instagram", name: "Instagram" },
@@ -131,9 +143,7 @@ export default function DashboardPage() {
                 { id: 4, code: "x", name: "X (Twitter)" },
             ];
             setPlatforms(fallback);
-
             if (selectedPlatformIds.length === 0) {
-                // Por defecto seleccionar TikTok (id 1) en fallback
                 setSelectedPlatformIds([fallback[0].id]);
             }
         }
@@ -143,15 +153,8 @@ export default function DashboardPage() {
         try {
             const res = await fetch("/api/campaigns");
             const data = await res.json();
-            const apiCampaigns = (data.data || []) as Array<{
-                id: number;
-                name: string;
-            }>;
-            const list = apiCampaigns.map((c) => ({
-                id: c.id,
-                name: c.name,
-            }));
-            setCampaigns(list);
+            const apiCampaigns = (data.data || []) as Array<{ id: number; name: string }>;
+            setCampaigns(apiCampaigns.map((c) => ({ id: c.id, name: c.name })));
         } catch (error) {
             console.error("Error fetching campaigns:", error);
         }
@@ -160,29 +163,17 @@ export default function DashboardPage() {
     const fetchInfluencerRanking = useCallback(async () => {
         try {
             const params = new URLSearchParams();
-
-            // Fechas basadas en los filtros de inicio/fin
             if (startDate && endDate) {
                 params.append("startDate", new Date(startDate).toISOString());
                 params.append("endDate", new Date(endDate).toISOString());
             }
             params.append("limit", "10");
-
-            // Filtro por campaña (usa el selector principal de campaña)
-            if (selectedCampaignId && selectedCampaignId !== "all") {
-                params.append("campaignId", selectedCampaignId);
-            }
-
-            // Agregar múltiples plataformas si hay seleccionadas
-            if (selectedPlatformIds.length > 0) {
-                params.append("socialPlatformId", selectedPlatformIds.join(","));
-            }
-
+            if (selectedCampaignId && selectedCampaignId !== "all") params.append("campaignId", selectedCampaignId);
+            if (selectedPlatformIds.length > 0) params.append("socialPlatformId", selectedPlatformIds.join(","));
             const res = await fetch(`/api/dashboard/influencer-ranking?${params.toString()}`);
             const data = await res.json();
             setInfluencerRanking(data.data || []);
-        } catch (error) {
-            console.error("Error fetching influencer ranking:", error);
+        } catch {
             setInfluencerRanking([]);
         }
     }, [startDate, endDate, selectedPlatformIds, selectedCampaignId]);
@@ -190,50 +181,31 @@ export default function DashboardPage() {
     useEffect(() => {
         fetchPlatforms();
         fetchCampaigns();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     useEffect(() => {
-        if (platforms.length >= 0) {
-            fetchInfluencerRanking();
-        }
+        if (platforms.length >= 0) fetchInfluencerRanking();
     }, [fetchInfluencerRanking, platforms.length]);
 
     useEffect(() => {
-        // Esperar a que las plataformas se carguen antes de hacer fetch
         if (platforms.length > 0 || (platforms.length === 0 && selectedPlatformIds.length === 0)) {
             fetchStats();
             fetchTimeline();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [startDate, endDate, selectedPlatformIds, selectedCampaignId, platforms.length]);
 
     const fetchStats = async () => {
         try {
             setLoading(true);
             const params = new URLSearchParams();
-
             if (startDate && endDate) {
                 params.append("startDate", new Date(startDate).toISOString());
                 params.append("endDate", new Date(endDate).toISOString());
             }
-
-            if (selectedCampaignId && selectedCampaignId !== "all") {
-                params.append("campaignId", selectedCampaignId);
-            }
-
-            if (selectedPlatformIds.length > 0) {
-                selectedPlatformIds.forEach((id) => {
-                    params.append("socialPlatformId", id.toString());
-                });
-            }
-
+            if (selectedCampaignId && selectedCampaignId !== "all") params.append("campaignId", selectedCampaignId);
+            if (selectedPlatformIds.length > 0) selectedPlatformIds.forEach((id) => params.append("socialPlatformId", id.toString()));
             const res = await fetch(`/api/dashboard/stats?${params.toString()}`);
-
-            if (!res.ok) {
-                throw new Error(`Error ${res.status}: ${res.statusText}`);
-            }
-
+            if (!res.ok) throw new Error(`Error ${res.status}`);
             const data = await res.json();
             setStats(data.data || null);
         } catch (error) {
@@ -247,128 +219,78 @@ export default function DashboardPage() {
     const fetchTimeline = async () => {
         try {
             const params = new URLSearchParams();
-
             if (startDate && endDate) {
                 params.append("startDate", new Date(startDate).toISOString());
                 params.append("endDate", new Date(endDate).toISOString());
             }
             params.append("groupBy", "day");
-
-            if (selectedCampaignId) {
-                params.append("campaignId", selectedCampaignId);
-            }
-
-            if (selectedPlatformIds.length > 0) {
-                selectedPlatformIds.forEach((id) => {
-                    params.append("socialPlatformId", id.toString());
-                });
-            }
-
+            if (selectedCampaignId) params.append("campaignId", selectedCampaignId);
+            if (selectedPlatformIds.length > 0) selectedPlatformIds.forEach((id) => params.append("socialPlatformId", id.toString()));
             const res = await fetch(`/api/dashboard/timeline?${params.toString()}`);
-
-            if (!res.ok) {
-                throw new Error(`Error ${res.status}: ${res.statusText}`);
-            }
-
+            if (!res.ok) throw new Error(`Error ${res.status}`);
             const data = await res.json();
-            const timelineData = data.data || [];
-
-            const validatedData = timelineData.map((item: TimelineData) => ({
+            const timelineData = (data.data || []).map((item: TimelineData) => ({
                 date: item.date || "",
                 views: typeof item.views === "number" && !isNaN(item.views) ? item.views : 0,
-                engagement: typeof item.engagement === "number" && !isNaN(item.engagement) ? item.engagement : 0,
+                likes: typeof item.likes === "number" && !isNaN(item.likes) ? item.likes : 0,
+                shares: typeof item.shares === "number" && !isNaN(item.shares) ? item.shares : 0,
+                clicks: typeof item.clicks === "number" && !isNaN(item.clicks) ? item.clicks : 0,
                 conversions: typeof item.conversions === "number" && !isNaN(item.conversions) ? item.conversions : 0,
+                revenue: typeof item.revenue === "number" && !isNaN(item.revenue) ? item.revenue : 0,
+                engagement: typeof item.engagement === "number" && !isNaN(item.engagement) ? item.engagement : 0,
+                ctr: typeof item.ctr === "number" && !isNaN(item.ctr) ? item.ctr : 0,
             }));
-
-            setTimeline(validatedData);
+            setTimeline(timelineData);
         } catch (error) {
             console.error("Error fetching timeline:", error);
             setTimeline([]);
         }
     };
 
-    // Colores para cada plataforma
-    const platformColors: Record<number, string> = {
-        1: "#1E90FF", // TikTok - Primary Blue
-        2: "#E4405F", // Instagram - Rosa/Rojo
-        3: "#FF0000", // YouTube - Rojo
-        4: "#000000", // X - Negro
-    };
-
-    // Generar chartConfig dinámicamente basado en plataformas seleccionadas
     const chartConfig: ChartConfig = {
-        views: {
-            label: "Vistas",
-            color: "#1E90FF",
-        },
-        engagement: {
-            label: "Engagement",
-            color: "#2EC7FF",
-        },
-        conversions: {
-            label: "Conversiones",
-            color: "#4CAF50",
-        },
+        views: { label: "Vistas", color: "#6C48C5" },
+        likes: { label: "Likes", color: "#E4405F" },
+        shares: { label: "Shares", color: "#2EC7FF" },
+        clicks: { label: "Clics", color: "#FF8C00" },
+        conversions: { label: "Conversiones", color: "#4CAF50" },
+        revenue: { label: "Ingresos", color: "#F59E0B" },
+        engagement: { label: "Engagement %", color: "#8B5CF6" },
+        ctr: { label: "CTR %", color: "#06B6D4" },
     };
 
-    // Agregar configuraciones para cada plataforma seleccionada
     selectedPlatformIds.forEach((platformId) => {
         const platform = platforms.find((p) => p.id === platformId);
         if (platform) {
             const color = platformColors[platformId] || "#6C48C5";
-            chartConfig[`views_${platform.code}`] = {
-                label: `Vistas ${platform.name}`,
-                color,
-            };
-            chartConfig[`engagement_${platform.code}`] = {
-                label: `Engagement ${platform.name}`,
-                color,
-            };
+            chartConfig[`views_${platform.code}`] = { label: `Vistas ${platform.name}`, color };
+            chartConfig[`engagement_${platform.code}`] = { label: `Engagement ${platform.name}`, color };
         }
     });
 
-    // Formatear fecha para el eje X
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString("es-ES", {
-            day: "numeric",
-            month: "short",
-        });
+        return date.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
     };
 
-    // Función para exportar a Excel
     const exportToExcel = async () => {
         if (timeline.length === 0) {
             toast.error("No hay datos para exportar");
             return;
         }
-
         try {
-            const selectedCampaignName =
-                selectedCampaignId && selectedCampaignId !== "all"
-                    ? (campaigns.find((c) => c.id === Number(selectedCampaignId))?.name ?? "Campaña seleccionada")
-                    : "Todas las campañas";
-
-            const selectedPlatformNames =
-                selectedPlatformIds.length > 0
-                    ? selectedPlatformIds
-                          .map((id) => platforms.find((p) => p.id === id)?.name)
-                          .filter(Boolean)
-                          .join(", ")
-                    : "Todas las plataformas";
+            const selectedCampaignName = selectedCampaignId && selectedCampaignId !== "all"
+                ? (campaigns.find((c) => c.id === Number(selectedCampaignId))?.name ?? "Campaña seleccionada")
+                : "Todas las campañas";
+            const selectedPlatformNames = selectedPlatformIds.length > 0
+                ? selectedPlatformIds.map((id) => platforms.find((p) => p.id === id)?.name).filter(Boolean).join(", ")
+                : "Todas las plataformas";
 
             const excelData = timeline.map((item) => {
                 const row: Record<string, string | number> = {
-                    Fecha: new Date(item.date).toLocaleDateString("es-ES", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    }),
+                    Fecha: new Date(item.date).toLocaleDateString("es-ES", { year: "numeric", month: "long", day: "numeric" }),
+                    Canales: selectedPlatformNames,
+                    Campaña: selectedCampaignName,
                 };
-
-                row["Canales"] = selectedPlatformNames;
-                row["Campaña"] = selectedCampaignName;
-
                 if (selectedPlatformIds.length > 1) {
                     selectedPlatformIds.forEach((platformId) => {
                         const platform = platforms.find((p) => p.id === platformId);
@@ -376,61 +298,43 @@ export default function DashboardPage() {
                             const viewsKey = `views_${platform.code}` as keyof typeof item;
                             const engagementKey = `engagement_${platform.code}` as keyof typeof item;
                             const conversionsKey = `conversions_${platform.code}` as keyof typeof item;
-
                             row[`Vistas ${platform.name}`] = typeof item[viewsKey] === "number" ? item[viewsKey] : 0;
-                            const engagementValue = item[engagementKey];
-                            row[`Engagement ${platform.name} (%)`] =
-                                typeof engagementValue === "number" ? Number(engagementValue.toFixed(2)) : 0;
+                            const ev = item[engagementKey];
+                            row[`Engagement ${platform.name} (%)`] = typeof ev === "number" ? Number(ev.toFixed(2)) : 0;
                             row[`Conversiones ${platform.name}`] = typeof item[conversionsKey] === "number" ? item[conversionsKey] : 0;
                         }
                     });
-
                     row["Vistas Totales"] = item.views || 0;
                     row["Engagement Total (%)"] = typeof item.engagement === "number" ? Number(item.engagement.toFixed(2)) : 0;
                     row["Conversiones Totales"] = item.conversions || 0;
                 } else {
                     row["Vistas"] = item.views || 0;
-                    row["Engagement (%)"] = typeof item.engagement === "number" ? Number(item.engagement.toFixed(2)) : 0;
+                    row["Likes"] = item.likes || 0;
+                    row["Shares"] = item.shares || 0;
+                    row["Clics"] = item.clicks || 0;
                     row["Conversiones"] = item.conversions || 0;
+                    row["Ingresos"] = item.revenue || 0;
+                    row["Engagement (%)"] = typeof item.engagement === "number" ? Number(item.engagement.toFixed(2)) : 0;
+                    row["CTR (%)"] = typeof item.ctr === "number" ? Number(item.ctr.toFixed(2)) : 0;
                 }
-
                 return row;
             });
 
-            // Crear workbook y worksheet usando ExcelJS
             const workbook = new ExcelJS.Workbook();
-            const sheetNameBase = "Impacto de campaña";
-            const sheetName = sheetNameBase.slice(0, 31);
-            const ws = workbook.addWorksheet(sheetName);
-
+            const ws = workbook.addWorksheet("Impacto de campaña");
             const headers = Object.keys(excelData[0] || {});
-            // Agregar fila de encabezados
             ws.addRow(headers);
-
-            // Agregar filas
             for (const rowObj of excelData) {
-                const row = headers.map((h) => (rowObj[h] !== undefined ? rowObj[h] : ""));
-                ws.addRow(row);
+                ws.addRow(headers.map((h) => (rowObj[h] !== undefined ? rowObj[h] : "")));
             }
-
-            // Ajustar ancho de columnas
             headers.forEach((key, idx) => {
-                const maxLen = Math.max(
-                    key.length,
-                    ...excelData.map((r) => String(r[key] ?? "").length)
-                );
+                const maxLen = Math.max(key.length, ...excelData.map((r) => String(r[key] ?? "").length));
                 ws.getColumn(idx + 1).width = Math.min(50, maxLen + 2);
             });
-
-            const monthName = "Rango_fechas";
-            const platformNames =
-                selectedPlatformIds.length > 0
-                    ? selectedPlatformIds
-                          .map((id) => platforms.find((p) => p.id === id)?.name)
-                          .filter(Boolean)
-                          .join("_")
-                    : "Todas";
-            const fileName = `Evolucion_de_impacto_de_campaña_${monthName}_${platformNames}.xlsx`;
+            const platformNames = selectedPlatformIds.length > 0
+                ? selectedPlatformIds.map((id) => platforms.find((p) => p.id === id)?.name).filter(Boolean).join("_")
+                : "Todas";
+            const fileName = `Evolucion_impacto_${platformNames}.xlsx`;
 
             const buf = await workbook.xlsx.writeBuffer();
             const blob = new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
@@ -442,13 +346,42 @@ export default function DashboardPage() {
             a.click();
             a.remove();
             URL.revokeObjectURL(url);
-
-            toast.success("Archivo Excel descargado exitosamente");
-        } catch (error) {
-            console.error("Error exporting to Excel:", error);
-            toast.error("Error al exportar a Excel");
+            toast.success("Excel descargado");
+        } catch {
+            toast.error("Error al exportar");
         }
     };
+
+    const KPI_CARDS = stats ? [
+        { key: "reach", label: "Alcance", value: fmt(stats.reach.value), change: stats.reach.change, isPositive: stats.reach.isPositive, icon: IconEye, color: "#6C48C5" },
+        { key: "engagement", label: "Engagement", value: `${stats.engagement.value.toFixed(2)}%`, change: stats.engagement.change, isPositive: stats.engagement.isPositive, icon: IconHeart, color: "#E4405F" },
+        { key: "clicks", label: "Clics", value: fmt(stats.clicks.value), change: stats.clicks.change, isPositive: stats.clicks.isPositive, icon: IconClick, color: "#FF8C00" },
+        { key: "conversions", label: "Conversiones", value: fmt(stats.conversions.value), change: stats.conversions.change, isPositive: stats.conversions.isPositive, icon: IconArrowsShuffle, color: "#4CAF50" },
+        { key: "ctr", label: "CTR", value: `${stats.ctr.value.toFixed(2)}%`, change: stats.ctr.change, isPositive: stats.ctr.isPositive, icon: IconShare, color: "#06B6D4" },
+        { key: "revenue", label: "Ingresos", value: fmt(stats.revenue.value, "currency"), change: stats.revenue.change, isPositive: stats.revenue.isPositive, icon: IconCurrencyDollar, color: "#F59E0B" },
+    ] : [];
+
+    const totalFromTimeline = {
+        views: timeline.reduce((s, i) => s + i.views, 0),
+        likes: timeline.reduce((s, i) => s + i.likes, 0),
+        shares: timeline.reduce((s, i) => s + i.shares, 0),
+        clicks: timeline.reduce((s, i) => s + i.clicks, 0),
+        conversions: timeline.reduce((s, i) => s + i.conversions, 0),
+        revenue: timeline.reduce((s, i) => s + i.revenue, 0),
+    };
+
+    const chartMetricConfig = chartConfig[chartMetric as keyof typeof chartConfig] || { label: "Métrica", color: "#6C48C5" };
+    const chartDataKey = selectedPlatformIds.length > 1 ? (() => {
+        const first = platforms.find((p) => p.id === selectedPlatformIds[0]);
+        return first ? `views_${first.code}` : "views";
+    })() : chartMetric;
+
+    const totalTimelineDays = timeline.length;
+    const avgPerDay = totalTimelineDays > 0 ? {
+        views: Math.round(totalFromTimeline.views / totalTimelineDays),
+        engagement: timeline.reduce((s, i) => s + i.engagement, 0) / totalTimelineDays,
+        conversions: Math.round(totalFromTimeline.conversions / totalTimelineDays),
+    } : null;
 
     if (loading && !stats) {
         return (
@@ -456,8 +389,9 @@ export default function DashboardPage() {
                 <AppSidebar variant="inset" />
                 <SidebarInset>
                     <SiteHeader />
-                    <div className="flex flex-1 flex-col items-center justify-center p-6">
-                        <p className="text-[var(--muted-foreground)]">Cargando...</p>
+                    <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
+                        <IconLoader2 className="w-5 h-5 animate-spin" />
+                        Cargando dashboard...
                     </div>
                 </SidebarInset>
             </SidebarProvider>
@@ -466,659 +400,403 @@ export default function DashboardPage() {
 
     return (
         <SidebarProvider
-            style={
-                {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                } as React.CSSProperties
-            }
+            style={{
+                "--sidebar-width": "calc(var(--spacing) * 72)",
+                "--header-height": "calc(var(--spacing) * 12)",
+            } as React.CSSProperties}
         >
             <AppSidebar variant="inset" />
             <SidebarInset>
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
-                        <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[var(--background)] min-h-full">
-                            {/* Header con filtros */}
-                            <div className="flex flex-col gap-4 mb-6">
+                    <div className="@container/main flex flex-1 flex-col gap-2">
+                        <div className="flex flex-col gap-4 py-4 md:gap-5 md:py-5 px-4 lg:px-6 bg-muted min-h-full">
+                            {/* Header */}
+                            <div className="flex items-start justify-between gap-4 flex-wrap">
                                 <div>
-                                    <h1 className="text-[28px] font-bold text-[var(--foreground)] mb-2">Dashboard</h1>
-                                    <p className="text-[16px] text-[var(--muted-foreground)]">Resumen general de métricas y rendimiento</p>
+                                    <h1 className="text-[28px] font-bold text-foreground mb-1">Dashboard</h1>
+                                    <p className="text-[16px] text-muted-foreground">Métricas clave y rendimiento de campañas</p>
                                 </div>
-
-                                {/* Filtros */}
-                                <div className="flex gap-3 flex-wrap items-center">
-                                    {/* Switch modo fechas / mensual */}
-                                    <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Modo mensual</Label>
-                                        <Switch
-                                            checked={dateMode === "monthly"}
-                                            onCheckedChange={(checked: boolean) => {
-                                                const newMode = checked ? "monthly" : "range";
-                                                setDateMode(newMode);
-                                                if (newMode === "monthly") {
-                                                    updateDatesFromMonthSelection(year, selectedMonths);
-                                                }
-                                            }}
-                                            className="data-[state=checked]:bg-primary"
-                                        />
-                                    </div>
-
-                                    {dateMode === "range" ? (
-                                        <>
-                                            {/* Fecha inicio */}
-                                            <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Fecha inicio</Label>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className="h-10 w-[220px] justify-between rounded-2xl text-left font-normal"
-                                                        >
-                                                            {startDate
-                                                                ? new Date(startDate).toLocaleDateString("es-ES", {
-                                                                      day: "2-digit",
-                                                                      month: "short",
-                                                                      year: "numeric",
-                                                                  })
-                                                                : "Seleccionar fecha"}
-                                                            <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar
-                                                            mode="single"
-                                                            selected={startDate ? new Date(startDate) : undefined}
-                                                            onSelect={(date: Date | undefined) => {
-                                                                if (date) setStartDate(date.toISOString().split("T")[0]);
-                                                            }}
-                                                            initialFocus
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </div>
-
-                                            {/* Fecha fin */}
-                                            <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Fecha fin</Label>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className="h-10 w-[220px] justify-between rounded-2xl text-left font-normal"
-                                                        >
-                                                            {endDate
-                                                                ? new Date(endDate).toLocaleDateString("es-ES", {
-                                                                      day: "2-digit",
-                                                                      month: "short",
-                                                                      year: "numeric",
-                                                                  })
-                                                                : "Seleccionar fecha"}
-                                                            <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <Calendar
-                                                            mode="single"
-                                                            selected={endDate ? new Date(endDate) : undefined}
-                                                            onSelect={(date: Date | undefined) => {
-                                                                if (date) setEndDate(date.toISOString().split("T")[0]);
-                                                            }}
-                                                            initialFocus
-                                                        />
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            {/* Año */}
-                                            <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Año</Label>
-                                                <Select
-                                                    value={year}
-                                                    onValueChange={(value) => {
-                                                        setYear(value);
-                                                        updateDatesFromMonthSelection(value, selectedMonths);
-                                                    }}
-                                                >
-                                                    <SelectTrigger className="h-10 w-[220px] rounded-2xl">
-                                                        <SelectValue placeholder="Selecciona año" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {years.map((y) => (
-                                                            <SelectItem key={y} value={y}>
-                                                                {y}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            {/* Meses (multi-select) */}
-                                            <div className="flex items-center gap-2">
-                                                <Label className="text-xs text-[var(--muted-foreground)]">Meses</Label>
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className="h-10 w-[220px] justify-between rounded-2xl border-[var(--border)]"
-                                                        >
-                                                            {selectedMonths.length === 0
-                                                                ? "Seleccionar meses"
-                                                                : selectedMonths.length === 1
-                                                                  ? months.find((m) => m.value === selectedMonths[0])?.label
-                                                                  : `${selectedMonths.length} meses seleccionados`}
-                                                            <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[220px] p-3 rounded-2xl">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                            <span className="text-xs font-semibold text-[var(--foreground)]">Meses</span>
-                                                            {selectedMonths.length > 0 && (
-                                                                    <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-6 px-2 text-[10px] text-primary"
-                                                                    onClick={() => {
-                                                                        setSelectedMonths([]);
-                                                                        updateDatesFromMonthSelection(year, []);
-                                                                    }}
-                                                                >
-                                                                    Limpiar
-                                                                </Button>
-                                                            )}
-                                                        </div>
-                                                        <div className="max-h-64 overflow-y-auto space-y-1">
-                                                            {months.map((m) => {
-                                                                const checked = selectedMonths.includes(m.value);
-                                                                return (
-                                                                    <div
-                                                                        key={m.value}
-                                                                        className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-primary/10 cursor-pointer"
-                                                                        onClick={() => {
-                                                                            const next = checked
-                                                                                ? selectedMonths.filter((v) => v !== m.value)
-                                                                                : [...selectedMonths, m.value];
-                                                                            setSelectedMonths(next);
-                                                                            updateDatesFromMonthSelection(year, next);
-                                                                        }}
-                                                                    >
-                                                                            <Checkbox
-                                                                            checked={checked}
-                                                                            onCheckedChange={(value) => {
-                                                                                const isChecked = Boolean(value);
-                                                                                const next = isChecked
-                                                                                    ? [...selectedMonths, m.value]
-                                                                                    : selectedMonths.filter((v) => v !== m.value);
-                                                                                setSelectedMonths(next);
-                                                                                updateDatesFromMonthSelection(year, next);
-                                                                            }}
-                                                                            className="border-primary data-[state=checked]:bg-primary"
-                                                                        />
-                                                                        <span className="text-xs text-[var(--foreground)]">{m.label}</span>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
-                                            </div>
-                                        </>
-                                    )}
-
-                                    {/* Canal de ingreso (Redes sociales) - Multi-select */}
-                                    <Popover open={platformsOpen} onOpenChange={setPlatformsOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className={cn(
-                                                        "h-10 w-[220px] justify-between rounded-2xl border-[var(--border)]",
-                                                        selectedPlatformIds.length === 0 && "text-muted-foreground"
-                                                    )}
-                                            >
-                                                {selectedPlatformIds.length === 0
-                                                    ? "Seleccionar canales"
-                                                    : selectedPlatformIds.length === 1
-                                                      ? platforms.find((p) => p.id === selectedPlatformIds[0])?.name ||
-                                                        "1 canal seleccionado"
-                                                      : `${selectedPlatformIds.length} canales seleccionados`}
-                                                <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-[250px] p-4 rounded-2xl">
-                                            <div className="space-y-3">
-                                                        <div className="flex items-center justify-between mb-2">
-                                                    <Label className="text-sm font-semibold text-[var(--foreground)]">Canales de ingreso</Label>
-                                                    {selectedPlatformIds.length > 0 && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 px-2 text-xs text-primary"
-                                                            onClick={() => setSelectedPlatformIds([])}
-                                                        >
-                                                            Limpiar
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                                        {platforms.length > 0 ? (
-                                                    platforms.map((platform) => {
-                                                        const isSelected = selectedPlatformIds.includes(platform.id);
-                                                        return (
-                                                            <div
-                                                                key={platform.id}
-                                                                        className="flex items-center space-x-2 p-2 rounded-lg hover:bg-primary/10 cursor-pointer"
-                                                                onClick={() => {
-                                                                    if (isSelected) {
-                                                                        setSelectedPlatformIds(
-                                                                            selectedPlatformIds.filter((id) => id !== platform.id)
-                                                                        );
-                                                                    } else {
-                                                                        setSelectedPlatformIds([...selectedPlatformIds, platform.id]);
-                                                                    }
-                                                                }}
-                                                            >
-                                                                <Checkbox
-                                                                    id={`platform-${platform.id}`}
-                                                                    checked={isSelected}
-                                                                    onCheckedChange={(checked) => {
-                                                                        if (checked) {
-                                                                            setSelectedPlatformIds([...selectedPlatformIds, platform.id]);
-                                                                        } else {
-                                                                            setSelectedPlatformIds(
-                                                                                selectedPlatformIds.filter((id) => id !== platform.id)
-                                                                            );
-                                                                        }
-                                                                    }}
-                                                                            className="border-primary data-[state=checked]:bg-primary"
-                                                                />
-                                                                <Label
-                                                                    htmlFor={`platform-${platform.id}`}
-                                                                    className="flex-1 cursor-pointer text-sm text-foreground font-medium"
-                                                                >
-                                                                    {platform.name}
-                                                                </Label>
-                                                            </div>
-                                                        );
-                                                    })
-                                                ) : (
-                                                    <div className="text-sm text-[var(--muted-foreground)] py-2">Cargando plataformas...</div>
-                                                )}
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-
-                                    {/* Mostrar badges de plataformas seleccionadas */}
-                                    {selectedPlatformIds.length > 0 && (
-                                        <div className="flex flex-wrap gap-2">
-                                                    {selectedPlatformIds.map((platformId) => {
-                                                const platform = platforms.find((p) => p.id === platformId);
-                                                if (!platform) return null;
-                                                return (
-                                                    <div
-                                                        key={platformId}
-                                                                className="flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs font-medium"
-                                                    >
-                                                        {platform.name}
-                                                        <button
-                                                            onClick={() => {
-                                                                setSelectedPlatformIds(
-                                                                    selectedPlatformIds.filter((id) => id !== platformId)
-                                                                );
-                                                            }}
-                                                                    className="ml-1 hover:bg-primary hover:text-white rounded-full p-0.5"
-                                                        >
-                                                            <IconX className="h-3 w-3" />
-                                                        </button>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-
-                                    {/* Campañas - selector simple */}
-                                    <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
-                                        <SelectTrigger className="h-10 w-[220px] rounded-2xl">
-                                            <SelectValue placeholder="Todas las campañas" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">Todas las campañas</SelectItem>
-                                            {campaigns.map((campaign) => (
-                                                <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                                                    {campaign.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                <div className="flex items-center gap-2">
+                                    <Button variant="outline" size="sm" onClick={exportToExcel} disabled={timeline.length === 0} className="rounded-2xl gap-2 h-9">
+                                        <IconDownload className="w-4 h-4" />
+                                        Exportar
+                                    </Button>
                                 </div>
                             </div>
 
-                            {/* KPIs Cards */}
+                            {/* Filters bar */}
+                            <div className="flex flex-wrap items-center gap-2 bg-white rounded-2xl px-4 py-3 border border-primary/5 shadow-sm">
+                                <IconFilter className="w-4 h-4 text-muted-foreground shrink-0" />
+                                <div className="flex items-center gap-2">
+                                    <Switch checked={dateMode === "monthly"} onCheckedChange={(c) => {
+                                        const newMode = c ? "monthly" : "range";
+                                        setDateMode(newMode);
+                                        if (newMode === "monthly") updateDatesFromMonthSelection(year, selectedMonths);
+                                    }} className="data-[state=checked]:bg-primary" />
+                                    <Label className="text-xs text-muted-foreground whitespace-nowrap">Mensual</Label>
+                                </div>
+                                <div className="w-px h-6 bg-primary/10" />
+                                {dateMode === "range" ? (
+                                    <>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="rounded-2xl h-8 gap-1.5 text-xs font-normal">
+                                                    <IconCalendar className="w-3.5 h-3.5 text-muted-foreground" />
+                                                    {new Date(startDate).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={new Date(startDate)} onSelect={(d) => d && setStartDate(d.toISOString().split("T")[0])} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                        <span className="text-xs text-muted-foreground">→</span>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="rounded-2xl h-8 gap-1.5 text-xs font-normal">
+                                                    <IconCalendar className="w-3.5 h-3.5 text-muted-foreground" />
+                                                    {new Date(endDate).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar mode="single" selected={new Date(endDate)} onSelect={(d) => d && setEndDate(d.toISOString().split("T")[0])} initialFocus />
+                                            </PopoverContent>
+                                        </Popover>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Select value={year} onValueChange={(v) => { setYear(v); updateDatesFromMonthSelection(v, selectedMonths); }}>
+                                            <SelectTrigger className="h-8 w-[100px] rounded-2xl text-xs">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {years.map((y) => (<SelectItem key={y} value={y} className="text-xs">{y}</SelectItem>))}
+                                            </SelectContent>
+                                        </Select>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="rounded-2xl h-8 text-xs gap-1 font-normal">
+                                                    {selectedMonths.length === 0 ? "Meses" : selectedMonths.length === 1
+                                                        ? MONTHS.find((m) => m.value === selectedMonths[0])?.label
+                                                        : `${selectedMonths.length} meses`}
+                                                    <IconChevronDown className="w-3 h-3 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[200px] p-3 rounded-2xl">
+                                                <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                    {MONTHS.map((m) => {
+                                                        const checked = selectedMonths.includes(m.value);
+                                                        return (
+                                                            <div key={m.value} className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-primary/10 cursor-pointer" onClick={() => {
+                                                                const next = checked ? selectedMonths.filter((v) => v !== m.value) : [...selectedMonths, m.value];
+                                                                setSelectedMonths(next);
+                                                                updateDatesFromMonthSelection(year, next);
+                                                            }}>
+                                                                <Checkbox checked={checked} className="border-primary data-[state=checked]:bg-primary" />
+                                                                <span className="text-xs text-foreground">{m.label}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    </>
+                                )}
+                                <div className="w-px h-6 bg-primary/10" />
+                                <Popover open={platformsOpen} onOpenChange={setPlatformsOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="sm" className={cn("rounded-2xl h-8 text-xs gap-1", selectedPlatformIds.length === 0 && "text-muted-foreground")}>
+                                            <IconUsers className="w-3.5 h-3.5" />
+                                            {selectedPlatformIds.length === 0 ? "Canales" : selectedPlatformIds.length === 1
+                                                ? platforms.find((p) => p.id === selectedPlatformIds[0])?.name || "1 canal"
+                                                : `${selectedPlatformIds.length} canales`}
+                                            <IconChevronDown className="w-3 h-3 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[220px] p-3 rounded-2xl">
+                                        {platforms.map((platform) => {
+                                            const isSelected = selectedPlatformIds.includes(platform.id);
+                                            return (
+                                                <div key={platform.id} className="flex items-center gap-2 px-1.5 py-1.5 rounded-lg hover:bg-primary/10 cursor-pointer" onClick={() => {
+                                                    if (isSelected) setSelectedPlatformIds(selectedPlatformIds.filter((id) => id !== platform.id));
+                                                    else setSelectedPlatformIds([...selectedPlatformIds, platform.id]);
+                                                }}>
+                                                    <Checkbox checked={isSelected} className="border-primary data-[state=checked]:bg-primary" />
+                                                    <span className="text-xs text-foreground font-medium">{platform.name}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </PopoverContent>
+                                </Popover>
+                                {selectedPlatformIds.length > 0 && (
+                                    <div className="flex gap-1">
+                                        {selectedPlatformIds.map((id) => {
+                                            const p = platforms.find((pl) => pl.id === id);
+                                            if (!p) return null;
+                                            return (
+                                                <div key={id} className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary rounded-lg text-[10px] font-medium">
+                                                    {p.name}
+                                                    <button onClick={() => {
+                                                        setSelectedPlatformIds(selectedPlatformIds.filter((pid) => pid !== id));
+                                                    }} className="hover:bg-primary hover:text-white rounded-full p-0.5">
+                                                        <IconX className="w-2.5 h-2.5" />
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                                <div className="w-px h-6 bg-primary/10" />
+                                <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+                                    <SelectTrigger className="h-8 w-[180px] rounded-2xl text-xs">
+                                        <SelectValue placeholder="Todas las campañas" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all" className="text-xs">Todas las campañas</SelectItem>
+                                        {campaigns.map((c) => (
+                                            <SelectItem key={c.id} value={c.id.toString()} className="text-xs">{c.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* KPIs */}
                             {stats && (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                                    <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                        <CardHeader className="pb-3">
-                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">Alcance Total</CardDescription>
-                                            <CardTitle className="text-[24px] font-bold text-[var(--foreground)]">
-                                                {stats.reach.value.toLocaleString()}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-2 cursor-default">
-                                                        {stats.reach.isPositive ? (
-                                                            <IconTrendingUp className="w-4 h-4 text-success" />
-                                                        ) : (
-                                                            <IconTrendingDown className="w-4 h-4 text-destructive" />
-                                                        )}
-                                                        <span
-                                                            className={`text-sm font-semibold ${stats.reach.isPositive ? "text-success" : "text-destructive"}`}
-                                                        >
-                                                            {stats.reach.change > 0 ? "+" : ""}
-                                                            {stats.reach.change.toFixed(1)}%
-                                                        </span>
-                                                        <span className="text-sm text-[var(--muted-foreground)]">vs mes anterior</span>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                                    {KPI_CARDS.map((kpi) => {
+                                        const Icon = kpi.icon;
+                                        return (
+                                            <Card key={kpi.key} className="rounded-[20px] border-primary/5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                                <CardContent className="p-4">
+                                                    <div className="flex items-center justify-between mb-2">
+                                                        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
+                                                        <Icon className="w-4 h-4" style={{ color: kpi.color }} />
                                                     </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>Cambio porcentual de alcance respecto al periodo anterior.</TooltipContent>
-                                            </Tooltip>
+                                                    <p className="text-[22px] font-bold text-foreground leading-tight">{kpi.value}</p>
+                                                    <div className="flex items-center gap-1 mt-1.5">
+                                                        {kpi.change > 0 ? (
+                                                            <IconTrendingUp className="w-3.5 h-3.5 text-green-600" />
+                                                        ) : (
+                                                            <IconTrendingDown className="w-3.5 h-3.5 text-red-500" />
+                                                        )}
+                                                        <span className={cn("text-[11px] font-semibold", kpi.isPositive ? "text-green-600" : "text-red-500")}>
+                                                            {kpi.change > 0 ? "+" : ""}{kpi.change.toFixed(1)}%
+                                                        </span>
+                                                        <span className="text-[11px] text-muted-foreground">vs anterior</span>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Summary row */}
+                            {timeline.length > 0 && (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <Card className="rounded-[16px] border-primary/5 shadow-sm col-span-2">
+                                        <CardContent className="p-4 flex items-center gap-6 flex-wrap">
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total vistas</p>
+                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.views)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Likes</p>
+                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.likes)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Shares</p>
+                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.shares)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Clics</p>
+                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.clicks)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Conversiones</p>
+                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.conversions)}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Ingresos</p>
+                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.revenue, "currency")}</p>
+                                            </div>
                                         </CardContent>
                                     </Card>
-
-                                        <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                        <CardHeader className="pb-3">
-                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">Engagement Rate</CardDescription>
-                                            <CardTitle className="text-[24px] font-bold text-[var(--foreground)]">
-                                                {stats.engagement.value.toFixed(2)}%
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-2 cursor-default">
-                                                        {stats.engagement.isPositive ? (
-                                                            <IconTrendingUp className="w-4 h-4 text-success" />
-                                                        ) : (
-                                                            <IconTrendingDown className="w-4 h-4 text-destructive" />
-                                                        )}
-                                                        <span
-                                                            className={`text-sm font-semibold ${stats.engagement.isPositive ? "text-success" : "text-destructive"}`}
-                                                        >
-                                                            {stats.engagement.change > 0 ? "+" : ""}
-                                                            {stats.engagement.change.toFixed(1)}%
-                                                        </span>
-                                                        <span className="text-sm text-[var(--muted-foreground)]">vs mes anterior</span>
+                                    {avgPerDay && (
+                                        <Card className="rounded-[16px] border-primary/5 shadow-sm col-span-1">
+                                            <CardContent className="p-4 flex items-center gap-4">
+                                                <div>
+                                                    <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Promedio diario</p>
+                                                    <div className="flex gap-4 mt-1">
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">Vistas</p>
+                                                            <p className="text-sm font-bold text-foreground">{fmt(avgPerDay.views)}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">Eng.</p>
+                                                            <p className="text-sm font-bold text-foreground">{avgPerDay.engagement.toFixed(2)}%</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] text-muted-foreground">Conv.</p>
+                                                            <p className="text-sm font-bold text-foreground">{fmt(avgPerDay.conversions)}</p>
+                                                        </div>
                                                     </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    Engagement medio (likes + shares) sobre el alcance en el periodo.
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        </CardContent>
-                                    </Card>
-
-                                    <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                        <CardHeader className="pb-3">
-                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">Conversiones</CardDescription>
-                                            <CardTitle className="text-[24px] font-bold text-[var(--foreground)]">
-                                                {stats.conversions.value.toLocaleString()}
-                                            </CardTitle>
-                                        </CardHeader>
-                                        <CardContent>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <div className="flex items-center gap-2 cursor-default">
-                                                        {stats.conversions.isPositive ? (
-                                                            <IconTrendingUp className="w-4 h-4 text-success" />
-                                                        ) : (
-                                                            <IconTrendingDown className="w-4 h-4 text-destructive" />
-                                                        )}
-                                                        <span
-                                                            className={`text-sm font-semibold ${stats.conversions.isPositive ? "text-success" : "text-destructive"}`}
-                                                        >
-                                                            {stats.conversions.change > 0 ? "+" : ""}
-                                                            {stats.conversions.change.toFixed(1)}%
-                                                        </span>
-                                                        <span className="text-sm text-[var(--muted-foreground)]">vs mes anterior</span>
-                                                    </div>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    Número de conversiones atribuidas a las campañas en el periodo.
-                                                </TooltipContent>
-                                            </Tooltip>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                    <Card className="rounded-[16px] border-primary/5 shadow-sm col-span-1">
+                                        <CardContent className="p-4">
+                                            <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Período activo</p>
+                                            <p className="text-lg font-bold text-foreground mt-1">{totalTimelineDays} días</p>
+                                            <p className="text-[10px] text-muted-foreground mt-0.5">
+                                                {new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} — {new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
+                                            </p>
                                         </CardContent>
                                     </Card>
                                 </div>
                             )}
 
-                            {/* Contenedor principal: Ranking (1/4) + Gráfico (3/4) */}
-                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                                {/* Ranking de Influencers - 1/4 */}
-                                <Card className="lg:col-span-1 rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                    <CardHeader className="space-y-1">
-                                        <CardTitle className="text-[18px] font-bold text-foreground flex items-center gap-2">
-                                            <IconTrophy className="w-5 h-5 text-accent" />
-                                            Ranking Top Influencers
+                            {/* Ranking + Chart */}
+                            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                                {/* Ranking */}
+                                <Card className="lg:col-span-1 rounded-[20px] border-primary/5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardHeader className="pb-2 px-5 pt-5">
+                                        <CardTitle className="text-[16px] font-bold text-foreground flex items-center gap-2">
+                                            <IconCrown className="w-4 h-4 text-amber-500" />
+                                            Top Influencers
                                         </CardTitle>
-                                        <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
-                                            Desde {startDate} hasta {endDate}
+                                        <CardDescription className="text-[12px] text-muted-foreground">
+                                            {influencerRanking.length > 0 ? `Ranking de ${influencerRanking.length} influencers` : "Sin datos"}
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="p-4">
                                         {influencerRanking.length === 0 ? (
-                                            <div className="flex items-center justify-center h-[400px] text-[var(--muted-foreground)] text-sm">
-                                                <p>No hay datos disponibles</p>
-                                            </div>
+                                            <div className="flex items-center justify-center h-[300px] text-muted-foreground text-sm">No hay datos disponibles</div>
                                         ) : (
-                                            <div className="space-y-3 max-h-[500px] overflow-y-auto">
-                                                {influencerRanking.map((influencer) => (
-                                                    <div
-                                                        key={influencer.id}
-                                                        className={cn(
-                                                            "flex items-start gap-3 p-3 rounded-xl transition-all hover:bg-primary/10 cursor-pointer",
-                                                            influencer.rank <= 3 &&
-                                                                "bg-gradient-to-r from-accent/10 to-transparent border border-accent/20"
-                                                        )}
-                                                    >
-                                                        {/* Rank */}
-                                                        <div
-                                                            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm"
-                                                            style={{
-                                                                backgroundColor:
-                                                                    influencer.rank === 1
-                                                                        ? "#FFD700"
-                                                                        : influencer.rank === 2
-                                                                          ? "#C0C0C0"
-                                                                          : influencer.rank === 3
-                                                                            ? "#CD7F32"
-                                                                            : "#E6F0FF",
-                                                                            color: influencer.rank <= 3 ? "#1A1A2E" : "#1E90FF",
-                                                            }}
-                                                        >
-                                                            {influencer.rank === 1 ? <IconCrown className="w-4 h-4" /> : influencer.rank}
-                                                        </div>
-
-                                                        {/* Información del influencer */}
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <Avatar className="w-8 h-8">
-                                                                    <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                                                                        {influencer.name
-                                                                            .split(" ")
-                                                                            .map((n) => n[0])
-                                                                            .join("")
-                                                                            .toUpperCase()
-                                                                            .slice(0, 2)}
-                                                                    </AvatarFallback>
-                                                                </Avatar>
+                                            <div className="space-y-2 max-h-[460px] overflow-y-auto pr-1">
+                                                {influencerRanking.map((inf) => {
+                                                    const maxViews = Math.max(...influencerRanking.map((i) => i.totalViews), 1);
+                                                    const barWidth = (inf.totalViews / maxViews) * 100;
+                                                    return (
+                                                        <div key={inf.id} className={cn(
+                                                            "p-3 rounded-xl transition-all hover:bg-primary/5",
+                                                            inf.rank <= 3 && "bg-gradient-to-r from-amber-50/80 to-transparent border border-amber-200/50"
+                                                        )}>
+                                                            <div className="flex items-start gap-2.5">
+                                                                <div className={cn(
+                                                                    "flex-shrink-0 flex items-center justify-center w-7 h-7 rounded-full text-[11px] font-bold",
+                                                                    inf.rank === 1 ? "bg-amber-400 text-amber-950" : inf.rank === 2 ? "bg-gray-300 text-gray-700" : inf.rank === 3 ? "bg-orange-300 text-orange-900" : "bg-primary/10 text-primary"
+                                                                )}>
+                                                                    {inf.rank === 1 ? <IconCrown className="w-3.5 h-3.5" /> : inf.rank}
+                                                                </div>
                                                                 <div className="flex-1 min-w-0">
-                                                                    <p className="text-sm font-semibold text-[var(--foreground)] truncate">
-                                                                        {influencer.name}
-                                                                    </p>
-                                                                    {influencer.niche && (
-                                                                        <p className="text-xs text-[var(--muted-foreground)] truncate">
-                                                                            {influencer.niche}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-
-                                                            {/* Métricas */}
-                                                            <div className="mt-2 space-y-1">
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[var(--muted-foreground)]">Views:</span>
-                                                                    <span className="font-semibold text-[var(--foreground)]">
-                                                                        {(influencer.totalViews / 1000).toFixed(0)}k
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[var(--muted-foreground)]">Engagement:</span>
-                                                                    <Badge
-                                                                        variant="secondary"
-                                                                        className="text-xs px-1.5 py-0 bg-primary/10 text-primary"
-                                                                    >
-                                                                        {influencer.engagementRate.toFixed(1)}%
-                                                                    </Badge>
-                                                                </div>
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[var(--muted-foreground)]">Conversiones:</span>
-                                                                    <span className="font-semibold text-foreground">
-                                                                        {influencer.totalConversions.toLocaleString()}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center justify-between text-xs">
-                                                                    <span className="text-[var(--muted-foreground)]">ROI:</span>
-                                                                    <Badge
-                                                                        variant="secondary"
-                                                                        className={cn(
-                                                                            "text-xs px-1.5 py-0",
-                                                                            influencer.roi > 50
-                                                                                ? "bg-success/10 text-success"
-                                                                                : influencer.roi > 0
-                                                                                  ? "bg-accent/10 text-accent"
-                                                                                  : "bg-destructive/10 text-destructive"
-                                                                        )}
-                                                                    >
-                                                                        {influencer.roi > 0 ? "+" : ""}
-                                                                        {influencer.roi.toFixed(1)}%
-                                                                    </Badge>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <Avatar className="w-6 h-6">
+                                                                            <AvatarFallback className="bg-primary/10 text-primary text-[9px] font-semibold">
+                                                                                {inf.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)}
+                                                                            </AvatarFallback>
+                                                                        </Avatar>
+                                                                        <p className="text-sm font-semibold text-foreground truncate">{inf.name}</p>
+                                                                    </div>
+                                                                    {inf.niche && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{inf.niche}</p>}
+                                                                    {/* Mini bar */}
+                                                                    <div className="mt-1.5 h-1.5 bg-primary/5 rounded-full overflow-hidden">
+                                                                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-[#8B5CF6]" style={{ width: `${barWidth}%` }} />
+                                                                    </div>
+                                                                    <div className="flex items-center justify-between mt-1 text-[10px]">
+                                                                        <span className="text-muted-foreground">{fmt(inf.totalViews)} vistas</span>
+                                                                        <Badge variant="secondary" className={cn(
+                                                                            "text-[9px] px-1.5 py-0 h-4",
+                                                                            inf.roi > 50 ? "bg-green-100 text-green-700" : inf.roi > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                                                                        )}>
+                                                                            {inf.roi > 0 ? "+" : ""}{inf.roi.toFixed(0)}% ROI
+                                                                        </Badge>
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         )}
                                     </CardContent>
                                 </Card>
 
-                                {/* Gráfico principal - 3/4 */}
-                                <Card className="lg:col-span-3 rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                    <CardHeader>
-                                        <div className="flex items-center justify-between">
+                                {/* Chart */}
+                                <Card className="lg:col-span-3 rounded-[20px] border-primary/5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardHeader className="pb-2 px-5 pt-5">
+                                        <div className="flex items-center justify-between flex-wrap gap-3">
                                             <div>
-                                                <CardTitle className="text-[18px] font-bold text-foreground">
-                                                    Evolución del impacto de campaña
-                                                </CardTitle>
-                                                <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
-                                                    Vistas, Engagement y Conversiones por día - desde {startDate} hasta {endDate}
+                                                <CardTitle className="text-[16px] font-bold text-foreground">Evolución de métricas</CardTitle>
+                                                <CardDescription className="text-[12px] text-muted-foreground">
+                                                    {new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} — {new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
                                                 </CardDescription>
                                             </div>
-                                            <Button
-                                                variant="outline"
-                                                onClick={exportToExcel}
-                                                disabled={timeline.length === 0}
-                                                className="h-10 border-primary text-primary hover:bg-primary/10 rounded-2xl px-4"
-                                            >
-                                                <IconDownload className="w-4 h-4 mr-2" />
-                                                Descargar Excel
-                                            </Button>
+                                            <div className="flex items-center gap-1.5 bg-muted rounded-2xl p-1">
+                                                {["views", "likes", "shares", "conversions", "revenue", "engagement", "ctr"].map((m) => {
+                                                    const cfg = chartConfig[m as keyof typeof chartConfig];
+                                                    if (!cfg) return null;
+                                                    return (
+                                                        <button key={m} onClick={() => setChartMetric(m)} className={cn(
+                                                            "px-2.5 py-1 rounded-xl text-[10px] font-medium transition-all",
+                                                            chartMetric === m ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                        )}>
+                                                            {cfg.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
+                                    <CardContent className="px-2 pt-2 sm:px-5 sm:pt-4">
                                         {timeline.length === 0 ? (
-                                            <div className="flex items-center justify-center h-[400px] text-[var(--muted-foreground)]">
-                                                <p>No hay datos disponibles para el período seleccionado</p>
-                                            </div>
+                                            <div className="flex items-center justify-center h-[350px] text-muted-foreground text-sm">No hay datos para el período seleccionado</div>
                                         ) : (
-                                            <ChartContainer config={chartConfig} className="aspect-auto h-[400px] w-full">
-                                                <AreaChart data={timeline} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                            <ChartContainer config={chartConfig} className="aspect-auto h-[350px] w-full">
+                                                <AreaChart data={timeline} margin={{ top: 5, right: 8, left: -10, bottom: 0 }}>
                                                     <defs>
-                                                        {selectedPlatformIds.length > 0 ? (
-                                                            // Gradientes para cada plataforma seleccionada
-                                                            selectedPlatformIds.map((platformId) => {
-                                                                const platform = platforms.find((p) => p.id === platformId);
-                                                                if (!platform) return null;
-                                                                const color = platformColors[platformId] || "#6C48C5";
-                                                                return (
-                                                                    <linearGradient
-                                                                        key={`fill_${platform.code}`}
-                                                                        id={`fill_${platform.code}`}
-                                                                        x1="0"
-                                                                        y1="0"
-                                                                        x2="0"
-                                                                        y2="1"
-                                                                    >
-                                                                        <stop offset="5%" stopColor={color} stopOpacity={0.8} />
-                                                                        <stop offset="95%" stopColor={color} stopOpacity={0.1} />
-                                                                    </linearGradient>
-                                                                );
-                                                            })
-                                                        ) : (
-                                                            // Gradientes para métricas consolidadas
-                                                            <>
-                                                                <linearGradient id="fillViews" x1="0" y1="0" x2="0" y2="1">
-                                                                    <stop offset="5%" stopColor="#6C48C5" stopOpacity={0.8} />
-                                                                    <stop offset="95%" stopColor="#6C48C5" stopOpacity={0.1} />
-                                                                </linearGradient>
-                                                                <linearGradient id="fillEngagement" x1="0" y1="0" x2="0" y2="1">
-                                                                    <stop offset="5%" stopColor="#C68FFF" stopOpacity={0.8} />
-                                                                    <stop offset="95%" stopColor="#C68FFF" stopOpacity={0.1} />
-                                                                </linearGradient>
-                                                                <linearGradient id="fillConversions" x1="0" y1="0" x2="0" y2="1">
-                                                                    <stop offset="5%" stopColor="#4CAF50" stopOpacity={0.8} />
-                                                                    <stop offset="95%" stopColor="#4CAF50" stopOpacity={0.1} />
-                                                                </linearGradient>
-                                                            </>
-                                                        )}
+                                                        <linearGradient id="fillMetric" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop offset="5%" stopColor={chartMetricConfig.color || "#6C48C5"} stopOpacity={0.35} />
+                                                            <stop offset="95%" stopColor={chartMetricConfig.color || "#6C48C5"} stopOpacity={0.03} />
+                                                        </linearGradient>
                                                     </defs>
-                                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#E8DEFF" />
+                                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F0ECF9" />
                                                     <XAxis
                                                         dataKey="date"
                                                         tickLine={false}
                                                         axisLine={false}
-                                                        tickMargin={8}
-                                                        minTickGap={32}
-                                                        tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                                                        tickFormatter={(value) => formatDate(value)}
+                                                        tickMargin={6}
+                                                        minTickGap={40}
+                                                        tick={{ fill: "#94A3B8", fontSize: 11 }}
+                                                        tickFormatter={(v) => formatDate(v)}
                                                     />
                                                     <YAxis
                                                         tickLine={false}
                                                         axisLine={false}
-                                                        tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
-                                                        tickFormatter={(value) => {
-                                                            if (value >= 1000) {
-                                                                return `${(value / 1000).toFixed(1)}k`;
-                                                            }
-                                                            return value.toString();
+                                                        tick={{ fill: "#94A3B8", fontSize: 11 }}
+                                                        tickFormatter={(v) => {
+                                                            if (["engagement", "ctr"].includes(chartMetric)) return `${v.toFixed(1)}%`;
+                                                            if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+                                                            if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
+                                                            return v.toString();
                                                         }}
+                                                        width={45}
                                                     />
                                                     <ChartTooltip
                                                         cursor={false}
-                                                        content={
-                                                            <ChartTooltipContent
-                                                                labelFormatter={(value) => {
-                                                                    return formatDate(value as string);
-                                                                }}
-                                                                indicator="dot"
-                                                            />
-                                                        }
+                                                        content={<ChartTooltipContent
+                                                            labelFormatter={(v) => formatDate(v as string)}
+                                                            formatter={(value, name) => {
+                                                                const cfg = chartConfig[name as keyof typeof chartConfig];
+                                                                const label = cfg?.label || name;
+                                                                if (["engagement", "ctr"].includes(name as string)) return [`${Number(value).toFixed(2)}%`, label];
+                                                                return [Number(value).toLocaleString("es-ES"), label];
+                                                            }}
+                                                            indicator="dot"
+                                                        />}
                                                     />
-                                                    {selectedPlatformIds.length > 0 ? (
-                                                        // Si hay plataformas seleccionadas, mostrar áreas por plataforma (solo vistas para comparar)
+                                                    {selectedPlatformIds.length > 1 ? (
                                                         selectedPlatformIds.map((platformId) => {
                                                             const platform = platforms.find((p) => p.id === platformId);
                                                             if (!platform) return null;
@@ -1128,52 +806,25 @@ export default function DashboardPage() {
                                                                     key={`views_${platform.code}`}
                                                                     dataKey={`views_${platform.code}`}
                                                                     type="natural"
-                                                                    fill={`url(#fill_${platform.code})`}
+                                                                    fill={`url(#fillMetric)`}
                                                                     stroke={color}
                                                                     strokeWidth={2}
                                                                     name={`Vistas ${platform.name}`}
-                                                                    stackId={selectedPlatformIds.length > 1 ? "a" : undefined}
-                                                                >
-                                                                    <LabelList dataKey={`views_${platform.code}`} position="top" />
-                                                                </Area>
+                                                                    stackId="a"
+                                                                />
                                                             );
                                                         })
                                                     ) : (
-                                                        // Si no hay plataformas seleccionadas, mostrar áreas consolidadas con labels
-                                                        <>
-                                                            <Area
-                                                                dataKey="views"
-                                                                type="natural"
-                                                                fill="url(#fillViews)"
-                                                                stroke="#6C48C5"
-                                                                strokeWidth={2}
-                                                                name="Vistas"
-                                                            >
-                                                                <LabelList dataKey="views" position="top" />
-                                                            </Area>
-                                                            <Area
-                                                                dataKey="engagement"
-                                                                type="natural"
-                                                                fill="url(#fillEngagement)"
-                                                                stroke="#C68FFF"
-                                                                strokeWidth={2}
-                                                                name="Engagement (%)"
-                                                            >
-                                                                <LabelList dataKey="engagement" position="top" />
-                                                            </Area>
-                                                            <Area
-                                                                dataKey="conversions"
-                                                                type="natural"
-                                                                fill="url(#fillConversions)"
-                                                                stroke="#4CAF50"
-                                                                strokeWidth={2}
-                                                                name="Conversiones"
-                                                            >
-                                                                <LabelList dataKey="conversions" position="top" />
-                                                            </Area>
-                                                        </>
+                                                        <Area
+                                                            dataKey={chartDataKey}
+                                                            type="natural"
+                                                            fill="url(#fillMetric)"
+                                                            stroke={chartMetricConfig.color || "#6C48C5"}
+                                                            strokeWidth={2.5}
+                                                            name={chartMetric}
+                                                        />
                                                     )}
-                                                    <ChartLegend content={<ChartLegendContent />} />
+                                                    {selectedPlatformIds.length <= 1 && <ChartLegend content={<ChartLegendContent />} />}
                                                 </AreaChart>
                                             </ChartContainer>
                                         )}
