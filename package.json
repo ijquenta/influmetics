@@ -11,6 +11,7 @@
         "prisma:migrate": "prisma migrate dev",
         "prisma:studio": "prisma studio",
         "prisma:seed": "curl -X POST http://localhost:3000/api/data/seed",
+        "seed:admin": "curl -X POST http://localhost:3000/api/auth/create-user -H 'Content-Type: application/json' -d '{\"email\":\"admin@influmetics.com\",\"password\":\"123456\",\"name\":\"Admin\",\"role\":\"admin\",\"company\":\"Influmetics\"}'",
         "format": "prettier --write \"**/*.{js,ts,jsx,tsx,css,html,json}\""
     },
     "dependencies": {
