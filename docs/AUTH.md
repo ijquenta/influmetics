@@ -91,24 +91,60 @@ export async function GET() {
 
 ## Cómo crear un nuevo usuario
 
-```
-Desde el frontend:
-  signup-form.tsx → usa useAuth().signup(email, password, name, role?, company?)
-  El trigger handle_new_user() crea el perfil automáticamente en profiles
+### Opción 1 — Desde el frontend (signup)
 
-Desde Supabase Dashboard:
-  Authentication > Users > Invite user
-  Luego editar profiles.role en Table Editor si necesitas cambiar el rol
+El formulario `/signup` crea usuarios con rol `growth_manager` por defecto.
+
 ```
+useAuth().signup(email, password, name, role?, company?)
+```
+
+### Opción 2 — Desde Supabase Dashboard
+
+1. Authentication > Users > Invite user
+2. Luego editar `profiles.role` en Table Editor si necesitas cambiar el rol
+
+### Opción 3 — API endpoint (solo para admins)
+
+```bash
+curl -X POST http://localhost:3000/api/auth/create-user \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "admin@influmetics.com",
+    "password": "123456",
+    "name": "Admin",
+    "role": "admin",
+    "company": "Influmetics"
+  }'
+```
+
+> ⚠️ Este endpoint requiere una cookie de sesión de un usuario **admin**.
+> Primero inicia sesión como admin, luego ejecuta el curl desde el mismo navegador,
+> o usa `--cookie` con el token de sesión.
 
 ---
 
 ## Cómo hacer admin a alguien
 
+### Opción 1 — Supabase Dashboard (rápido)
+
 1. Ve a **Supabase Dashboard > Table Editor > profiles**
 2. Busca el usuario por email
-3. Cambia la celda `role` de `growth_manager` a `admin`
+3. Cambia `role` de `growth_manager` a `admin`
 4. Guarda — el cambio es inmediato, no necesita relogin
+
+### Opción 2 — Seed inicial (primera vez)
+
+Si es tu primera vez y no hay ningún admin todavía, ejecuta el seed:
+
+```bash
+npm run seed:admin
+```
+
+Esto ejecuta el endpoint `/api/auth/create-user` con las credenciales de
+`.env`. Si aún no hay admin, registra primero un usuario normal en `/signup`,
+cámbiale el rol a admin manualmente en Supabase, y luego usa ese admin para
+crear más usuarios desde la API.
 
 ---
 
