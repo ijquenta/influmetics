@@ -53,75 +53,6 @@ interface InfluencerRanking {
     roi: number;
 }
 
-// Generar datos dummy para el mes seleccionado
-const generateDummyData = (
-    year: number,
-    month: number,
-    selectedPlatformIds: number[] = [],
-    platforms: Array<{ id: number; code: string }> = []
-): TimelineData[] => {
-    const daysInMonth = new Date(year, month, 0).getDate();
-    const data: TimelineData[] = [];
-
-    for (let day = 1; day <= daysInMonth; day++) {
-        const date = new Date(year, month - 1, day);
-        const dateString = date.toISOString().split("T")[0];
-
-        // Agregar variación diaria
-        const dayVariation = Math.sin((day / daysInMonth) * Math.PI * 2) * 0.3 + 1;
-
-        // Si hay plataformas seleccionadas, generar datos por plataforma
-        if (selectedPlatformIds.length > 0) {
-            const item: TimelineData = {
-                date: dateString,
-                views: 0,
-                engagement: 0,
-                conversions: 0,
-            };
-
-            selectedPlatformIds.forEach((platformId) => {
-                const platform = platforms.find((p) => p.id === platformId);
-                if (platform) {
-                    // Generar valores aleatorios pero realistas por plataforma
-                    const baseViews = (10000 + Math.random() * 50000) / selectedPlatformIds.length;
-                    const baseEngagement = 2 + Math.random() * 8; // 2-10%
-                    const baseConversions = (50 + Math.random() * 200) / selectedPlatformIds.length;
-
-                    item[`views_${platform.code}`] = Math.round(baseViews * dayVariation);
-                    item[`engagement_${platform.code}`] = Number((baseEngagement * dayVariation).toFixed(2));
-                    item[`conversions_${platform.code}`] = Math.round(baseConversions * dayVariation);
-
-                    // Acumular para los totales
-                    item.views += Math.round(baseViews * dayVariation);
-                    item.conversions += Math.round(baseConversions * dayVariation);
-                }
-            });
-
-            // Calcular engagement total promedio
-            item.engagement =
-                selectedPlatformIds.length > 0
-                    ? Number((((item.views > 0 ? item.views * 0.06 : 0) / item.views) * 100).toFixed(2))
-                    : Number((2 + Math.random() * 8).toFixed(2));
-
-            data.push(item);
-        } else {
-            // Si no hay plataformas seleccionadas, generar datos consolidados
-            const baseViews = 10000 + Math.random() * 50000;
-            const baseEngagement = 2 + Math.random() * 8; // 2-10%
-            const baseConversions = 50 + Math.random() * 200;
-
-            data.push({
-                date: dateString,
-                views: Math.round(baseViews * dayVariation),
-                engagement: Number((baseEngagement * dayVariation).toFixed(2)),
-                conversions: Math.round(baseConversions * dayVariation),
-            });
-        }
-    }
-
-    return data;
-};
-
 export default function DashboardPage() {
     const today = new Date();
     const currentYear = today.getFullYear();
@@ -252,7 +183,6 @@ export default function DashboardPage() {
             setInfluencerRanking(data.data || []);
         } catch (error) {
             console.error("Error fetching influencer ranking:", error);
-            // En caso de error, dejar vacío o usar datos dummy
             setInfluencerRanking([]);
         }
     }, [startDate, endDate, selectedPlatformIds, selectedCampaignId]);
@@ -283,17 +213,15 @@ export default function DashboardPage() {
             setLoading(true);
             const params = new URLSearchParams();
 
-            // Fechas basadas en los filtros de inicio/fin
             if (startDate && endDate) {
                 params.append("startDate", new Date(startDate).toISOString());
                 params.append("endDate", new Date(endDate).toISOString());
             }
 
-            // Filtro por campaña
             if (selectedCampaignId && selectedCampaignId !== "all") {
                 params.append("campaignId", selectedCampaignId);
             }
-            // Agregar múltiples plataformas
+
             if (selectedPlatformIds.length > 0) {
                 selectedPlatformIds.forEach((id) => {
                     params.append("socialPlatformId", id.toString());
@@ -301,58 +229,16 @@ export default function DashboardPage() {
             }
 
             const res = await fetch(`/api/dashboard/stats?${params.toString()}`);
-            const data = await res.json();
 
-            // Si no hay stats, generar datos dummy
-            if (!data.data) {
-                const yearNum = currentYear;
-                const monthNum = currentMonth;
-                const dummyTimeline = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms);
-                const totalViews = dummyTimeline.reduce((sum, item) => sum + item.views, 0);
-                const avgEngagement = dummyTimeline.reduce((sum, item) => sum + item.engagement, 0) / dummyTimeline.length;
-                const totalConversions = dummyTimeline.reduce((sum, item) => sum + item.conversions, 0);
-                const totalClicks = Math.round(totalViews * 0.05); // 5% CTR
-                const totalRevenue = totalConversions * 150; // $150 por conversión
-
-                setStats({
-                    reach: { value: totalViews, change: 12.5, isPositive: true },
-                    engagement: { value: avgEngagement, change: 5.3, isPositive: true },
-                    clicks: { value: totalClicks, change: 8.2, isPositive: true },
-                    conversions: {
-                        value: totalConversions,
-                        change: 15.7,
-                        isPositive: true,
-                    },
-                    ctr: { value: 5.0, change: 0, isPositive: true },
-                    revenue: { value: totalRevenue, change: 18.4, isPositive: true },
-                });
-            } else {
-                setStats(data.data);
+            if (!res.ok) {
+                throw new Error(`Error ${res.status}: ${res.statusText}`);
             }
+
+            const data = await res.json();
+            setStats(data.data || null);
         } catch (error) {
             console.error("Error fetching stats:", error);
-            // En caso de error, generar stats dummy
-            const yearNum = currentYear;
-            const monthNum = currentMonth;
-            const dummyTimeline = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms);
-            const totalViews = dummyTimeline.reduce((sum, item) => sum + item.views, 0);
-            const avgEngagement = dummyTimeline.reduce((sum, item) => sum + item.engagement, 0) / dummyTimeline.length;
-            const totalConversions = dummyTimeline.reduce((sum, item) => sum + item.conversions, 0);
-            const totalClicks = Math.round(totalViews * 0.05);
-            const totalRevenue = totalConversions * 150;
-
-            setStats({
-                reach: { value: totalViews, change: 12.5, isPositive: true },
-                engagement: { value: avgEngagement, change: 5.3, isPositive: true },
-                clicks: { value: totalClicks, change: 8.2, isPositive: true },
-                conversions: {
-                    value: totalConversions,
-                    change: 15.7,
-                    isPositive: true,
-                },
-                ctr: { value: 5.0, change: 0, isPositive: true },
-                revenue: { value: totalRevenue, change: 18.4, isPositive: true },
-            });
+            setStats(null);
         } finally {
             setLoading(false);
         }
@@ -362,18 +248,16 @@ export default function DashboardPage() {
         try {
             const params = new URLSearchParams();
 
-            // Fechas basadas en los filtros de inicio/fin
             if (startDate && endDate) {
                 params.append("startDate", new Date(startDate).toISOString());
                 params.append("endDate", new Date(endDate).toISOString());
             }
             params.append("groupBy", "day");
 
-            // Filtro por campaña
             if (selectedCampaignId) {
                 params.append("campaignId", selectedCampaignId);
             }
-            // Agregar múltiples plataformas
+
             if (selectedPlatformIds.length > 0) {
                 selectedPlatformIds.forEach((id) => {
                     params.append("socialPlatformId", id.toString());
@@ -381,93 +265,25 @@ export default function DashboardPage() {
             }
 
             const res = await fetch(`/api/dashboard/timeline?${params.toString()}`);
+
+            if (!res.ok) {
+                throw new Error(`Error ${res.status}: ${res.statusText}`);
+            }
+
             const data = await res.json();
-            let timelineData = data.data || [];
+            const timelineData = data.data || [];
 
-            // Si no hay datos, generar datos dummy
-            if (timelineData.length === 0) {
-                const yearNum = currentYear;
-                const monthNum = currentMonth;
-                timelineData = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms);
-                console.log("Using dummy data for timeline", timelineData.length);
-            }
+            const validatedData = timelineData.map((item: TimelineData) => ({
+                date: item.date || "",
+                views: typeof item.views === "number" && !isNaN(item.views) ? item.views : 0,
+                engagement: typeof item.engagement === "number" && !isNaN(item.engagement) ? item.engagement : 0,
+                conversions: typeof item.conversions === "number" && !isNaN(item.conversions) ? item.conversions : 0,
+            }));
 
-            // Validar y asegurar que los datos tengan el formato correcto
-            let validatedData = timelineData.map((item: TimelineData) => {
-                const validated: TimelineData = {
-                    date: item.date || "",
-                    views: typeof item.views === "number" && !isNaN(item.views) ? item.views : 0,
-                    engagement: typeof item.engagement === "number" && !isNaN(item.engagement) ? item.engagement : 0,
-                    conversions: typeof item.conversions === "number" && !isNaN(item.conversions) ? item.conversions : 0,
-                };
-
-                // Agregar datos por plataforma si existen o generar valores por defecto
-                if (selectedPlatformIds.length > 0 && platforms.length > 0) {
-                    selectedPlatformIds.forEach((platformId) => {
-                        const platform = platforms.find((p) => p.id === platformId);
-                        if (platform) {
-                            const viewsKey = `views_${platform.code}`;
-                            const engagementKey = `engagement_${platform.code}`;
-                            const conversionsKey = `conversions_${platform.code}`;
-
-                            const viewsValue = item[viewsKey as keyof TimelineData];
-                            const engagementValue = item[engagementKey as keyof TimelineData];
-                            const conversionsValue = item[conversionsKey as keyof TimelineData];
-
-                            // Validar y asignar valores para vistas
-                            if (typeof viewsValue === "number" && !isNaN(viewsValue) && viewsValue >= 0) {
-                                validated[viewsKey] = viewsValue;
-                            } else {
-                                // Si no hay valor, dividir el total entre las plataformas
-                                validated[viewsKey] =
-                                    validated.views > 0
-                                        ? Math.round(validated.views / selectedPlatformIds.length)
-                                        : Math.round((10000 + Math.random() * 50000) / selectedPlatformIds.length);
-                            }
-
-                            // Validar y asignar valores para engagement
-                            if (typeof engagementValue === "number" && !isNaN(engagementValue) && engagementValue >= 0) {
-                                validated[engagementKey] = engagementValue;
-                            } else {
-                                validated[engagementKey] =
-                                    validated.engagement > 0 ? validated.engagement : Number((2 + Math.random() * 8).toFixed(2));
-                            }
-
-                            // Validar y asignar valores para conversiones
-                            if (typeof conversionsValue === "number" && !isNaN(conversionsValue) && conversionsValue >= 0) {
-                                validated[conversionsKey] = conversionsValue;
-                            } else {
-                                validated[conversionsKey] =
-                                    validated.conversions > 0
-                                        ? Math.round(validated.conversions / selectedPlatformIds.length)
-                                        : Math.round((50 + Math.random() * 200) / selectedPlatformIds.length);
-                            }
-                        }
-                    });
-                }
-
-                return validated;
-            });
-
-            // Asegurar que haya al menos un dato válido
-            if (validatedData.length === 0) {
-                const yearNum = currentYear;
-                const monthNum = currentMonth;
-                validatedData = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms);
-            }
-
-            console.log("Timeline data:", validatedData.length, "items"); // Debug
-            console.log("Sample data:", validatedData[0]); // Debug
-            console.log("First item keys:", Object.keys(validatedData[0] || {})); // Debug
-            console.log("Selected platforms:", selectedPlatformIds); // Debug
             setTimeline(validatedData);
         } catch (error) {
             console.error("Error fetching timeline:", error);
-            // En caso de error, usar datos dummy
-            const yearNum = currentYear;
-            const monthNum = currentMonth;
-            const dummyData = generateDummyData(yearNum, monthNum, selectedPlatformIds, platforms);
-            setTimeline(dummyData);
+            setTimeline([]);
         }
     };
 
