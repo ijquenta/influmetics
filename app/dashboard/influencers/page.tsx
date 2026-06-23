@@ -250,7 +250,7 @@ export default function InfluencersPage() {
 
                                     <Button
                                         variant="outline"
-                                        onClick={() => router.push("/dashboard/influencers/simulation")}
+                                        onClick={() => router.push("/dashboard/influencers/analysis")}
                                         className="border-primary text-primary hover:bg-primary/10 rounded-2xl px-6"
                                     >
                                         Recuperar desde Red Social
@@ -297,9 +297,7 @@ export default function InfluencersPage() {
                                                     <TableRow>
                                                         <TableHead className="text-foreground font-semibold">Nombre</TableHead>
                                                         <TableHead className="text-foreground font-semibold hidden md:table-cell">Nicho</TableHead>
-                                                        <TableHead className="text-foreground font-semibold hidden lg:table-cell">
-                                                            Código
-                                                        </TableHead>
+                                                        <TableHead className="text-foreground font-semibold text-center w-20">Campañas</TableHead>
                                                         <TableHead className="text-foreground font-semibold">Redes Sociales</TableHead>
                                                         <TableHead className="text-foreground font-semibold text-center w-24">Seguidores TT</TableHead>
                                                         <TableHead className="text-foreground font-semibold text-center w-20">Posts</TableHead>
@@ -313,12 +311,12 @@ export default function InfluencersPage() {
                                                         return (
                                                             <TableRow key={influencer.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}>
                                                                 <TableCell className="font-medium text-foreground">{influencer.name}</TableCell>
-                                                                <TableCell className="text-muted-foreground hidden md:table-cell">
-                                                                    {influencer.niche || <span className="text-muted-foreground/50">—</span>}
-                                                                </TableCell>
-                                                                <TableCell className="text-muted-foreground hidden lg:table-cell">
-                                                                    {influencer.referralCode || <span className="text-muted-foreground/50">—</span>}
-                                                                </TableCell>
+                                                                 <TableCell className="text-muted-foreground hidden md:table-cell">
+                                                                     {influencer.niche || <span className="text-muted-foreground/50">—</span>}
+                                                                 </TableCell>
+                                                                 <TableCell className="text-center text-muted-foreground">
+                                                                     {influencer._count?.influencerCampaigns ?? 0}
+                                                                 </TableCell>
                                                                 <TableCell>
                                                                     <div className="flex flex-wrap gap-2">
                                                                         {socialAccounts.length === 0 ? (

@@ -14,9 +14,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, LabelList, ResponsiveContainer } from "recharts";
-import { IconChevronDown } from "@tabler/icons-react";
+import { IconTrendingUp, IconTrendingDown, IconWallet, IconUsers, IconAlertCircle, IconChevronDown, IconLoader2, IconDownload, IconInfoCircle } from "@tabler/icons-react";
 import ExcelJS from "exceljs";
 import { toast } from "sonner";
+import { getROILabel, getROIColor } from "@/lib/roi";
 
 interface InfluencerOption {
     id: number;
@@ -43,6 +44,13 @@ interface RoiSummary {
     campaignName?: string | null;
     nau: number;
     roi: number;
+    views: number;
+    engagements: number;
+    engagementRate: number;
+    cpm: number | null;
+    cpe: number | null;
+    investment: number;
+    emv: number;
 }
 
 // Helper para formatear fechas al formato YYYY-MM-DD del input date
@@ -63,12 +71,14 @@ export default function RoiPage() {
     const chartConfig: ChartConfig = useMemo(
         () => ({
             roi: {
-                label: "NAU",
+                label: "EMV",
                 color: "#6C48C5",
             },
         }),
         []
     );
+
+    const LINE_COLORS = ["#6C48C5", "#10B981", "#F59E0B", "#3B82F6", "#EF4444"];
 
     const fetchInfluencers = async () => {
         try {
@@ -146,9 +156,36 @@ export default function RoiPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    // Timeline y summary: vacíos hasta que se conecte una fuente de datos real de NAU/ROI
-    const timeline = useMemo<RoiTimelinePoint[]>(() => [], []);
-    const summary = useMemo<RoiSummary[]>(() => [], []);
+    const [timeline, setTimeline] = useState<RoiTimelinePoint[]>([]);
+    const [summary, setSummary] = useState<RoiSummary[]>([]);
+    const [loadingRoi, setLoadingRoi] = useState(false);
+
+    const fetchRoiData = async () => {
+        setLoadingRoi(true);
+        try {
+            const params = new URLSearchParams({
+                startDate,
+                endDate,
+                campaignId: selectedCampaignId,
+            });
+            const res = await fetch(`/api/roi/calculate?${params}`);
+            const data = await res.json();
+            if (res.ok) {
+                setTimeline(data.timeline || []);
+                setSummary(data.summary || []);
+            }
+        } catch {
+            console.error("Error fetching ROI data");
+        } finally {
+            setLoadingRoi(false);
+        }
+    };
+
+    useEffect(() => {
+        if (influencers.length > 0) {
+            fetchRoiData();
+        }
+    }, [startDate, endDate, selectedCampaignId, influencers]);
 
     const selectedCampaignName = useMemo(() => {
         if (selectedCampaignId === "all") return "Todas las campañas";
@@ -167,12 +204,20 @@ export default function RoiPage() {
 
     const alerts = useMemo(() => summary.filter((item) => item.nau === 0 || item.roi < 0), [summary]);
 
-    // Top 5 influencers por ROI (ya viene ordenado desc en generateRoiDummyData)
+    // Top 5 influencers por ROI
     const topSummaryForChart = useMemo(() => summary.slice(0, 5), [summary]);
+
+    const totalInvestment = useMemo(() => summary.reduce((s, r) => s + r.investment, 0), [summary]);
+    const totalEMV = useMemo(() => summary.reduce((s, r) => s + r.emv, 0), [summary]);
+    const avgROI = useMemo(() => {
+        if (summary.length === 0) return 0;
+        return summary.reduce((s, r) => s + r.roi, 0) / summary.length;
+    }, [summary]);
+    const negativeCount = useMemo(() => summary.filter((r) => r.roi < 0 || r.nau === 0).length, [summary]);
 
     const exportTimelineToExcel = async () => {
         if (timeline.length === 0 || topSummaryForChart.length === 0) {
-            toast.error("No hay datos de NAU para exportar");
+            toast.error("No hay datos de EMV para exportar");
             return;
         }
 
@@ -191,7 +236,7 @@ export default function RoiPage() {
                     const key = inf.referralCode || `INF_${inf.influencerId}`;
                     const label = inf.referralCode ? `${inf.referralCode} / ${inf.name}` : inf.name;
                     const value = item[key as keyof RoiTimelinePoint];
-                    row[`NAU ${label}`] = typeof value === "number" && !Number.isNaN(value) ? value : 0;
+                    row[`EMV ${label}`] = typeof value === "number" && !Number.isNaN(value) ? value : 0;
                 });
 
                 return row;
@@ -199,7 +244,7 @@ export default function RoiPage() {
 
             // Usar ExcelJS para generar el archivo en el cliente
             const workbook = new ExcelJS.Workbook();
-            const ws = workbook.addWorksheet("NAU en el tiempo");
+            const ws = workbook.addWorksheet("EMV en el tiempo");
 
             const headers = Object.keys(excelData[0] || {});
             ws.addRow(headers);
@@ -213,7 +258,7 @@ export default function RoiPage() {
                 ws.getColumn(idx + 1).width = Math.min(50, maxLen + 2);
             });
 
-            const fileName = `ROI_NAU_Top5_${selectedCampaignName
+            const fileName = `ROI_EMV_Top5_${selectedCampaignName
                 .replace(/\s+/g, "_")
                 .replace(/[^a-zA-Z0-9_]/g, "")}_${startDate}_${endDate}.xlsx`;
 
@@ -248,421 +293,325 @@ export default function RoiPage() {
                 <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
-                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-[var(--background)] min-h-full">
-                            {/* Header y filtros */}
-                            <div className="flex flex-col gap-4 mb-4">
-                                <div>
-                                    <h1 className="text-[28px] font-bold text-[var(--foreground)] mb-2">Retorno y nuevos clientes por campaña</h1>
-                                    <p className="text-[16px] text-[var(--muted-foreground)]">
-                                        Analiza el retorno de la inversión (ROI) por influencer, código de referido y campaña.
-                                    </p>
+                        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
+                            {/* Header */}
+                            <div className="flex flex-col gap-1 mb-2">
+                                <h1 className="text-[28px] font-bold text-foreground">ROI y retorno de inversión</h1>
+                                <p className="text-[16px] text-muted-foreground">
+                                    Mide el retorno que genera cada influencer según sus métricas en TikTok y la inversión registrada.
+                                </p>
+                            </div>
+
+                            {/* KPI Cards */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardContent className="p-4 md:p-5">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                            <IconWallet className="w-4 h-4" />
+                                            <p className="text-[11px] font-medium uppercase tracking-wider">Inversión total</p>
+                                        </div>
+                                        <p className="text-[22px] font-bold text-foreground">
+                                            ${totalInvestment.toLocaleString("es-ES")}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">{summary.length} influencers</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardContent className="p-4 md:p-5">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                            <IconTrendingUp className="w-4 h-4" />
+                                            <p className="text-[11px] font-medium uppercase tracking-wider">Valor engagement</p>
+                                        </div>
+                                        <p className="text-[22px] font-bold text-foreground">
+                                            ${totalEMV.toLocaleString("es-ES")}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">Basado en EMV (vistas × CPM $8)</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardContent className="p-4 md:p-5">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                            <IconTrendingUp className="w-4 h-4" />
+                                            <p className="text-[11px] font-medium uppercase tracking-wider">ROI promedio</p>
+                                        </div>
+                                        <p className={`text-[22px] font-bold ${getROIColor(avgROI)}`}>
+                                            {avgROI >= 0 ? "+" : ""}{Math.round(avgROI)}%
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">{getROILabel(avgROI)}</p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardContent className="p-4 md:p-5">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                            <IconUsers className="w-4 h-4" />
+                                            <p className="text-[11px] font-medium uppercase tracking-wider">Influencers</p>
+                                        </div>
+                                        <p className="text-[22px] font-bold text-foreground">{summary.length}</p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                            {summary.filter((r) => r.roi > 0).length} con ROI positivo
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <CardContent className="p-4 md:p-5">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                                            <IconTrendingDown className="w-4 h-4" />
+                                            <p className="text-[11px] font-medium uppercase tracking-wider">Con pérdida</p>
+                                        </div>
+                                        <p className={`text-[22px] font-bold ${negativeCount > 0 ? "text-red-500" : "text-foreground"}`}>
+                                            {negativeCount}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                            {negativeCount > 0 ? "Revisar campañas" : "Sin incidencias"}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            {/* Filters */}
+                            <div className="flex flex-wrap gap-3 items-end">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Desde</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="h-10 w-[180px] justify-between rounded-2xl text-left font-normal">
+                                                {startDate
+                                                    ? new Date(startDate).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
+                                                    : "Seleccionar"}
+                                                <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={startDate ? new Date(startDate) : undefined} onSelect={(d) => d && setStartDate(formatDateForInput(d))} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
-
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    {/* Fecha inicio */}
-                                    <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Fecha inicio</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className="h-10 w-[220px] justify-between rounded-2xl text-left font-normal"
-                                                >
-                                                    {startDate
-                                                        ? new Date(startDate).toLocaleDateString("es-ES", {
-                                                            day: "2-digit",
-                                                            month: "short",
-                                                            year: "numeric",
-                                                        })
-                                                        : "Seleccionar fecha"}
-                                                    <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={startDate ? new Date(startDate) : undefined}
-                                                    onSelect={(date: Date | undefined) => {
-                                                        if (date) setStartDate(formatDateForInput(date));
-                                                    }}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-                                    {/* Fecha fin */}
-                                    <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Fecha fin</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    className="h-10 w-[220px] justify-between rounded-2xl text-left font-normal"
-                                                >
-                                                    {endDate
-                                                        ? new Date(endDate).toLocaleDateString("es-ES", {
-                                                            day: "2-digit",
-                                                            month: "short",
-                                                            year: "numeric",
-                                                        })
-                                                        : "Seleccionar fecha"}
-                                                    <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0" align="start">
-                                                <Calendar
-                                                    mode="single"
-                                                    selected={endDate ? new Date(endDate) : undefined}
-                                                    onSelect={(date: Date | undefined) => {
-                                                        if (date) setEndDate(formatDateForInput(date));
-                                                    }}
-                                                    initialFocus
-                                                />
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
-
-                                    {/* Campaña */}
-                                    <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Campaña</Label>
-                                        <Select
-                                            value={selectedCampaignId}
-                                            onValueChange={(value) => {
-                                                setSelectedCampaignId(value);
-
-                                                // Cuando se selecciona una campaña, seleccionar por defecto
-                                                // los códigos de referido que pertenecen a esa campaña (máx. 3).
-                                                const campaignIdNum = value !== "all" ? parseInt(value) : undefined;
-
-                                                if (campaignIdNum) {
-                                                    const campaignCodes = Array.from(
-                                                        new Set(
-                                                            influencers
-                                                                .filter((inf) => inf.campaignId === campaignIdNum && inf.referralCode)
-                                                                .map((inf) => inf.referralCode as string)
-                                                        )
-                                                    ).slice(0, 3);
-
-                                                    if (campaignCodes.length > 0) {
-                                                        setSelectedReferralCodes(campaignCodes);
-                                                    }
-                                                }
-                                            }}
-                                        >
-                                            <SelectTrigger className="h-10 w-[220px] rounded-2xl">
-                                                <SelectValue placeholder="Todas las campañas" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">Todas las campañas</SelectItem>
-                                                {Array.from(
-                                                    new Map(
-                                                        influencers
-                                                            .filter((inf) => inf.campaignId != null && inf.campaignName)
-                                                            .map((inf) => [
-                                                                inf.campaignId as number,
-                                                                {
-                                                                    id: inf.campaignId as number,
-                                                                    name: inf.campaignName as string,
-                                                                },
-                                                            ])
-                                                    ).values()
-                                                ).map((campaign) => (
-                                                    <SelectItem key={campaign.id} value={campaign.id.toString()}>
-                                                        {campaign.name}
-                                                    </SelectItem>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Hasta</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="h-10 w-[180px] justify-between rounded-2xl text-left font-normal">
+                                                {endDate
+                                                    ? new Date(endDate).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" })
+                                                    : "Seleccionar"}
+                                                <IconChevronDown className="ml-2 h-4 w-4 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar mode="single" selected={endDate ? new Date(endDate) : undefined} onSelect={(d) => d && setEndDate(formatDateForInput(d))} initialFocus />
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Campaña</Label>
+                                    <Select value={selectedCampaignId} onValueChange={(v) => {
+                                        setSelectedCampaignId(v);
+                                        if (v !== "all") {
+                                            const cid = parseInt(v);
+                                            const codes = Array.from(new Set(influencers.filter((i) => i.campaignId === cid && i.referralCode).map((i) => i.referralCode as string))).slice(0, 3);
+                                            if (codes.length > 0) setSelectedReferralCodes(codes);
+                                        }
+                                    }}>
+                                        <SelectTrigger className="h-10 w-[200px] rounded-2xl">
+                                            <SelectValue placeholder="Todas las campañas" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todas las campañas</SelectItem>
+                                            {Array.from(new Map(influencers.filter((i) => i.campaignId != null && i.campaignName).map((i) => [i.campaignId as number, { id: i.campaignId as number, name: i.campaignName as string }])).values()).map((c) => (
+                                                <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Código referido</Label>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" className="h-10 w-[240px] justify-between rounded-2xl">
+                                                {selectedReferralCodes.length === 0
+                                                    ? "Todos los códigos"
+                                                    : selectedReferralCodes.length <= 2
+                                                        ? selectedReferralCodes.join(", ")
+                                                        : `${selectedReferralCodes.length} códigos`}
+                                                <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[260px] p-3 rounded-2xl">
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-xs font-semibold text-foreground">Códigos</span>
+                                                {selectedReferralCodes.length > 0 && (
+                                                    <Button variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-primary" onClick={() => setSelectedReferralCodes([])}>Limpiar</Button>
+                                                )}
+                                            </div>
+                                            <div className="max-h-64 overflow-y-auto space-y-1">
+                                                {Array.from(new Map(influencers.filter((i) => i.referralCode).map((i) => [i.referralCode as string, `${i.referralCode} · ${i.name}${i.campaignName ? " · " + i.campaignName : ""}`])).entries()).map(([code, label]) => (
+                                                    <div key={code} className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-primary/10 cursor-pointer" onClick={() => setSelectedReferralCodes(selectedReferralCodes.includes(code) ? selectedReferralCodes.filter((c) => c !== code) : [...selectedReferralCodes, code])}>
+                                                        <Checkbox checked={selectedReferralCodes.includes(code)} className="border-primary data-[state=checked]:bg-primary" />
+                                                        <span className="text-xs text-foreground">{label}</span>
+                                                    </div>
                                                 ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {/* Código referido (multi-select) */}
-                                    <div className="flex items-center gap-2">
-                                        <Label className="text-xs text-[var(--muted-foreground)]">Código referido</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    role="combobox"
-                                                    className="h-10 w-[320px] justify-between rounded-2xl"
-                                                >
-                                                    {selectedReferralCodes.length === 0
-                                                        ? "Todos los códigos"
-                                                        : selectedReferralCodes.length <= 3
-                                                            ? selectedReferralCodes.join(", ")
-                                                            : `${selectedReferralCodes.length} códigos seleccionados`}
-                                                    <IconChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[260px] p-3 rounded-2xl">
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-xs font-semibold text-[var(--foreground)]">Códigos de referido</span>
-                                                    {selectedReferralCodes.length > 0 && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-6 px-2 text-[10px] text-primary"
-                                                            onClick={() => setSelectedReferralCodes([])}
-                                                        >
-                                                            Limpiar
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                                <div className="max-h-64 overflow-y-auto space-y-1">
-                                                    {Array.from(
-                                                        new Map(
-                                                            influencers
-                                                                .filter((inf) => inf.referralCode)
-                                                                .map((inf) => {
-                                                                    const key = inf.referralCode as string;
-                                                                    const label = inf.campaignName
-                                                                        ? `${key} · ${inf.name} · ${inf.campaignName}`
-                                                                        : `${key} · ${inf.name}`;
-                                                                    return [key, label] as [string, string];
-                                                                })
-                                                        ).entries()
-                                                    ).map(([code, label]) => {
-                                                        const checked = selectedReferralCodes.includes(code);
-                                                        return (
-                                                            <div
-                                                                key={code}
-                                                                className="flex items-center gap-2 px-1.5 py-1 rounded-lg hover:bg-primary/10 cursor-pointer"
-                                                                onClick={() => {
-                                                                    setSelectedReferralCodes(
-                                                                        checked
-                                                                            ? selectedReferralCodes.filter((c) => c !== code)
-                                                                            : [...selectedReferralCodes, code]
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <Checkbox
-                                                                    checked={checked}
-                                                                    onCheckedChange={(value) => {
-                                                                        const isChecked = Boolean(value);
-                                                                        setSelectedReferralCodes(
-                                                                            isChecked
-                                                                                ? [...selectedReferralCodes, code]
-                                                                                : selectedReferralCodes.filter((c) => c !== code)
-                                                                        );
-                                                                    }}
-                                                                    className="border-primary data-[state=checked]:bg-primary"
-                                                                />
-                                                                <span className="text-xs text-[var(--foreground)]">{label}</span>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                    </div>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 </div>
                             </div>
 
-                            {/* Sección principal: Gráfico arriba y tabla abajo */}
-                            <div className="grid grid-cols-1 gap-6">
-                                {/* Gráfico de línea NAU en el tiempo (full width) */}
-                                <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                    <CardHeader className="flex flex-row items-center justify-between gap-4">
-                                        <div>
-                                            <CardTitle className="text-[18px] font-bold text-[var(--foreground)]">
-                                                NAU en el tiempo (Top 5 por ROI)
-                                            </CardTitle>
-                                            <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
-                                                Evolución diaria del NAU por código referido / influencer.
-                                            </CardDescription>
-                                        </div>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={exportTimelineToExcel}
-                                            disabled={timeline.length === 0 || topSummaryForChart.length === 0}
-                                            className="h-9 rounded-2xl border-primary text-primary hover:bg-primary/10"
-                                        >
-                                            Descargar datos
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent className="h-[320px]">
-                                        {timeline.length === 0 ? (
-                                            <div className="flex items-center justify-center h-full text-[var(--muted-foreground)] text-sm">
-                                                No hay datos para mostrar.
-                                            </div>
-                                        ) : (
-                                            <ChartContainer config={chartConfig} className="h-full w-full">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <LineChart data={timeline} margin={{ top: 16, right: 24, left: 0, bottom: 8 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6F0FF" />
-                                                        <XAxis
-                                                            dataKey="date"
-                                                            tickLine={false}
-                                                            axisLine={false}
-                                                            tickMargin={8}
-                                                            minTickGap={32}
-                                                            tick={{ fill: "#A0B8D0", fontSize: 12 }}
-                                                            tickFormatter={(value) => formatDate(value as string)}
-                                                        />
-                                                        <YAxis
-                                                            tickLine={false}
-                                                            axisLine={false}
-                                                            tick={{ fill: "#A0B8D0", fontSize: 12 }}
-                                                            tickFormatter={(value) =>
-                                                                value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value.toString()
-                                                            }
-                                                        />
-                                                        <ChartTooltip
-                                                            cursor={false}
-                                                            content={
-                                                                <ChartTooltipContent
-                                                                    labelFormatter={(value) => formatDate(value as string)}
-                                                                    indicator="dot"
-                                                                />
-                                                            }
-                                                        />
-                                                        {/* Una línea por código referido / influencer (Top 5 por ROI) */}
-                                                        {topSummaryForChart.map((row) => {
-                                                            const key = row.referralCode || `INF_${row.influencerId}`;
-                                                            return (
-                                                                <Line
-                                                                    key={key}
-                                                                    type="monotone"
-                                                                    dataKey={key}
-                                                                    name={
-                                                                        row.referralCode
-                                                                            ? `${row.referralCode} / ${row.name}${row.campaignName ? " · " + row.campaignName : ""
-                                                                            }`
-                                                                            : `${row.name}${row.campaignName ? " · " + row.campaignName : ""}`
-                                                                    }
-                                                                    stroke="#1E90FF"
-                                                                    strokeWidth={2}
-                                                                    dot={{ r: 3 }}
-                                                                    activeDot={{ r: 5 }}
-                                                                >
-                                                                    <LabelList dataKey={key} position="top" />
-                                                                </Line>
-                                                            );
-                                                        })}
-                                                    </LineChart>
-                                                </ResponsiveContainer>
-                                            </ChartContainer>
-                                        )}
-                                    </CardContent>
-                                </Card>
-
-                                {/* Tabla dinámica NAU / ROI por influencer (debajo de la gráfica) */}
-                                <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                    <CardHeader>
-                                        <CardTitle className="text-[18px] font-bold text-[var(--foreground)]">NAU y ROI por Influencer</CardTitle>
-                                        <CardDescription className="text-[14px] text-[var(--muted-foreground)]">
-                                            Código, clientes nuevos y retorno estimado por cada influencer.
+                            {/* Chart */}
+                            <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <CardHeader className="flex flex-row items-start justify-between gap-4">
+                                    <div>
+                                        <CardTitle className="text-[18px] font-bold text-foreground">Evolución del valor de engagement</CardTitle>
+                                        <CardDescription className="text-[14px] text-muted-foreground">
+                                            Top 5 influencers con mejor ROI — valor diario generado en engagement
                                         </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {summary.length === 0 ? (
-                                            <div className="text-center py-8 text-[var(--muted-foreground)] text-sm">
-                                                No hay datos para los filtros seleccionados.
-                                            </div>
-                                        ) : (
+                                    </div>
+                                    <Button variant="outline" size="sm" onClick={exportTimelineToExcel} disabled={timeline.length === 0} className="rounded-2xl gap-2 h-9">
+                                        <IconDownload className="w-4 h-4" />
+                                        Exportar
+                                    </Button>
+                                </CardHeader>
+                                <CardContent className="h-[320px]">
+                                    {loadingRoi ? (
+                                        <div className="flex items-center justify-center h-full gap-2 text-muted-foreground text-sm">
+                                            <IconLoader2 className="w-4 h-4 animate-spin" />
+                                            Calculando ROI...
+                                        </div>
+                                    ) : timeline.length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
+                                            <IconInfoCircle className="w-8 h-8 opacity-40" />
+                                            <p className="text-sm">No hay datos para el período seleccionado.</p>
+                                            <p className="text-xs">Asigna influencers a campañas y extrae sus métricas de TikTok para ver el ROI.</p>
+                                        </div>
+                                    ) : (
+                                        <ChartContainer config={chartConfig} className="h-full w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <LineChart data={timeline} margin={{ top: 16, right: 16, left: 0, bottom: 8 }}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E6F0FF" />
+                                                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8} minTickGap={32} tick={{ fill: "#A0B8D0", fontSize: 12 }} tickFormatter={(v) => formatDate(v as string)} />
+                                                    <YAxis tickLine={false} axisLine={false} tick={{ fill: "#A0B8D0", fontSize: 12 }} tickFormatter={(v) => v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v.toString()} />
+                                                    <ChartTooltip cursor={false} content={<ChartTooltipContent labelFormatter={(v) => formatDate(v as string)} indicator="dot" />} />
+                                                    {topSummaryForChart.map((row, i) => {
+                                                        const key = row.referralCode || `INF_${row.influencerId}`;
+                                                        return (
+                                                            <Line key={key} type="monotone" dataKey={key} name={row.referralCode ? `${row.referralCode} / ${row.name}` : row.name} stroke={LINE_COLORS[i % LINE_COLORS.length]} strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                                                        );
+                                                    })}
+                                                </LineChart>
+                                            </ResponsiveContainer>
+                                        </ChartContainer>
+                                    )}
+                                </CardContent>
+                            </Card>
+
+                            {/* Table */}
+                            <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <CardHeader>
+                                    <CardTitle className="text-[18px] font-bold text-foreground">Detalle por influencer</CardTitle>
+                                    <CardDescription className="text-[14px] text-muted-foreground">
+                                        Inversión, valor de engagement y ROI calculado por influencer
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    {summary.length === 0 ? (
+                                        <div className="text-center py-8 text-muted-foreground text-sm px-6">
+                                            No hay datos para los filtros seleccionados.
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto">
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow className="border-primary/10">
-                                                        <TableHead className="text-[var(--foreground)] font-semibold">Código</TableHead>
-                                                        <TableHead className="text-[var(--foreground)] font-semibold">Influencer</TableHead>
-                                                        <TableHead className="text-[var(--foreground)] font-semibold">Username</TableHead>
-                                                        <TableHead className="text-[var(--foreground)] font-semibold">Redes</TableHead>
-                                                        <TableHead className="text-[var(--foreground)] font-semibold">Campaña</TableHead>
-                                                        <TableHead className="text-[var(--foreground)] font-semibold text-right">
-                                                            Clientes nuevos (NAU)
-                                                        </TableHead>
+                                                        <TableHead className="text-foreground font-semibold">Influencer</TableHead>
+                                                        <TableHead className="text-foreground font-semibold hidden md:table-cell">Campaña</TableHead>
+                                                        <TableHead className="text-foreground font-semibold text-right">Inversión</TableHead>
+                                                        <TableHead className="text-foreground font-semibold text-right hidden sm:table-cell">Vistas</TableHead>
+                                                        <TableHead className="text-foreground font-semibold text-right">Engagement</TableHead>
                                                         <TableHead className="text-foreground font-semibold text-right">ROI</TableHead>
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
                                                     {summary.map((row) => (
-                                                        <TableRow
-                                                            key={`${row.influencerId}-${row.referralCode ?? "none"}`}
-                                                            className="border-primary/10"
-                                                        >
-                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
-                                                                {row.referralCode ?? "-"}
+                                                        <TableRow key={`${row.influencerId}-${row.referralCode ?? "none"}`} className="border-primary/10">
+                                                            <TableCell>
+                                                                <div>
+                                                                    <p className="text-sm font-medium text-foreground">{row.name}</p>
+                                                                    <p className="text-xs text-muted-foreground">{row.referralCode ? `${row.referralCode}` : row.username ?? `@influencer_${row.influencerId}`}</p>
+                                                                </div>
                                                             </TableCell>
-                                                            <TableCell className="text-sm font-medium text-[var(--foreground)]">{row.name}</TableCell>
-                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
-                                                                {row.username ?? `@influencer_${row.influencerId}`}
+                                                            <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{row.campaignName ?? "-"}</TableCell>
+                                                            <TableCell className="text-right text-sm text-foreground">
+                                                                ${row.investment.toLocaleString("es-ES")}
                                                             </TableCell>
-                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
-                                                                {(row.socialPlatforms && row.socialPlatforms.length > 0
-                                                                    ? row.socialPlatforms
-                                                                    : ["TikTok", "Instagram"]
-                                                                ).join(" · ")}
+                                                            <TableCell className="text-right text-sm text-muted-foreground hidden sm:table-cell">
+                                                                {row.views.toLocaleString("es-ES")}
                                                             </TableCell>
-                                                            <TableCell className="text-[var(--muted-foreground)] text-sm">
-                                                                {row.campaignName ?? "-"}
-                                                            </TableCell>
-                                                            <TableCell className="text-right text-sm text-[var(--foreground)]">
-                                                                {row.nau.toLocaleString()}
+                                                            <TableCell className="text-right text-sm text-foreground">
+                                                                ${row.emv.toLocaleString("es-ES")}
                                                             </TableCell>
                                                             <TableCell className="text-right text-sm">
-                                                                <span
-                                                                    className={
-                                                                        row.roi >= 0
-                                                                            ? "text-success font-semibold"
-                                                                            : "text-destructive font-semibold"
-                                                                    }
-                                                                >
-                                                                    {row.roi >= 0 ? "+" : ""}
-                                                                    {row.roi.toFixed(1)}%
+                                                                <span className={`font-semibold ${getROIColor(row.roi)}`}>
+                                                                    {row.roi >= 0 ? "+" : ""}{row.roi.toFixed(1)}%
                                                                 </span>
                                                             </TableCell>
                                                         </TableRow>
                                                     ))}
+                                                    {/* Total row */}
+                                                    {summary.length > 0 && (
+                                                        <TableRow className="border-primary/10 bg-primary/5">
+                                                            <TableCell className="text-sm font-bold text-foreground">Total</TableCell>
+                                                            <TableCell className="hidden md:table-cell" />
+                                                            <TableCell className="text-right text-sm font-bold text-foreground">
+                                                                ${totalInvestment.toLocaleString("es-ES")}
+                                                            </TableCell>
+                                                            <TableCell className="text-right text-sm font-bold text-foreground hidden sm:table-cell">
+                                                                {summary.reduce((s, r) => s + r.views, 0).toLocaleString("es-ES")}
+                                                            </TableCell>
+                                                            <TableCell className="text-right text-sm font-bold text-foreground">
+                                                                ${totalEMV.toLocaleString("es-ES")}
+                                                            </TableCell>
+                                                            <TableCell className="text-right text-sm font-bold">
+                                                                <span className={getROIColor(avgROI)}>
+                                                                    {avgROI >= 0 ? "+" : ""}{Math.round(avgROI)}%
+                                                                </span>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )}
                                                 </TableBody>
                                             </Table>
-                                        )}
-                                    </CardContent>
-                                </Card>
-                            </div>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
 
-                            {/* Sección inferior: Alertas */}
-                            <div className="grid grid-cols-1 gap-6">
-                                {/* Alertas NAU / ROI */}
-                                <Card className="rounded-[20px] border-[var(--border)] shadow-[0_4px_20px_rgba(46,199,255,0.08)]">
-                                    <CardHeader>
-                                        <CardTitle className="text-[18px] font-bold text-foreground">Alertas</CardTitle>
+                            {/* Alerts */}
+                            {alerts.length > 0 && (
+                                <Card className="rounded-[20px] border-red-200 dark:border-red-900 shadow-sm">
+                                    <CardHeader className="pb-3">
+                                        <div className="flex items-center gap-2">
+                                            <IconAlertCircle className="w-5 h-5 text-red-500" />
+                                            <CardTitle className="text-[18px] font-bold text-foreground">Alertas</CardTitle>
+                                            <span className="text-xs text-muted-foreground ml-1">({alerts.length} influencers)</span>
+                                        </div>
                                         <CardDescription className="text-[14px] text-muted-foreground">
-                                            Influencers con NAU = 0 o ROI negativo.
+                                            Influencers con EMV = 0 o ROI negativo. Revisa sus campañas.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent>
-                                        {alerts.length === 0 ? (
-                                            <div className="text-sm text-muted-foreground">No hay alertas para el periodo seleccionado.</div>
-                                        ) : (
-                                            <div className="space-y-3 max-h-[260px] overflow-y-auto">
-                                                {alerts.map((row) => (
-                                                    <div
-                                                        key={`${row.influencerId}-${row.referralCode ?? "none"}`}
-                                                        className="p-3 rounded-xl bg-destructive/10 text-destructive"
-                                                    >
-                                                        <p className="text-sm font-semibold">
-                                                            {row.name} ({row.referralCode ?? "sin código"})
-                                                        </p>
-                                                        <p className="text-sm mt-1 text-destructive/90">
-                                                            {row.username ?? `@influencer_${row.influencerId}`} ·{" "}
-                                                            {(row.socialPlatforms && row.socialPlatforms.length > 0
-                                                                ? row.socialPlatforms
-                                                                : ["TikTok", "Instagram"]
-                                                            ).join(" · ")}
-                                                        </p>
-                                                        {row.nau === 0 && (
-                                                            <p className="text-xs mt-1">NAU = 0 para el periodo seleccionado.</p>
-                                                        )}
-                                                        {row.roi < 0 && (
-                                                            <p className="text-xs mt-1">ROI negativo de {row.roi.toFixed(1)}%.</p>
-                                                        )}
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            {alerts.slice(0, 9).map((row) => (
+                                                <div key={`${row.influencerId}-${row.referralCode ?? "none"}`} className="p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/50">
+                                                    <p className="text-sm font-semibold text-red-700 dark:text-red-300">{row.name}</p>
+                                                    <p className="text-xs text-red-600/70 dark:text-red-400/70 mt-0.5">{row.referralCode ?? "sin código"} · {row.campaignName ?? "—"}</p>
+                                                    <div className="flex gap-3 mt-2 text-xs text-red-600/80">
+                                                        {row.nau === 0 && <span>EMV = $0</span>}
+                                                        {row.roi < 0 && <span>ROI: {row.roi.toFixed(1)}%</span>}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </CardContent>
                                 </Card>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>

@@ -50,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 ...(role !== "viewer"
                     ? [{ title: "Nuevo", url: "/dashboard/influencers/new" as const }]
                     : []),
-                { title: "Análisis de perfil", url: "/dashboard/influencers/simulation" },
+                { title: "Análisis de perfil", url: "/dashboard/influencers/analysis" },
             ],
         },
         {
