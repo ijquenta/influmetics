@@ -5,90 +5,45 @@ function n<T>(value: T | undefined): T | null {
     return value === undefined ? null : value;
 }
 
-interface ScraperAuthorMeta {
+interface ScraperAuthor {
     id: string;
     name: string;
-    profileUrl: string;
     nickName: string;
+    profileUrl: string;
+    avatar: string;
     verified: boolean;
     signature: string;
-    bioLink: string;
-    avatar: string;
-    commerceUserInfo?: { commerceUser?: boolean };
-    privateAccount: boolean;
-    roomId: string;
-    ttSeller: boolean;
-    createTime: number;
-    following: number;
-    friends: number;
     fans: number;
     heart: number;
     video: number;
-    digg: number;
-    originalAvatarUrl: string;
+    following: number;
+    friends: number;
+    privateAccount: boolean;
 }
 
-interface ScraperMusicMeta {
-    musicName: string;
-    musicAuthor: string;
-    musicOriginal: boolean;
-    playUrl: string;
-    coverMediumUrl: string;
-    musicId: string;
-    originalCoverMediumUrl: string;
-}
-
-interface ScraperVideoMeta {
-    height: number;
-    width: number;
+interface ScraperVideo {
     duration: number;
     coverUrl: string;
-    definition: string;
-    format: string;
-    subtitleLinks: { language: string; downloadLink: string; source: string }[] | null;
-    transcriptionLink: string | null;
-    originalCoverUrl: string;
-}
-
-interface ScraperDetailedMention {
-    id: string;
-    name: string;
-    nickName: string;
-    profileUrl: string;
-}
-
-interface ScraperHashtag {
-    name: string;
 }
 
 interface ScraperResult {
     id: string;
     text: string;
     textLanguage: string;
-    createTime: number;
     createTimeISO: string;
-    isAd: boolean;
-    authorMeta: ScraperAuthorMeta;
-    musicMeta: ScraperMusicMeta;
     webVideoUrl: string;
-    videoMeta: ScraperVideoMeta;
     diggCount: number;
-    shareCount: number;
     playCount: number;
-    collectCount: number;
+    shareCount: number;
     commentCount: number;
+    collectCount: number;
     repostCount: number;
-    mentions: string[];
-    detailedMentions: ScraperDetailedMention[];
-    hashtags: ScraperHashtag[];
-    effectStickers: string[];
-    isSlideshow: boolean;
-    isPinned: boolean;
+    hashtags: string[];
     isSponsored: boolean;
-    mediaUrls: string[];
-    input: string;
-    fromProfileSection: string;
-    commentsDatasetUrl: string | null;
+    isPinned: boolean;
+    mentions: string[];
+    author: ScraperAuthor;
+    video: ScraperVideo;
 }
 
 export async function POST(request: NextRequest) {
@@ -146,7 +101,7 @@ export async function POST(request: NextRequest) {
         }
 
         const firstResult = scraperData.results[0];
-        const author = firstResult.authorMeta;
+        const author = firstResult.author;
 
         // Find or create the social platform "tiktok"
         const tiktokPlatform = await prisma.socialPlatform.findUnique({ where: { code: "tiktok" } });
@@ -174,17 +129,13 @@ export async function POST(request: NextRequest) {
                         nickName: n(author.nickName),
                         verified: n(author.verified) ?? false,
                         signature: n(author.signature),
-                        bioLink: n(author.bioLink),
                         avatar: n(author.avatar),
                         following: n(author.following) ?? 0,
                         friends: n(author.friends) ?? 0,
                         fans: n(author.fans) ?? 0,
                         heart: n(author.heart) ?? 0,
                         video: n(author.video) ?? 0,
-                        digg: n(author.digg) ?? 0,
                         privateAccount: n(author.privateAccount) ?? false,
-                        ttSeller: n(author.ttSeller) ?? false,
-                        commerceUser: author.commerceUserInfo?.commerceUser ?? false,
                         scrapedAt: new Date(),
                     },
                 });
@@ -210,17 +161,13 @@ export async function POST(request: NextRequest) {
                         nickName: n(author.nickName),
                         verified: n(author.verified) ?? false,
                         signature: n(author.signature),
-                        bioLink: n(author.bioLink),
                         avatar: n(author.avatar),
                         following: n(author.following) ?? 0,
                         friends: n(author.friends) ?? 0,
                         fans: n(author.fans) ?? 0,
                         heart: n(author.heart) ?? 0,
                         video: n(author.video) ?? 0,
-                        digg: n(author.digg) ?? 0,
                         privateAccount: n(author.privateAccount) ?? false,
-                        ttSeller: n(author.ttSeller) ?? false,
-                        commerceUser: author.commerceUserInfo?.commerceUser ?? false,
                         scrapedAt: new Date(),
                     },
                 });
@@ -240,8 +187,8 @@ export async function POST(request: NextRequest) {
                         data: {
                             caption: result.text,
                             publishedAt,
-                            duration: result.videoMeta.duration,
-                            coverUrl: result.videoMeta.coverUrl,
+                            duration: result.video.duration,
+                            coverUrl: result.video.coverUrl,
                             webVideoUrl: result.webVideoUrl,
                             isPinned: result.isPinned,
                         },
@@ -256,23 +203,11 @@ export async function POST(request: NextRequest) {
                             publishedAt,
                             tiktokVideoId: result.id,
                             textLanguage: result.textLanguage,
-                            isAd: result.isAd,
-                            duration: result.videoMeta.duration,
-                            width: result.videoMeta.width,
-                            height: result.videoMeta.height,
-                            coverUrl: result.videoMeta.coverUrl,
-                            definition: result.videoMeta.definition,
-                            format: result.videoMeta.format,
+                            duration: result.video.duration,
+                            coverUrl: result.video.coverUrl,
                             webVideoUrl: result.webVideoUrl,
-                            musicName: result.musicMeta.musicName,
-                            musicAuthor: result.musicMeta.musicAuthor,
-                            musicPlayUrl: result.musicMeta.playUrl,
-                            musicId: result.musicMeta.musicId,
-                            isSlideshow: result.isSlideshow,
                             isPinned: result.isPinned,
                             isSponsored: result.isSponsored,
-                            fromProfileSection: result.fromProfileSection,
-                            commentsDatasetUrl: result.commentsDatasetUrl,
                         },
                     });
                 }
@@ -314,38 +249,11 @@ export async function POST(request: NextRequest) {
                     await tx.postHashtag.deleteMany({ where: { postId } });
                     await tx.postHashtag.createMany({
                         data: result.hashtags
-                            .filter((h) => h.name && h.name.trim())
+                            .filter((h) => h && h.trim())
                             .map((h) => ({
                                 postId,
-                                name: h.name.trim(),
+                                name: h.trim(),
                             })),
-                    });
-                }
-
-                // Save subtitles
-                if (result.videoMeta.subtitleLinks && result.videoMeta.subtitleLinks.length > 0) {
-                    await tx.postSubtitle.deleteMany({ where: { postId } });
-                    await tx.postSubtitle.createMany({
-                        data: result.videoMeta.subtitleLinks.map((s) => ({
-                            postId,
-                            language: s.language,
-                            downloadLink: s.downloadLink,
-                            source: s.source,
-                        })),
-                    });
-                }
-
-                // Save mentions
-                if (result.detailedMentions && result.detailedMentions.length > 0) {
-                    await tx.postMention.deleteMany({ where: { postId } });
-                    await tx.postMention.createMany({
-                        data: result.detailedMentions.map((m) => ({
-                            postId,
-                            mentionedUserId: m.id,
-                            mentionedName: m.name,
-                            nickName: m.nickName,
-                            profileUrl: m.profileUrl,
-                        })),
                     });
                 }
             }
@@ -364,8 +272,6 @@ export async function POST(request: NextRequest) {
                         include: {
                             metrics: { orderBy: { snapshotDate: "desc" }, take: 1 },
                             hashtags: true,
-                            mentions: true,
-                            subtitles: true,
                         },
                         orderBy: { publishedAt: "desc" },
                     },

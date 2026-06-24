@@ -32,7 +32,7 @@ import {
 } from "@tabler/icons-react";
 import { toast } from "sonner";
 
-interface AuthorMeta {
+interface Author {
     id: string;
     name: string;
     nickName: string;
@@ -46,7 +46,7 @@ interface AuthorMeta {
 }
 
 interface ScraperResult {
-    authorMeta: AuthorMeta;
+    author: Author;
 }
 
 interface ScraperResponse {
@@ -67,7 +67,7 @@ export default function AnalysisPage() {
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
-    const [author, setAuthor] = useState<AuthorMeta | null>(null);
+    const [author, setAuthor] = useState<Author | null>(null);
     const [rawData, setRawData] = useState<ScraperResponse | null>(null);
     const [savedId, setSavedId] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -115,7 +115,7 @@ export default function AnalysisPage() {
             }
 
             setRawData(data);
-            setAuthor(data.results[0].authorMeta);
+            setAuthor(data.results[0].author);
             toast.success("Perfil extraído correctamente");
         } catch {
             setError("Ocurrió un error al conectar con TikTok. Verifica que el usuario exista.");

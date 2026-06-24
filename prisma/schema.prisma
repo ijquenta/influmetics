@@ -13,6 +13,7 @@ model UserType {
   name String
 
   users User[]
+
 }
 
 model User {
@@ -25,15 +26,17 @@ model User {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
 }
 
 model SocialPlatform {
   id   Int    @id @default(autoincrement())
-  code String @unique // 'tiktok', 'instagram'
+  code String @unique
   name String
 
   socialAccounts InfluencerSocialAccount[]
   posts          Post[]
+
 }
 
 model Influencer {
@@ -51,6 +54,7 @@ model Influencer {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
 }
 
 model InfluencerSocialAccount {
@@ -69,17 +73,13 @@ model InfluencerSocialAccount {
   nickName       String?
   verified       Boolean?  @default(false)
   signature      String?
-  bioLink        String?
   avatar         String?
   following      Int?      @default(0)
   friends        Int?      @default(0)
   fans           Int?      @default(0)
   heart          Int?      @default(0)
   video          Int?      @default(0)
-  digg           Int?      @default(0)
   privateAccount Boolean?  @default(false)
-  ttSeller       Boolean?  @default(false)
-  commerceUser   Boolean?  @default(false)
   scrapedAt      DateTime?
 
   createdAt DateTime @default(now())
@@ -94,6 +94,7 @@ model CampaignGoalType {
   name String
 
   campaigns Campaign[]
+
 }
 
 model Campaign {
@@ -114,6 +115,7 @@ model Campaign {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
 }
 
 model InfluencerCampaign {
@@ -132,10 +134,11 @@ model InfluencerCampaign {
 
 model ContentType {
   id   Int    @id @default(autoincrement())
-  code String @unique // 'video', 'reel', 'story'
+  code String @unique
   name String
 
   posts Post[]
+
 }
 
 model Post {
@@ -158,25 +161,13 @@ model Post {
   isTakenosContent Boolean  @default(false)
 
   // TikTok scraper video data
-  tiktokVideoId      String?
-  textLanguage       String?
-  isAd               Boolean? @default(false)
-  duration           Int?
-  width              Int?
-  height             Int?
-  coverUrl           String?
-  definition         String?
-  format             String?
-  webVideoUrl        String?
-  musicName          String?
-  musicAuthor        String?
-  musicPlayUrl       String?
-  musicId            String?
-  isSlideshow        Boolean? @default(false)
-  isPinned           Boolean? @default(false)
-  isSponsored        Boolean? @default(false)
-  fromProfileSection String?
-  commentsDatasetUrl String?
+  tiktokVideoId String?
+  textLanguage  String?
+  duration      Int?
+  coverUrl      String?
+  webVideoUrl   String?
+  isPinned      Boolean? @default(false)
+  isSponsored   Boolean? @default(false)
 
   metrics   PostMetricSnapshot[]
   hashtags  PostHashtag[]
@@ -185,6 +176,7 @@ model Post {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
 }
 
 model PostMetricSnapshot {
@@ -202,10 +194,10 @@ model PostMetricSnapshot {
   roi         Decimal? @db.Decimal(10, 4)
 
   // TikTok scraper metrics
-  saves       Int?    @default(0)
-  reposts     Int?    @default(0)
-  playCount   Int?    @default(0)
-  commentCount Int?   @default(0)
+  saves        Int? @default(0)
+  reposts      Int? @default(0)
+  playCount    Int? @default(0)
+  commentCount Int? @default(0)
 
   createdAt DateTime @default(now())
 
@@ -219,6 +211,7 @@ model PostHashtag {
   name   String
 
   createdAt DateTime @default(now())
+
 }
 
 model PostMention {
@@ -231,6 +224,7 @@ model PostMention {
   profileUrl      String?
 
   createdAt DateTime @default(now())
+
 }
 
 model PostSubtitle {
@@ -242,15 +236,17 @@ model PostSubtitle {
   source       String?
 
   createdAt DateTime @default(now())
+
 }
 
 model InternalMetricType {
   id          Int     @id @default(autoincrement())
-  code        String  @unique // 'NUA', 'NU', 'NAU', etc.
+  code        String  @unique
   name        String
   description String?
 
   metrics InternalMetric[]
+
 }
 
 model InternalMetric {
@@ -265,9 +261,11 @@ model InternalMetric {
   metricTypeId Int
 
   metricDate DateTime
-  value      Decimal  @db.Decimal(14, 4)
+  value      Decimal @db.Decimal(14, 4)
 
   createdAt DateTime @default(now())
 
   @@unique([campaignId, influencerId, metricTypeId, metricDate])
 }
+
+
