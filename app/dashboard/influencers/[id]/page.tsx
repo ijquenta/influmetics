@@ -16,6 +16,8 @@ import {
     IconLoader2,
     IconEdit,
     IconCurrencyDollar,
+    IconMessage,
+    IconArrowRight,
 } from "@tabler/icons-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -714,17 +716,25 @@ export default function InfluencerDetailPage() {
                                                             <p className="text-xs text-foreground line-clamp-2 min-h-[2rem]">
                                                                 {video.caption || "Sin descripción"}
                                                             </p>
-                                                            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
-                                                                <span className="text-muted-foreground">Vistas</span>
-                                                                <span className="font-semibold text-foreground text-right">{formatNumber(video.playCount)}</span>
-                                                                <span className="text-muted-foreground">Likes</span>
-                                                                <span className="font-semibold text-foreground text-right">{formatNumber(video.likes)}</span>
-                                                                <span className="text-muted-foreground">Comentarios</span>
-                                                                <span className="font-semibold text-foreground text-right">{formatNumber(video.comments)}</span>
-                                                                <span className="text-muted-foreground">Compartido</span>
-                                                                <span className="font-semibold text-foreground text-right">{formatNumber(video.shares)}</span>
-                                                            </div>
-                                                        </div>
+                                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+                                                                 <span className="text-muted-foreground">Vistas</span>
+                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.playCount)}</span>
+                                                                 <span className="text-muted-foreground">Likes</span>
+                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.likes)}</span>
+                                                                 <span className="text-muted-foreground">Comentarios</span>
+                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.comments)}</span>
+                                                                 <span className="text-muted-foreground">Compartido</span>
+                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.shares)}</span>
+                                                             </div>
+                                                             <button
+                                                                 onClick={() => router.push(`/dashboard/influencers/${influencer.id}/posts/${video.id}/comments`)}
+                                                                 className="w-full mt-1 flex items-center justify-center gap-1.5 text-[10px] font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg py-1.5 transition-colors"
+                                                             >
+                                                                 <IconMessage className="w-3 h-3" />
+                                                                 Ver comentarios
+                                                                 <IconArrowRight className="w-3 h-3" />
+                                                             </button>
+                                                         </div>
                                                     ))}
                                                 </div>
                                             </CardContent>

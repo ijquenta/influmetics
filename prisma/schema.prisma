@@ -173,6 +173,7 @@ model Post {
   hashtags  PostHashtag[]
   mentions  PostMention[]
   subtitles PostSubtitle[]
+  comments  Comment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -237,6 +238,30 @@ model PostSubtitle {
 
   createdAt DateTime @default(now())
 
+}
+
+model Comment {
+  id              Int      @id @default(autoincrement())
+  post            Post     @relation(fields: [postId], references: [id])
+  postId          Int
+
+  tiktokCommentId String
+
+  text            String
+  diggCount       Int?     @default(0)
+  replyCount      Int?     @default(0)
+  createTimeISO   DateTime?
+  authorUsername  String?
+  authorUserId    String?
+
+  sentimentLabel  String?
+  sentimentScore  Float?
+  sentimentReason String?
+  analyzedAt      DateTime?
+
+  createdAt       DateTime @default(now())
+
+  @@unique([postId, tiktokCommentId])
 }
 
 model InternalMetricType {

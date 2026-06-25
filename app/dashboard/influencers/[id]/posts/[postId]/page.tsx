@@ -32,7 +32,7 @@ type DummyJson = {
 
 export default function InfluencerPostCommentsPage() {
     const params = useParams();
-    const videoId = String(params?.videoId || "");
+    const postId = String(params?.postId || "");
 
     const [loading, setLoading] = useState(true);
     const [video, setVideo] = useState<DummyVideo | null>(null);
@@ -51,7 +51,7 @@ export default function InfluencerPostCommentsPage() {
                 const res = await fetch("/json-influencers.json");
                 const json = (await res.json()) as DummyJson;
                 const allVideos = json.data?.videos ?? [];
-                const found = allVideos.find((v) => String(v.id) === videoId) ?? null;
+                const found = allVideos.find((v) => String(v.id) === postId) ?? null;
                 setVideo(
                     found && {
                         id: String(found.id),
@@ -76,7 +76,7 @@ export default function InfluencerPostCommentsPage() {
         };
 
         void loadDummy();
-    }, [videoId]);
+    }, [postId]);
 
     const formatNumber = (value: number | string) => {
         const num = typeof value === "string" ? Number(value) : value;
