@@ -24,13 +24,14 @@ CREATE TABLE social_platform (
 );
 
 -- 4. Influencers
-CREATE TABLE influencer (
+CREATE TABLE "Influencer" (
     id SERIAL PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     email VARCHAR(150),
     birth_date DATE,
     niche VARCHAR(150),
     referral_code VARCHAR(100),
+    notes TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
