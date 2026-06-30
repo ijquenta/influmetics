@@ -45,7 +45,8 @@ model Influencer {
   email        String?
   birthDate    DateTime?
   niche        String?
-  referralCode String?
+  referralCode String? @unique
+  notes        String?
 
   socialAccounts      InfluencerSocialAccount[]
   influencerCampaigns InfluencerCampaign[]
@@ -86,6 +87,8 @@ model InfluencerSocialAccount {
   updatedAt DateTime @updatedAt
 
   @@unique([influencerId, socialPlatformId])
+  @@index([handle])
+  @@index([socialPlatformId, handle])
 }
 
 model CampaignGoalType {
@@ -168,6 +171,10 @@ model Post {
   webVideoUrl   String?
   isPinned      Boolean? @default(false)
   isSponsored   Boolean? @default(false)
+
+  // Comment analysis results
+  temasDestacados String?
+  sugerencia      String?
 
   metrics   PostMetricSnapshot[]
   hashtags  PostHashtag[]
