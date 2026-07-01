@@ -2,10 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
 import { PageBreadcrumb } from "@/components/page-breadcrumb";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
     IconBrandTiktok,
@@ -22,15 +19,31 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel";
 import type { InfluencerWithRelations } from "@/shared/types/influencer.types";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { IconCalendar } from "@tabler/icons-react";
 import { calculateEMV, calculateROI, getROILabel, getROIColor } from "@/lib/roi";
+import { getMetricColor } from "@/lib/utils";
 
 interface TikTokProfile {
     username: string;
@@ -117,7 +130,7 @@ function formatDuration(seconds: number): string {
 
 export default function InfluencerDetailPage() {
     const params = useParams();
-    const id = Number(params?.id);
+    const id = Number(Array.isArray(params?.id) ? params.id[0] : params?.id);
     const router = useRouter();
 
     const [influencer, setInfluencer] = useState<InfluencerWithRelations | null>(null);
@@ -125,7 +138,7 @@ export default function InfluencerDetailPage() {
     const [refreshing, setRefreshing] = useState(false);
     const [editOpen, setEditOpen] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [editForm, setEditForm] = useState({ name: "", email: "", niche: "", referralCode: "" });
+    const [editForm, setEditForm] = useState({ name: "", email: "", birthDate: "", niche: "", referralCode: "", notes: "" });
     const [linkOpen, setLinkOpen] = useState(false);
     const [campaigns, setCampaigns] = useState<{ id: number; name: string }[]>([]);
     const [selectedCampaignId, setSelectedCampaignId] = useState("");
@@ -139,7 +152,8 @@ export default function InfluencerDetailPage() {
     const fetchInfluencer = async () => {
         try {
             const res = await fetch(`/api/influencers/${id}`);
-            if (!res.ok) throw new Error("Not found");
+            if (res.status === 404) throw new Error("Not found");
+            if (!res.ok) throw new Error("Error del servidor");
             const data = await res.json();
             setInfluencer(data.data ?? null);
         } catch (error) {
@@ -155,8 +169,10 @@ export default function InfluencerDetailPage() {
         setEditForm({
             name: influencer.name,
             email: influencer.email || "",
+            birthDate: influencer.birthDate ? new Date(influencer.birthDate).toISOString().split("T")[0] : "",
             niche: influencer.niche || "",
             referralCode: influencer.referralCode || "",
+            notes: influencer.notes || "",
         });
         setEditOpen(true);
     };
@@ -165,17 +181,27 @@ export default function InfluencerDetailPage() {
         if (!influencer) return;
         setSaving(true);
         try {
+            const payload = {
+                name: editForm.name.trim(),
+                email: editForm.email.trim(),
+                birthDate: editForm.birthDate || null,
+                niche: editForm.niche.trim(),
+                referralCode: editForm.referralCode.trim(),
+                notes: editForm.notes.trim(),
+            };
             const res = await fetch(`/api/influencers/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(editForm),
+                body: JSON.stringify(payload),
             });
-            if (!res.ok) throw new Error();
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al actualizar");
             toast.success("Influencer actualizado");
             setEditOpen(false);
+            setLoading(true);
             await fetchInfluencer();
-        } catch {
-            toast.error("Error al actualizar");
+        } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Error al actualizar");
         } finally {
             setSaving(false);
         }
@@ -184,9 +210,12 @@ export default function InfluencerDetailPage() {
     const fetchCampaigns = async () => {
         try {
             const res = await fetch("/api/campaigns");
+            if (!res.ok) throw new Error("Error al cargar campañas");
             const data = await res.json();
-            setCampaigns((data.data || []).map((c: any) => ({ id: c.id, name: c.name })));
-        } catch {}
+            setCampaigns((data.data || []).map((c: { id: number; name: string }) => ({ id: c.id, name: c.name })));
+        } catch {
+            toast.error("No se pudieron cargar las campañas");
+        }
     };
 
     const openLinkDialog = () => {
@@ -195,6 +224,11 @@ export default function InfluencerDetailPage() {
         setAgreedCost("");
         setLinkOpen(true);
     };
+
+    const linkedCampaignIds = new Set(
+        influencer?.influencerCampaigns?.map((ic) => ic.campaignId.toString()) || []
+    );
+    const availableCampaigns = campaigns.filter((c) => !linkedCampaignIds.has(c.id.toString()));
 
     const handleLinkCampaign = async () => {
         if (!selectedCampaignId) return;
@@ -211,7 +245,9 @@ export default function InfluencerDetailPage() {
             }
             toast.success("Influencer asignado a la campaña");
             setLinkOpen(false);
-            await fetchInfluencer();
+            const updated = await fetch(`/api/influencers/${id}`);
+            const data = await updated.json();
+            setInfluencer(data.data ?? null);
         } catch {
             toast.error("Error al asignar");
         }
@@ -283,68 +319,127 @@ export default function InfluencerDetailPage() {
 
     if (loading) {
         return (
-            <SidebarProvider
-                style={
-                    {
-                        "--sidebar-width": "calc(var(--spacing) * 72)",
-                        "--header-height": "calc(var(--spacing) * 12)",
-                    } as React.CSSProperties
-                }
-            >
-                <AppSidebar variant="inset" />
-                <SidebarInset>
-                    <SiteHeader />
+
                     <div className="flex flex-1 flex-col">
                         <div className="@container/main flex flex-1 flex-col gap-2">
                             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
                                 <Skeleton className="h-5 w-48 rounded-xl mb-2" />
                                 <Skeleton className="h-8 w-72 rounded-xl mb-1" />
                                 <Skeleton className="h-4 w-64 rounded-xl mb-6" />
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                    <Skeleton className="h-64 rounded-[20px]" />
-                                    <Skeleton className="h-64 rounded-[20px]" />
+                                {/* KPI cards */}
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                        <div key={i} className="rounded-[20px] border border-[rgba(108,72,197,0.06)] bg-background p-5 space-y-3">
+                                            <Skeleton className="h-3 w-16 rounded-lg" />
+                                            <Skeleton className="h-7 w-24 rounded-lg" />
+                                            <Skeleton className="h-2.5 w-12 rounded-lg" />
+                                        </div>
+                                    ))}
+                                </div>
+                                {/* Main grid */}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* Left column */}
+                                    <div className="lg:col-span-1 space-y-6">
+                                        {/* Profile card skeleton */}
+                                        <div className="rounded-[20px] border border-[rgba(108,72,197,0.06)] bg-background p-6 space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                <Skeleton className="h-12 w-12 rounded-full" />
+                                                <div className="space-y-2">
+                                                    <Skeleton className="h-4 w-32 rounded-lg" />
+                                                    <Skeleton className="h-3 w-24 rounded-lg" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-3 w-full rounded-lg" />
+                                                <Skeleton className="h-3 w-3/4 rounded-lg" />
+                                            </div>
+                                            <div className="flex flex-wrap gap-2">
+                                                <Skeleton className="h-5 w-20 rounded-lg" />
+                                                <Skeleton className="h-5 w-16 rounded-lg" />
+                                            </div>
+                                        </div>
+                                        {/* Quick stats skeleton */}
+                                        <div className="rounded-[20px] border border-[rgba(108,72,197,0.06)] bg-background p-5 space-y-4">
+                                            <Skeleton className="h-4 w-28 rounded-lg" />
+                                            {Array.from({ length: 4 }).map((_, i) => (
+                                                <div key={i} className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <Skeleton className="h-3 w-20 rounded-lg" />
+                                                        <Skeleton className="h-3 w-12 rounded-lg" />
+                                                    </div>
+                                                    <Skeleton className="h-2 w-full rounded-full" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Right column */}
+                                    <div className="lg:col-span-2 space-y-6">
+                                        {/* Campaigns skeleton */}
+                                        <div className="rounded-[20px] border border-[rgba(108,72,197,0.06)] bg-background p-5 space-y-3">
+                                            <Skeleton className="h-4 w-32 rounded-lg" />
+                                            {Array.from({ length: 2 }).map((_, i) => (
+                                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-[rgba(108,72,197,0.02)]">
+                                                    <div className="space-y-1.5">
+                                                        <Skeleton className="h-3.5 w-28 rounded-lg" />
+                                                        <Skeleton className="h-3 w-20 rounded-lg" />
+                                                    </div>
+                                                    <Skeleton className="h-3 w-16 rounded-lg" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        {/* Videos skeleton */}
+                                        <div className="space-y-3">
+                                            <Skeleton className="h-4 w-24 rounded-lg" />
+                                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                                                {Array.from({ length: 3 }).map((_, i) => (
+                                                    <div key={i} className="rounded-[20px] border border-[rgba(108,72,197,0.06)] bg-background overflow-hidden">
+                                                        <Skeleton className="aspect-video w-full rounded-none" />
+                                                        <div className="p-3 space-y-2">
+                                                            <Skeleton className="h-3 w-16 rounded-lg" />
+                                                            <Skeleton className="h-3 w-full rounded-lg" />
+                                                            <Skeleton className="h-3 w-3/4 rounded-lg" />
+                                                            <div className="grid grid-cols-2 gap-2">
+                                                                <Skeleton className="h-3 w-12 rounded-lg" />
+                                                                <Skeleton className="h-3 w-12 rounded-lg justify-self-end" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </SidebarInset>
-            </SidebarProvider>
+
         );
     }
 
     if (!influencer) {
         return (
-            <SidebarProvider
-                style={
-                    {
-                        "--sidebar-width": "calc(var(--spacing) * 72)",
-                        "--header-height": "calc(var(--spacing) * 12)",
-                    } as React.CSSProperties
-                }
-            >
-                <AppSidebar variant="inset" />
-                <SidebarInset>
-                    <SiteHeader />
-                    <div className="flex flex-1 items-center justify-center p-6">
-                        <p className="text-muted-foreground">No se encontró el influencer.</p>
+
+                    <div className="flex flex-1 flex-col items-center justify-center p-6 gap-3">
+                        <div className="w-16 h-16 rounded-full bg-destructive/5 flex items-center justify-center">
+                            <span className="text-2xl">😕</span>
+                        </div>
+                        <p className="text-sm font-medium text-foreground">Influencer no encontrado</p>
+                        <p className="text-xs text-muted-foreground">El influencer que buscas no existe o fue eliminado.</p>
+                        <div className="flex gap-2 mt-1">
+                            <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/influencers")} className="rounded-2xl">
+                                Volver a influencers
+                            </Button>
+                            <Button size="sm" onClick={() => { setLoading(true); fetchInfluencer(); }} className="rounded-2xl">
+                                Reintentar
+                            </Button>
+                        </div>
                     </div>
-                </SidebarInset>
-            </SidebarProvider>
+
         );
     }
 
     return (
-        <SidebarProvider
-            style={
-                {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                } as React.CSSProperties
-            }
-        >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-                <SiteHeader />
+
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
@@ -394,9 +489,13 @@ export default function InfluencerDetailPage() {
                                                     <SelectValue placeholder="Seleccionar campaña" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {campaigns.map((c) => (
-                                                        <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
-                                                    ))}
+                                                    {availableCampaigns.length === 0 ? (
+                                                        <SelectItem value="_none" disabled>Todas las campañas ya están asignadas</SelectItem>
+                                                    ) : (
+                                                        availableCampaigns.map((c) => (
+                                                            <SelectItem key={c.id} value={c.id.toString()}>{c.name}</SelectItem>
+                                                        ))
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -428,12 +527,46 @@ export default function InfluencerDetailPage() {
                                             <Input value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="rounded-2xl h-10" />
                                         </div>
                                         <div>
+                                            <Label className="text-sm font-semibold mb-2 block">Fecha de nacimiento</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        className={`w-full justify-start text-left font-normal rounded-2xl h-10 ${!editForm.birthDate ? "text-muted-foreground" : ""}`}
+                                                    >
+                                                        <IconCalendar className="mr-2 h-4 w-4" />
+                                                        {editForm.birthDate
+                                                            ? format(new Date(editForm.birthDate), "PPP", { locale: es })
+                                                            : "Seleccionar fecha"}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={editForm.birthDate ? new Date(editForm.birthDate) : undefined}
+                                                        onSelect={(date) => setEditForm({ ...editForm, birthDate: date ? date.toISOString().split("T")[0] : "" })}
+                                                        locale={es}
+                                                        className="rounded-2xl"
+                                                    />
+                                                </PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div>
                                             <Label className="text-sm font-semibold mb-2 block">Nicho</Label>
                                             <Input value={editForm.niche} onChange={(e) => setEditForm({ ...editForm, niche: e.target.value })} className="rounded-2xl h-10" />
                                         </div>
                                         <div>
                                             <Label className="text-sm font-semibold mb-2 block">Código de referido</Label>
-                                            <Input value={editForm.referralCode} onChange={(e) => setEditForm({ ...editForm, referralCode: e.target.value })} className="rounded-2xl h-10" />
+                                            <Input value={editForm.referralCode} onChange={(e) => setEditForm({ ...editForm, referralCode: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter" && !saving) handleSave(); }} className="rounded-2xl h-10" />
+                                        </div>
+                                        <div>
+                                            <Label className="text-sm font-semibold mb-2 block">Notas internas</Label>
+                                            <Textarea
+                                                value={editForm.notes}
+                                                onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                                                placeholder="Observaciones, acuerdos, información relevante..."
+                                                className="rounded-2xl min-h-[80px] resize-y"
+                                            />
                                         </div>
                                     </div>
                                     <DialogFooter>
@@ -447,51 +580,56 @@ export default function InfluencerDetailPage() {
 
                             {/* KPI Cards */}
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                    <CardContent className="p-4 md:p-5">
-                                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Seguidores</p>
-                                        <p className="text-[22px] font-bold text-foreground">{tikTokProfile ? formatNumber(tikTokProfile.fans) : "—"}</p>
-                                        {tikTokProfile && <p className="text-[10px] text-muted-foreground mt-0.5">@{tikTokProfile.username}</p>}
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)] overflow-hidden">
+                                    <CardContent className="p-4 md:p-5 relative">
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/[0.03] rounded-bl-full" />
+                                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title="Número total de seguidores en TikTok">Seguidores</p>
+                                        <p className="text-[28px] font-extrabold text-foreground tracking-tight leading-none mb-1">{tikTokProfile ? formatNumber(tikTokProfile.fans) : "—"}</p>
+                                        {tikTokProfile && <p className="text-[11px] text-muted-foreground">@{tikTokProfile.username}</p>}
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                    <CardContent className="p-4 md:p-5">
-                                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Engagement rate</p>
-                                        <p className="text-[22px] font-bold text-foreground">
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)] overflow-hidden">
+                                    <CardContent className="p-4 md:p-5 relative">
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/[0.03] rounded-bl-full" />
+                                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title="Porcentaje de interacción promedio ((likes + comentarios + saves) / vistas) × 100">Engagement rate</p>
+                                        <p className={`text-[28px] font-extrabold tracking-tight leading-none mb-1 ${getMetricColor(engagementRate, "engagement")}`}>
                                             {tikTokVideos.length > 0 ? `${engagementRate.toFixed(2)}%` : "—"}
                                         </p>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        <p className="text-[11px] text-muted-foreground">
                                             {tikTokVideos.length > 0 ? `Promedio en ${tikTokVideos.length} videos` : "Sin datos"}
                                         </p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                    <CardContent className="p-4 md:p-5">
-                                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Vistas totales</p>
-                                        <p className="text-[22px] font-bold text-foreground">{tikTokVideos.length > 0 ? formatNumber(totalViews) : "—"}</p>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)] overflow-hidden">
+                                    <CardContent className="p-4 md:p-5 relative">
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/[0.03] rounded-bl-full" />
+                                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title="Suma total de vistas en todos los videos">Vistas totales</p>
+                                        <p className="text-[28px] font-extrabold text-foreground tracking-tight leading-none mb-1">{tikTokVideos.length > 0 ? formatNumber(totalViews) : "—"}</p>
+                                        <p className="text-[11px] text-muted-foreground">
                                             {avgViews > 0 ? `~${formatNumber(avgViews)} / video` : "Sin datos"}
                                         </p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                    <CardContent className="p-4 md:p-5">
-                                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Inversión total</p>
-                                        <p className="text-[22px] font-bold text-foreground">
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)] overflow-hidden">
+                                    <CardContent className="p-4 md:p-5 relative">
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/[0.03] rounded-bl-full" />
+                                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title="Suma total de inversión acordada en todas las campañas">Inversión total</p>
+                                        <p className="text-[28px] font-extrabold text-foreground tracking-tight leading-none mb-1">
                                             {totalInvestment > 0 ? `$${totalInvestment.toLocaleString("es-ES")}` : "—"}
                                         </p>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        <p className="text-[11px] text-muted-foreground">
                                             {influencer._count?.influencerCampaigns ?? 0} campañas activas
                                         </p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                    <CardContent className="p-4 md:p-5">
-                                        <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-1">ROI estimado</p>
-                                        <p className={`text-[22px] font-bold ${totalInvestment > 0 ? getROIColor(roi) : "text-foreground"}`}>
+                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)] overflow-hidden">
+                                    <CardContent className="p-4 md:p-5 relative">
+                                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/[0.03] rounded-bl-full" />
+                                        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1.5" title="Retorno de inversión estimado basado en EMV (Earned Media Value)">ROI estimado</p>
+                                        <p className={`text-[28px] font-extrabold tracking-tight leading-none mb-1 ${totalInvestment > 0 ? getROIColor(roi) : "text-foreground"}`}>
                                             {totalInvestment > 0 ? `${roi >= 0 ? "+" : ""}${Math.round(roi)}%` : "—"}
                                         </p>
-                                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                                        <p className="text-[11px] text-muted-foreground">
                                             {totalInvestment > 0 ? getROILabel(roi) : "Sin inversión registrada"}
                                         </p>
                                     </CardContent>
@@ -574,11 +712,11 @@ export default function InfluencerDetailPage() {
                                             </div>
 
                                             {influencer.socialAccounts && influencer.socialAccounts.length > 0 && (
-                                                <div className="pt-3 border-t border-border">
-                                                    <p className="text-xs text-muted-foreground mb-2">Redes sociales</p>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {influencer.socialAccounts.map((account) => (
-                                                            <Badge key={account.id} variant="outline" className="gap-1.5 py-1 rounded-2xl">
+                                                <div className="pt-3 border-t border-border space-y-2">
+                                                    <p className="text-xs text-muted-foreground">Redes sociales</p>
+                                                    {influencer.socialAccounts.map((account) => (
+                                                        <div key={account.id} className="flex items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-1.5 min-w-0">
                                                                 {(() => {
                                                                     const code = account.socialPlatform.code.toLowerCase();
                                                                     const icons: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -588,15 +726,39 @@ export default function InfluencerDetailPage() {
                                                                         x: IconBrandX,
                                                                     };
                                                                     const Icon = icons[code];
-                                                                    return Icon ? <Icon className="size-4" /> : null;
+                                                                    return Icon ? <Icon className="size-4 shrink-0" /> : null;
                                                                 })()}
-                                                                {account.socialPlatform.name}
+                                                                <span className="text-xs font-medium">{account.socialPlatform.name}</span>
                                                                 {account.handle && (
-                                                                    <span className="text-xs">· @{account.handle.replace(/^@/, "")}</span>
+                                                                    <span className="text-xs text-muted-foreground truncate">@{account.handle.replace(/^@/, "")}</span>
                                                                 )}
-                                                            </Badge>
-                                                        ))}
-                                                    </div>
+                                                            </div>
+                                                            <Switch
+                                                                checked={account.isActive}
+                                                                onCheckedChange={async (checked) => {
+                                                                    const res = await fetch(`/api/influencer-social-accounts/${account.id}`, {
+                                                                        method: "PATCH",
+                                                                        headers: { "Content-Type": "application/json" },
+                                                                        body: JSON.stringify({ isActive: checked }),
+                                                                    });
+                                                                    if (res.ok) {
+                                                                        setInfluencer((prev) => {
+                                                                            if (!prev) return prev;
+                                                                            return {
+                                                                                ...prev,
+                                                                                socialAccounts: prev.socialAccounts.map((sa) =>
+                                                                                    sa.id === account.id ? { ...sa, isActive: checked } : sa
+                                                                                ),
+                                                                            };
+                                                                        });
+                                                                        toast.success(checked ? "Cuenta activada" : "Cuenta desactivada");
+                                                                    } else {
+                                                                        toast.error("Error al actualizar estado");
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             )}
                                         </CardContent>
@@ -611,33 +773,27 @@ export default function InfluencerDetailPage() {
                                             </CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="space-y-3">
+                                            <div className="space-y-4">
                                                 <div>
-                                                    <div className="flex justify-between text-xs mb-1">
+                                                    <div className="flex justify-between text-xs mb-1.5">
                                                         <span className="text-muted-foreground">Vistas promedio</span>
                                                         <span className="font-semibold text-foreground">{formatNumber(avgViews)}</span>
                                                     </div>
-                                                    <div className="w-full bg-primary/10 rounded-full h-1.5">
-                                                        <div className="bg-primary h-1.5 rounded-full" style={{ width: `${Math.min((avgViews / (tikTokProfile?.fans || 1)) * 100, 100)}%` }} />
-                                                    </div>
+                                                    <Progress value={Math.min((avgViews / (tikTokProfile?.fans || 1)) * 100, 100)} className="h-2" />
                                                 </div>
                                                 <div>
-                                                    <div className="flex justify-between text-xs mb-1">
+                                                    <div className="flex justify-between text-xs mb-1.5">
                                                         <span className="text-muted-foreground">Likes promedio</span>
                                                         <span className="font-semibold text-foreground">{formatNumber(avgLikes)}</span>
                                                     </div>
-                                                    <div className="w-full bg-primary/10 rounded-full h-1.5">
-                                                        <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${Math.min((avgLikes / (tikTokProfile?.fans || 1)) * 100, 100)}%` }} />
-                                                    </div>
+                                                    <Progress value={Math.min((avgLikes / (tikTokProfile?.fans || 1)) * 100, 100)} className="h-2 [&>div]:bg-green-500" />
                                                 </div>
                                                 <div>
-                                                    <div className="flex justify-between text-xs mb-1">
+                                                    <div className="flex justify-between text-xs mb-1.5">
                                                         <span className="text-muted-foreground">Engagement rate</span>
                                                         <span className="font-semibold text-foreground">{tikTokVideos.length > 0 ? `${engagementRate.toFixed(2)}%` : "—"}</span>
                                                     </div>
-                                                    <div className="w-full bg-primary/10 rounded-full h-1.5">
-                                                        <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${Math.min(engagementRate * 10, 100)}%` }} />
-                                                    </div>
+                                                    <Progress value={Math.min(engagementRate * 10, 100)} className="h-2 [&>div]:bg-amber-500" />
                                                 </div>
                                             </div>
                                         </CardContent>
@@ -706,37 +862,62 @@ export default function InfluencerDetailPage() {
                                                 </CardDescription>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                    {topVideos.map((video, i) => (
-                                                        <div key={video.id} className="p-4 rounded-xl bg-[rgba(108,72,197,0.02)] border border-[rgba(108,72,197,0.06)] space-y-2">
-                                                            <div className="flex items-center justify-between">
-                                                                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
-                                                                <span className="text-[10px] text-muted-foreground">{formatDuration(video.duration)}</span>
-                                                            </div>
-                                                            <p className="text-xs text-foreground line-clamp-2 min-h-[2rem]">
-                                                                {video.caption || "Sin descripción"}
-                                                            </p>
-                                                             <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
-                                                                 <span className="text-muted-foreground">Vistas</span>
-                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.playCount)}</span>
-                                                                 <span className="text-muted-foreground">Likes</span>
-                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.likes)}</span>
-                                                                 <span className="text-muted-foreground">Comentarios</span>
-                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.comments)}</span>
-                                                                 <span className="text-muted-foreground">Compartido</span>
-                                                                 <span className="font-semibold text-foreground text-right">{formatNumber(video.shares)}</span>
-                                                             </div>
-                                                             <button
-                                                                 onClick={() => router.push(`/dashboard/influencers/${influencer.id}/posts/${video.id}/comments`)}
-                                                                 className="w-full mt-1 flex items-center justify-center gap-1.5 text-[10px] font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg py-1.5 transition-colors"
-                                                             >
-                                                                 <IconMessage className="w-3 h-3" />
-                                                                 Ver comentarios
-                                                                 <IconArrowRight className="w-3 h-3" />
-                                                             </button>
-                                                         </div>
-                                                    ))}
-                                                </div>
+                                                <Carousel className="w-full">
+                                                    <CarouselContent>
+                                                        {topVideos.map((video, i) => (
+                                                            <CarouselItem key={video.id} className="basis-full sm:basis-1/2 lg:basis-1/3">
+                                                                <div className="rounded-xl bg-[rgba(108,72,197,0.02)] border border-[rgba(108,72,197,0.06)] overflow-hidden h-full">
+                                                                    {video.coverUrl && (
+                                                                        <div className="relative aspect-video bg-muted">
+                                                                            <img
+                                                                                src={video.coverUrl}
+                                                                                alt={video.caption || "Video thumbnail"}
+                                                                                className="w-full h-full object-cover"
+                                                                                loading="lazy"
+                                                                            />
+                                                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                                                                <div className="w-8 h-8 rounded-full bg-white/80 flex items-center justify-center">
+                                                                                    <svg className="w-3.5 h-3.5 text-foreground ml-0.5" fill="currentColor" viewBox="0 0 24 24">
+                                                                                        <path d="M8 5v14l11-7z" />
+                                                                                    </svg>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+                                                                    <div className="p-3 space-y-2">
+                                                                        <div className="flex items-center justify-between">
+                                                                            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">#{i + 1}</span>
+                                                                            <span className="text-[10px] text-muted-foreground">{formatDuration(video.duration)}</span>
+                                                                        </div>
+                                                                        <p className="text-xs text-foreground line-clamp-2 min-h-[2rem]">
+                                                                            {video.caption || "Sin descripción"}
+                                                                        </p>
+                                                                        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px]">
+                                                                            <span className="text-muted-foreground">Vistas</span>
+                                                                            <span className="font-semibold text-foreground text-right">{formatNumber(video.playCount)}</span>
+                                                                            <span className="text-muted-foreground">Likes</span>
+                                                                            <span className="font-semibold text-foreground text-right">{formatNumber(video.likes)}</span>
+                                                                            <span className="text-muted-foreground">Comentarios</span>
+                                                                            <span className="font-semibold text-foreground text-right">{formatNumber(video.comments)}</span>
+                                                                            <span className="text-muted-foreground">Compartido</span>
+                                                                            <span className="font-semibold text-foreground text-right">{formatNumber(video.shares)}</span>
+                                                                        </div>
+                                                                        <button
+                                                                            onClick={() => router.push(`/dashboard/influencers/${influencer.id}/posts/${video.id}/comments`)}
+                                                                            className="w-full mt-1 flex items-center justify-center gap-1.5 text-[10px] font-medium text-primary bg-primary/5 hover:bg-primary/10 rounded-lg py-1.5 transition-colors"
+                                                                        >
+                                                                            <IconMessage className="w-3 h-3" />
+                                                                            Ver comentarios
+                                                                            <IconArrowRight className="w-3 h-3" />
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                            </CarouselItem>
+                                                        ))}
+                                                    </CarouselContent>
+                                                    <CarouselPrevious className="rounded-full" />
+                                                    <CarouselNext className="rounded-full" />
+                                                </Carousel>
                                             </CardContent>
                                         </Card>
                                     )}
@@ -745,7 +926,6 @@ export default function InfluencerDetailPage() {
                         </div>
                     </div>
                 </div>
-            </SidebarInset>
-        </SidebarProvider>
+
     );
 }

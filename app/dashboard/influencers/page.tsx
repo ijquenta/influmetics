@@ -2,9 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,7 +21,20 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+    HoverCard,
+    HoverCardContent,
+    HoverCardTrigger,
+} from "@/components/ui/hover-card";
 import {
     IconSearch,
     IconPlus,
@@ -35,6 +45,10 @@ import {
     IconChevronLeft,
     IconChevronRight,
     IconEye,
+    IconUsers,
+    IconDotsVertical,
+    IconEdit,
+    IconLink,
     IconBrandTiktok,
     IconBrandInstagram,
     IconBrandYoutube,
@@ -74,6 +88,7 @@ export default function InfluencersPage() {
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [dragOver, setDragOver] = useState(false);
 
     const fetchInfluencers = useCallback(async () => {
         setLoading(true);
@@ -84,6 +99,7 @@ export default function InfluencersPage() {
             params.append("limit", limit.toString());
 
             const res = await fetch(`/api/influencers?${params.toString()}`);
+            if (!res.ok) throw new Error("Error al cargar influencers");
             const data = await res.json();
             setInfluencers(data.data || []);
             setTotal(data.total || 0);
@@ -112,7 +128,11 @@ export default function InfluencersPage() {
     const handleDelete = async () => {
         if (!deleteId) return;
         try {
-            await fetch(`/api/influencers/${deleteId}`, { method: "DELETE" });
+            const res = await fetch(`/api/influencers/${deleteId}`, { method: "DELETE" });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "Error al eliminar influencer");
+            }
             toast.success("Influencer eliminado");
             setDeleteId(null);
             fetchInfluencers();
@@ -121,19 +141,43 @@ export default function InfluencersPage() {
         }
     };
 
-    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+    const validateFile = (file: File): boolean => {
         const ext = "." + file.name.split(".").pop()?.toLowerCase();
         if (![".csv", ".xlsx", ".xls"].includes(ext)) {
             toast.error("Selecciona un archivo CSV o XLSX");
-            return;
+            return false;
         }
         if (file.size > 10 * 1024 * 1024) {
             toast.error("El archivo es demasiado grande. Máximo 10MB");
-            return;
+            return false;
         }
-        setSelectedFile(file);
+        return true;
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (validateFile(file)) setSelectedFile(file);
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(true);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(false);
+    };
+
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file && validateFile(file)) setSelectedFile(file);
     };
 
     const handleUpload = async () => {
@@ -161,22 +205,17 @@ export default function InfluencersPage() {
     };
 
     const getTikTokFollowers = (accounts: SocialAccountWithPlatform[]): number | null => {
-        const tt = accounts.find((a) => a.socialPlatform.code.toLowerCase() === "tiktok");
+        const tt = accounts.find((a) => a.socialPlatform?.code?.toLowerCase() === "tiktok");
         return tt?.fans ?? null;
     };
 
+    const getTikTokAvatar = (accounts: SocialAccountWithPlatform[]): string | null => {
+        const tt = accounts.find((a) => a.socialPlatform?.code?.toLowerCase() === "tiktok");
+        return tt?.avatar ?? null;
+    };
+
     return (
-        <SidebarProvider
-            style={
-                {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                } as React.CSSProperties
-            }
-        >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-                <SiteHeader />
+
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
@@ -201,34 +240,50 @@ export default function InfluencersPage() {
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <div className="space-y-4 py-4">
-                                                <div>
-                                                    <Label htmlFor="file-upload" className="text-sm font-semibold text-foreground mb-2 block">
-                                                        Archivo
-                                                    </Label>
+                                                <div
+                                                    onDragOver={handleDragOver}
+                                                    onDragLeave={handleDragLeave}
+                                                    onDrop={handleDrop}
+                                                    className={`relative border-2 border-dashed rounded-2xl p-6 text-center transition-colors cursor-pointer ${
+                                                        dragOver
+                                                            ? "border-primary bg-primary/5"
+                                                            : selectedFile
+                                                            ? "border-primary/30 bg-primary/3"
+                                                            : "border-border hover:border-primary/40 hover:bg-muted/30"
+                                                    }`}
+                                                    onClick={() => fileInputRef.current?.click()}
+                                                >
                                                     <Input
                                                         id="file-upload"
                                                         ref={fileInputRef}
                                                         type="file"
                                                         accept=".csv,.xlsx,.xls"
                                                         onChange={handleFileSelect}
-                                                        className="rounded-2xl cursor-pointer"
+                                                        className="hidden"
                                                     />
-                                                    <p className="text-xs text-muted-foreground mt-2">CSV, XLSX, XLS (máx. 10MB)</p>
-                                                </div>
-                                                {selectedFile && (
-                                                    <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-xl">
-                                                        <IconFile className="w-5 h-5 text-primary shrink-0" />
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium text-foreground truncate">{selectedFile.name}</p>
-                                                            <p className="text-xs text-muted-foreground">
-                                                                {(selectedFile.size / 1024).toFixed(1)} KB
-                                                            </p>
+                                                    {selectedFile ? (
+                                                        <div className="flex items-center gap-3 justify-center">
+                                                            <IconFile className="w-8 h-8 text-primary shrink-0" />
+                                                            <div className="text-left">
+                                                                <p className="text-sm font-medium text-foreground truncate max-w-[200px]">{selectedFile.name}</p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {(selectedFile.size / 1024).toFixed(1)} KB
+                                                                </p>
+                                                            </div>
+                                                            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedFile(null); }} className="shrink-0">
+                                                                <IconX className="w-4 h-4" />
+                                                            </Button>
                                                         </div>
-                                                        <Button variant="ghost" size="sm" onClick={() => setSelectedFile(null)} className="shrink-0">
-                                                            <IconX className="w-4 h-4" />
-                                                        </Button>
-                                                    </div>
-                                                )}
+                                                    ) : (
+                                                        <>
+                                                            <IconUpload className="w-8 h-8 text-muted-foreground/60 mx-auto mb-2" />
+                                                            <p className="text-sm text-muted-foreground">
+                                                                {dragOver ? "Suelta el archivo aquí" : "Arrastra un archivo o haz clic para seleccionar"}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground mt-1">CSV, XLSX, XLS (máx. 10MB)</p>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
                                             <DialogFooter>
                                                 <Button
@@ -253,7 +308,7 @@ export default function InfluencersPage() {
                                         onClick={() => router.push("/dashboard/influencers/analysis")}
                                         className="border-primary text-primary hover:bg-primary/10 rounded-2xl px-6"
                                     >
-                                        Recuperar desde Red Social
+                                        Analizar TikTok
                                     </Button>
                                     <Button onClick={() => router.push("/dashboard/influencers/new")} className="rounded-2xl px-6">
                                         <IconPlus className="w-4 h-4 mr-2" />
@@ -275,19 +330,47 @@ export default function InfluencersPage() {
                                     </div>
 
                                     {loading ? (
-                                        <div className="space-y-3">
+                                        <div className="space-y-2">
                                             {Array.from({ length: 5 }).map((_, i) => (
-                                                <Skeleton key={i} className="h-12 w-full rounded-xl" />
+                                                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-[rgba(108,72,197,0.02)] border border-[rgba(108,72,197,0.06)]">
+                                                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                                                    <div className="flex-1 min-w-0 space-y-1.5">
+                                                        <Skeleton className="h-4 w-[180px] rounded-lg" />
+                                                        <Skeleton className="h-3 w-[120px] rounded-lg" />
+                                                    </div>
+                                                    <Skeleton className="h-3 w-[80px] rounded-lg hidden md:block" />
+                                                    <Skeleton className="h-3 w-[60px] rounded-lg hidden sm:block" />
+                                                    <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
+                                                </div>
                                             ))}
                                         </div>
                                     ) : influencers.length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">
-                                            <IconSearch className="w-8 h-8" />
-                                            <p className="text-sm">No se encontraron influencers</p>
-                                            {search && (
-                                                <Button variant="link" onClick={() => setSearch("")} className="text-xs">
+                                        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+                                            <div className="w-16 h-16 rounded-full bg-primary/5 flex items-center justify-center">
+                                                <IconUsers className="w-8 h-8 text-primary/40" />
+                                            </div>
+                                            <p className="text-sm font-medium text-foreground">
+                                                {search ? "Sin resultados" : "No hay influencers aún"}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground max-w-sm text-center">
+                                                {search
+                                                    ? `No encontramos nada para "${search}". Prueba con otro término.`
+                                                    : "Comienza agregando tu primer influencer para gestionar tus campañas."}
+                                            </p>
+                                            {search ? (
+                                                <Button variant="outline" size="sm" onClick={() => setSearch("")} className="rounded-2xl">
                                                     Limpiar búsqueda
                                                 </Button>
+                                            ) : (
+                                                <div className="flex gap-2 mt-1">
+                                                    <Button size="sm" onClick={() => router.push("/dashboard/influencers/new")} className="rounded-2xl gap-1.5">
+                                                        <IconPlus className="w-3.5 h-3.5" />
+                                                        Crear influencer
+                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => router.push("/dashboard/influencers/analysis")} className="rounded-2xl">
+                                                        Importar de TikTok
+                                                    </Button>
+                                                </div>
                                             )}
                                         </div>
                                     ) : (
@@ -295,6 +378,7 @@ export default function InfluencersPage() {
                                             <Table>
                                                 <TableHeader>
                                                     <TableRow>
+                                                        <TableHead className="text-foreground font-semibold w-12">Foto</TableHead>
                                                         <TableHead className="text-foreground font-semibold">Nombre</TableHead>
                                                         <TableHead className="text-foreground font-semibold hidden md:table-cell">Nicho</TableHead>
                                                         <TableHead className="text-foreground font-semibold text-center w-20">Campañas</TableHead>
@@ -308,9 +392,41 @@ export default function InfluencersPage() {
                                                     {influencers.map((influencer) => {
                                                         const socialAccounts = influencer.socialAccounts || [];
                                                         const followers = getTikTokFollowers(socialAccounts);
+                                                        const avatar = getTikTokAvatar(socialAccounts);
                                                         return (
-                                                            <TableRow key={influencer.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}>
-                                                                <TableCell className="font-medium text-foreground">{influencer.name}</TableCell>
+                                                            <TableRow key={influencer.id} className="hover:bg-muted/50 cursor-pointer transition-colors duration-150" onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)}>
+                                                                <TableCell>
+                                                                    <Avatar className="h-8 w-8">
+                                                                        {avatar ? (
+                                                                            <AvatarImage src={avatar} alt={influencer.name} />
+                                                                        ) : null}
+                                                                        <AvatarFallback className="text-xs">{influencer.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                                    </Avatar>
+                                                                </TableCell>
+                                                                <TableCell className="font-medium text-foreground">
+                                                                    <HoverCard>
+                                                                        <HoverCardTrigger asChild>
+                                                                            <span className="cursor-default">{influencer.name}</span>
+                                                                        </HoverCardTrigger>
+                                                                        <HoverCardContent className="w-64 rounded-2xl" side="right" align="start">
+                                                                            <div className="flex items-start gap-3">
+                                                                                <Avatar className="h-10 w-10">
+                                                                                    {avatar ? <AvatarImage src={avatar} alt={influencer.name} /> : null}
+                                                                                    <AvatarFallback className="text-xs">{influencer.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+                                                                                </Avatar>
+                                                                                <div className="space-y-1">
+                                                                                    <p className="text-sm font-semibold">{influencer.name}</p>
+                                                                                    {influencer.niche && <p className="text-xs text-muted-foreground">{influencer.niche}</p>}
+                                                                                    <div className="flex gap-2 text-xs text-muted-foreground">
+                                                                                        <span>{formatNumber(followers ?? 0)} seguidores</span>
+                                                                                        <span>·</span>
+                                                                                        <span>{influencer._count?.posts ?? 0} posts</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </HoverCardContent>
+                                                                    </HoverCard>
+                                                                </TableCell>
                                                                  <TableCell className="text-muted-foreground hidden md:table-cell">
                                                                      {influencer.niche || <span className="text-muted-foreground/50">—</span>}
                                                                  </TableCell>
@@ -347,49 +463,49 @@ export default function InfluencersPage() {
                                                                     {influencer._count?.posts ?? "—"}
                                                                 </TableCell>
                                                                 <TableCell className="text-right">
-                                                                    <div className="flex justify-end gap-1">
-                                                                        <Button
-                                                                            variant="ghost"
-                                                                            size="sm"
-                                                                            onClick={(e) => {
-                                                                                e.stopPropagation();
-                                                                                router.push(`/dashboard/influencers/${influencer.id}`);
-                                                                            }}
-                                                                            className="text-primary hover:text-primary/90"
-                                                                        >
-                                                                            <IconEye className="w-4 h-4" />
-                                                                        </Button>
-                                                                        <AlertDialog>
-                                                                            <AlertDialogTrigger asChild>
-                                                                                <Button
-                                                                                    variant="ghost"
-                                                                                    size="sm"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        setDeleteId(influencer.id);
-                                                                                    }}
-                                                                                    className="text-destructive hover:text-destructive/90"
-                                                                                >
-                                                                                    <IconTrash className="w-4 h-4" />
+                                                                    <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                                                                    <IconDotsVertical className="w-4 h-4" />
                                                                                 </Button>
-                                                                            </AlertDialogTrigger>
-                                                                            <AlertDialogContent className="rounded-[20px]">
-                                                                                <AlertDialogHeader>
-                                                                                    <AlertDialogTitle>Eliminar influencer</AlertDialogTitle>
-                                                                                    <AlertDialogDescription>
-                                                                                        ¿Estás seguro de eliminar a <strong>{influencer.name}</strong>? Esta acción no se puede deshacer.
-                                                                                    </AlertDialogDescription>
-                                                                                </AlertDialogHeader>
-                                                                                <AlertDialogFooter>
-                                                                                    <AlertDialogCancel className="rounded-2xl" onClick={() => setDeleteId(null)}>
-                                                                                        Cancelar
-                                                                                    </AlertDialogCancel>
-                                                                                    <AlertDialogAction onClick={handleDelete} className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                                                        Eliminar
-                                                                                    </AlertDialogAction>
-                                                                                </AlertDialogFooter>
-                                                                            </AlertDialogContent>
-                                                                        </AlertDialog>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end" className="rounded-2xl min-w-[180px]">
+                                                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)} className="cursor-pointer rounded-xl gap-2">
+                                                                                    <IconEye className="w-4 h-4 text-primary" />
+                                                                                    Ver detalle
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuItem onClick={() => router.push(`/dashboard/influencers/${influencer.id}`)} className="cursor-pointer rounded-xl gap-2">
+                                                                                    <IconEdit className="w-4 h-4 text-amber-600" />
+                                                                                    Editar
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuSeparator />
+                                                                                <AlertDialog>
+                                                                                    <AlertDialogTrigger asChild>
+                                                                                        <DropdownMenuItem className="cursor-pointer rounded-xl gap-2 text-destructive focus:text-destructive" onSelect={(e) => e.preventDefault()}>
+                                                                                            <IconTrash className="w-4 h-4" />
+                                                                                            Eliminar
+                                                                                        </DropdownMenuItem>
+                                                                                    </AlertDialogTrigger>
+                                                                                    <AlertDialogContent className="rounded-[20px]">
+                                                                                        <AlertDialogHeader>
+                                                                                            <AlertDialogTitle>Eliminar influencer</AlertDialogTitle>
+                                                                                            <AlertDialogDescription>
+                                                                                                ¿Estás seguro de eliminar a <strong>{influencer.name}</strong>? Esta acción no se puede deshacer.
+                                                                                            </AlertDialogDescription>
+                                                                                        </AlertDialogHeader>
+                                                                                        <AlertDialogFooter>
+                                                                                            <AlertDialogCancel className="rounded-2xl" onClick={() => setDeleteId(null)}>
+                                                                                                Cancelar
+                                                                                            </AlertDialogCancel>
+                                                                                            <AlertDialogAction onClick={handleDelete} className="rounded-2xl bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                                                                Eliminar
+                                                                                            </AlertDialogAction>
+                                                                                        </AlertDialogFooter>
+                                                                                    </AlertDialogContent>
+                                                                                </AlertDialog>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
                                                                     </div>
                                                                 </TableCell>
                                                             </TableRow>
@@ -399,40 +515,57 @@ export default function InfluencersPage() {
                                             </Table>
 
                                             {totalPages > 1 && (
-                                                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
+                                                <div className="flex items-center justify-between mt-6 pt-4 border-t border-border flex-wrap gap-3">
                                                     <p className="text-sm text-muted-foreground">
                                                         {total} resultado{total !== 1 ? "s" : ""} · Página {page} de {totalPages}
                                                     </p>
-                                                    <div className="flex items-center gap-1">
-                                                        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded-2xl">
-                                                            <IconChevronLeft className="w-4 h-4" />
-                                                        </Button>
-                                                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                                                            let pageNum: number;
-                                                            if (totalPages <= 7) {
-                                                                pageNum = i + 1;
-                                                            } else if (page <= 4) {
-                                                                pageNum = i + 1;
-                                                            } else if (page >= totalPages - 3) {
-                                                                pageNum = totalPages - 6 + i;
-                                                            } else {
-                                                                pageNum = page - 3 + i;
-                                                            }
-                                                            return (
-                                                                <Button
-                                                                    key={pageNum}
-                                                                    variant={page === pageNum ? "default" : "outline"}
-                                                                    size="sm"
-                                                                    onClick={() => setPage(pageNum)}
-                                                                    className="rounded-2xl min-w-[32px]"
-                                                                >
-                                                                    {pageNum}
-                                                                </Button>
-                                                            );
-                                                        })}
-                                                        <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded-2xl">
-                                                            <IconChevronRight className="w-4 h-4" />
-                                                        </Button>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex items-center gap-1">
+                                                            <Input
+                                                                type="number"
+                                                                min={1}
+                                                                max={totalPages}
+                                                                placeholder="Ir a"
+                                                                className="w-16 h-8 text-xs rounded-2xl text-center"
+                                                                onKeyDown={(e) => {
+                                                                    if (e.key === "Enter") {
+                                                                        const val = parseInt((e.target as HTMLInputElement).value);
+                                                                        if (val >= 1 && val <= totalPages) setPage(val);
+                                                                    }
+                                                                }}
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1} className="rounded-2xl">
+                                                                <IconChevronLeft className="w-4 h-4" />
+                                                            </Button>
+                                                            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                                                                let pageNum: number;
+                                                                if (totalPages <= 7) {
+                                                                    pageNum = i + 1;
+                                                                } else if (page <= 4) {
+                                                                    pageNum = i + 1;
+                                                                } else if (page >= totalPages - 3) {
+                                                                    pageNum = totalPages - 6 + i;
+                                                                } else {
+                                                                    pageNum = page - 3 + i;
+                                                                }
+                                                                return (
+                                                                    <Button
+                                                                        key={pageNum}
+                                                                        variant={page === pageNum ? "default" : "outline"}
+                                                                        size="sm"
+                                                                        onClick={() => setPage(pageNum)}
+                                                                        className="rounded-2xl min-w-[32px]"
+                                                                    >
+                                                                        {pageNum}
+                                                                    </Button>
+                                                                );
+                                                            })}
+                                                            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="rounded-2xl">
+                                                                <IconChevronRight className="w-4 h-4" />
+                                                            </Button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
@@ -443,7 +576,5 @@ export default function InfluencersPage() {
                         </div>
                     </div>
                 </div>
-            </SidebarInset>
-        </SidebarProvider>
     );
 }
