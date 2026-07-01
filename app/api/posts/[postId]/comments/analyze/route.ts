@@ -132,6 +132,15 @@ ${JSON.stringify(commentList, null, 2)}`;
             updatedCount++;
         }
 
+        // Save analysis results to the post
+        await prisma.post.update({
+            where: { id: postId },
+            data: {
+                temasDestacados: JSON.stringify(result.temas_destacados),
+                sugerencia: result.sugerencia,
+            },
+        });
+
         return NextResponse.json({
             analyzed: updatedCount,
             total: comments.length,

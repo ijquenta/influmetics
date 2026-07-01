@@ -63,17 +63,55 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     try {
         const { id: idParam } = await params;
         const id = parseInt(idParam);
+
+        if (Number.isNaN(id) || id <= 0) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
         const body = await request.json();
         const { name, email, birthDate, niche, referralCode } = body;
+
+        if (!name || !name.trim()) {
+            return NextResponse.json({ error: "El nombre es requerido" }, { status: 400 });
+        }
+
+        const cleanEmail = email?.trim() || null;
+        const cleanReferralCode = referralCode?.trim() || null;
+
+        if (cleanEmail) {
+            const existing = await prisma.influencer.findFirst({
+                where: { email: cleanEmail, id: { not: id } },
+            });
+            if (existing) {
+                return NextResponse.json({ error: "Ya existe un influencer con este email" }, { status: 400 });
+            }
+        }
+
+        if (cleanReferralCode) {
+            const existing = await prisma.influencer.findFirst({
+                where: { referralCode: cleanReferralCode, id: { not: id } },
+            });
+            if (existing) {
+                return NextResponse.json({ error: "Ya existe un influencer con este código de referido" }, { status: 400 });
+            }
+        }
+
+        let parsedDate = null;
+        if (birthDate) {
+            parsedDate = new Date(birthDate);
+            if (isNaN(parsedDate.getTime())) {
+                return NextResponse.json({ error: "Fecha de nacimiento inválida" }, { status: 400 });
+            }
+        }
 
         const influencer = await prisma.influencer.update({
             where: { id },
             data: {
-                name,
-                email,
-                birthDate: birthDate ? new Date(birthDate) : null,
-                niche,
-                referralCode,
+                name: name.trim(),
+                email: cleanEmail,
+                birthDate: parsedDate,
+                niche: niche?.trim() || null,
+                referralCode: cleanReferralCode,
             },
             include: {
                 socialAccounts: {
@@ -92,6 +130,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
         return NextResponse.json({ data: influencer });
     } catch (error) {
+        if (typeof error === "object" && error !== null && (error as { code?: string }).code === "P2025") {
+            return NextResponse.json({ error: "Influencer no encontrado" }, { status: 404 });
+        }
         console.error("Error updating influencer:", error);
         return NextResponse.json({ error: "Error al actualizar influencer" }, { status: 500 });
     }
@@ -102,8 +143,21 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
         const { id: idParam } = await params;
         const id = parseInt(idParam);
 
-        await prisma.influencer.delete({
-            where: { id },
+        if (Number.isNaN(id) || id <= 0) {
+            return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+        }
+
+        await prisma.$transaction(async (tx) => {
+            await tx.influencerSocialAccount.deleteMany({ where: { influencerId: id } });
+            await tx.influencerCampaign.deleteMany({ where: { influencerId: id } });
+            await tx.postHashtag.deleteMany({ where: { post: { influencerId: id } } });
+            await tx.postMention.deleteMany({ where: { post: { influencerId: id } } });
+            await tx.postSubtitle.deleteMany({ where: { post: { influencerId: id } } });
+            await tx.comment.deleteMany({ where: { post: { influencerId: id } } });
+            await tx.postMetricSnapshot.deleteMany({ where: { post: { influencerId: id } } });
+            await tx.post.deleteMany({ where: { influencerId: id } });
+            await tx.internalMetric.deleteMany({ where: { influencerId: id } });
+            await tx.influencer.delete({ where: { id } });
         });
 
         return NextResponse.json({ message: "Influencer eliminado" });

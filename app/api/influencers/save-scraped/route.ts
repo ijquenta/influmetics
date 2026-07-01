@@ -105,12 +105,15 @@ export async function POST(request: NextRequest) {
 
         // Find or create the social platform "tiktok"
         const tiktokPlatform = await prisma.socialPlatform.findUnique({ where: { code: "tiktok" } });
+        if (!tiktokPlatform) {
+            return NextResponse.json({ error: "La plataforma 'tiktok' no existe en la base de datos" }, { status: 500 });
+        }
 
         const result = await prisma.$transaction(async (tx) => {
             // Find or create the influencer by TikTok handle
             const existingAccount = await tx.influencerSocialAccount.findFirst({
                 where: {
-                    socialPlatformId: tiktokPlatform!.id,
+                    socialPlatformId: tiktokPlatform.id,
                     handle: { equals: author.name, mode: "insensitive" },
                 },
                 include: { influencer: true },
@@ -153,7 +156,7 @@ export async function POST(request: NextRequest) {
                 await tx.influencerSocialAccount.create({
                     data: {
                         influencerId: newInfluencer.id,
-                        socialPlatformId: tiktokPlatform!.id,
+                        socialPlatformId: tiktokPlatform.id,
                         handle: author.name,
                         profileUrl: n(author.profileUrl),
                         isActive: true,
@@ -197,7 +200,7 @@ export async function POST(request: NextRequest) {
                     existingPost = await tx.post.create({
                         data: {
                             influencerId,
-                            socialPlatformId: tiktokPlatform!.id,
+                            socialPlatformId: tiktokPlatform.id,
                             url: result.webVideoUrl,
                             caption: result.text,
                             publishedAt,

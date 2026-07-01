@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
         const emailIdx = headers.findIndex((h) => h.includes("email") || h.includes("correo"));
         const nicheIdx = headers.findIndex((h) => h.includes("nicho") || h.includes("niche"));
         const referralCodeIdx = headers.findIndex((h) => h.includes("codigo") || h.includes("referral") || h.includes("code"));
+        const birthDateIdx = headers.findIndex((h) => h.includes("fecha") || h.includes("birth") || h.includes("nacimiento") || h.includes("date"));
 
         // Índices para redes sociales (pueden variar)
         const tiktokHandleIdx = headers.findIndex((h) => h.includes("tiktok") || h.includes("tik tok"));
@@ -126,6 +127,38 @@ export async function POST(request: NextRequest) {
             platformMap[p.code.toLowerCase()] = p.id;
         });
 
+        // Pre-validación de duplicados
+        const existingEmails = new Set<string>();
+        const existingRefCodes = new Set<string>();
+        const existingHandles: Map<string, Set<string>> = new Map();
+
+        if (emailIdx !== -1) {
+            const emails = await prisma.influencer.findMany({
+                where: { email: { not: null } },
+                select: { email: true },
+            });
+            emails.forEach((e) => e.email && existingEmails.add(e.email));
+        }
+
+        if (referralCodeIdx !== -1) {
+            const refs = await prisma.influencer.findMany({
+                where: { referralCode: { not: null } },
+                select: { referralCode: true },
+            });
+            refs.forEach((r) => r.referralCode && existingRefCodes.add(r.referralCode));
+        }
+
+        for (const platformCode of ["tiktok", "instagram", "youtube", "x"] as const) {
+            if (platformMap[platformCode]) {
+                const accounts = await prisma.influencerSocialAccount.findMany({
+                    where: { socialPlatformId: platformMap[platformCode] },
+                    select: { handle: true },
+                });
+                const handles = new Set(accounts.map((a) => a.handle.toLowerCase()));
+                existingHandles.set(platformCode, handles);
+            }
+        }
+
         // Procesar cada fila en una transacción
         const results = await prisma.$transaction(async (tx) => {
             let successCount = 0;
@@ -139,15 +172,81 @@ export async function POST(request: NextRequest) {
                     continue;
                 }
 
+                const rowName = row[nameIdx]?.trim();
+                if (!rowName) {
+                    errorCount++;
+                    errors.push(`Fila ${i + 1}: El nombre es requerido`);
+                    continue;
+                }
+
+                const rowEmail = emailIdx !== -1 && row[emailIdx] ? row[emailIdx].trim() : null;
+                const rowRefCode = referralCodeIdx !== -1 && row[referralCodeIdx] ? row[referralCodeIdx].trim() : null;
+
+                if (rowEmail && existingEmails.has(rowEmail)) {
+                    errorCount++;
+                    errors.push(`Fila ${i + 1}: El email "${rowEmail}" ya existe`);
+                    continue;
+                }
+
+                if (rowRefCode && existingRefCodes.has(rowRefCode)) {
+                    errorCount++;
+                    errors.push(`Fila ${i + 1}: El código de referido "${rowRefCode}" ya existe`);
+                    continue;
+                }
+
+                // Verificar handles duplicados
+                const handleChecks: { platform: string; handle: string }[] = [];
+                if (tiktokHandleIdx !== -1 && row[tiktokHandleIdx] && platformMap["tiktok"]) {
+                    handleChecks.push({ platform: "tiktok", handle: row[tiktokHandleIdx] });
+                }
+                if (instagramHandleIdx !== -1 && row[instagramHandleIdx] && platformMap["instagram"]) {
+                    handleChecks.push({ platform: "instagram", handle: row[instagramHandleIdx] });
+                }
+                if (youtubeHandleIdx !== -1 && row[youtubeHandleIdx] && platformMap["youtube"]) {
+                    handleChecks.push({ platform: "youtube", handle: row[youtubeHandleIdx] });
+                }
+                if (xHandleIdx !== -1 && row[xHandleIdx] && platformMap["x"]) {
+                    handleChecks.push({ platform: "x", handle: row[xHandleIdx] });
+                }
+
+                let duplicateHandle = false;
+                for (const hc of handleChecks) {
+                    const cleanHandle = hc.handle.replace(/^@+/, "").trim().toLowerCase();
+                    const existing = existingHandles.get(hc.platform);
+                    if (existing && existing.has(cleanHandle)) {
+                        errorCount++;
+                        errors.push(`Fila ${i + 1}: El handle "${hc.handle}" ya está registrado en ${hc.platform}`);
+                        duplicateHandle = true;
+                        break;
+                    }
+                }
+                if (duplicateHandle) continue;
+
+                // Parse birthDate
+                let rowBirthDate = null;
+                if (birthDateIdx !== -1 && row[birthDateIdx]) {
+                    rowBirthDate = new Date(row[birthDateIdx]);
+                    if (isNaN(rowBirthDate.getTime())) {
+                        errorCount++;
+                        errors.push(`Fila ${i + 1}: Fecha de nacimiento inválida: "${row[birthDateIdx]}"`);
+                        continue;
+                    }
+                }
+
                 try {
                     const influencer = await tx.influencer.create({
                         data: {
-                            name: row[nameIdx] || "",
-                            email: emailIdx !== -1 && row[emailIdx] ? row[emailIdx] : null,
-                            niche: nicheIdx !== -1 && row[nicheIdx] ? row[nicheIdx] : null,
-                            referralCode: referralCodeIdx !== -1 && row[referralCodeIdx] ? row[referralCodeIdx] : null,
+                            name: rowName,
+                            email: rowEmail,
+                            niche: nicheIdx !== -1 && row[nicheIdx] ? row[nicheIdx].trim() : null,
+                            referralCode: rowRefCode,
+                            birthDate: rowBirthDate,
                         },
                     });
+
+                    // Marcar como usados para evitar duplicados en el mismo archivo
+                    if (rowEmail) existingEmails.add(rowEmail);
+                    if (rowRefCode) existingRefCodes.add(rowRefCode);
 
                     const socialAccounts: {
                         influencerId: number;
@@ -157,45 +256,31 @@ export async function POST(request: NextRequest) {
                     }[] = [];
 
                     if (tiktokHandleIdx !== -1 && row[tiktokHandleIdx] && platformMap["tiktok"]) {
-                        socialAccounts.push({
-                            influencerId: influencer.id,
-                            socialPlatformId: platformMap["tiktok"],
-                            handle: row[tiktokHandleIdx].replace("@", ""),
-                            isActive: true,
-                        });
+                        const h = row[tiktokHandleIdx].replace(/^@+/, "").trim();
+                        socialAccounts.push({ influencerId: influencer.id, socialPlatformId: platformMap["tiktok"], handle: h, isActive: true });
+                        existingHandles.get("tiktok")?.add(h.toLowerCase());
                     }
 
                     if (instagramHandleIdx !== -1 && row[instagramHandleIdx] && platformMap["instagram"]) {
-                        socialAccounts.push({
-                            influencerId: influencer.id,
-                            socialPlatformId: platformMap["instagram"],
-                            handle: row[instagramHandleIdx].replace("@", ""),
-                            isActive: true,
-                        });
+                        const h = row[instagramHandleIdx].replace(/^@+/, "").trim();
+                        socialAccounts.push({ influencerId: influencer.id, socialPlatformId: platformMap["instagram"], handle: h, isActive: true });
+                        existingHandles.get("instagram")?.add(h.toLowerCase());
                     }
 
                     if (youtubeHandleIdx !== -1 && row[youtubeHandleIdx] && platformMap["youtube"]) {
-                        socialAccounts.push({
-                            influencerId: influencer.id,
-                            socialPlatformId: platformMap["youtube"],
-                            handle: row[youtubeHandleIdx].replace("@", ""),
-                            isActive: true,
-                        });
+                        const h = row[youtubeHandleIdx].replace(/^@+/, "").trim();
+                        socialAccounts.push({ influencerId: influencer.id, socialPlatformId: platformMap["youtube"], handle: h, isActive: true });
+                        existingHandles.get("youtube")?.add(h.toLowerCase());
                     }
 
                     if (xHandleIdx !== -1 && row[xHandleIdx] && platformMap["x"]) {
-                        socialAccounts.push({
-                            influencerId: influencer.id,
-                            socialPlatformId: platformMap["x"],
-                            handle: row[xHandleIdx].replace("@", ""),
-                            isActive: true,
-                        });
+                        const h = row[xHandleIdx].replace(/^@+/, "").trim();
+                        socialAccounts.push({ influencerId: influencer.id, socialPlatformId: platformMap["x"], handle: h, isActive: true });
+                        existingHandles.get("x")?.add(h.toLowerCase());
                     }
 
                     if (socialAccounts.length > 0) {
-                        await tx.influencerSocialAccount.createMany({
-                            data: socialAccounts,
-                        });
+                        await tx.influencerSocialAccount.createMany({ data: socialAccounts });
                     }
 
                     successCount++;
@@ -208,11 +293,17 @@ export async function POST(request: NextRequest) {
             return { successCount, errorCount, errors };
         });
 
+        const displayErrors = results.errors.slice(0, 10);
+        const moreErrors = results.errors.length - displayErrors.length;
+
         return NextResponse.json({
-            message: `Importación completada: ${results.successCount} influencers creados exitosamente`,
+            message: results.errorCount > 0
+                ? `Importación completada: ${results.successCount} creados, ${results.errorCount} errores`
+                : `Importación completada: ${results.successCount} influencers creados exitosamente`,
             count: results.successCount,
-            errors: results.errorCount > 0 ? results.errors.slice(0, 10) : [],
+            errors: displayErrors,
             errorCount: results.errorCount,
+            moreErrors: moreErrors > 0 ? `... y ${moreErrors} errores más` : null,
         });
     } catch (error: any) {
         console.error("Error uploading file:", error);

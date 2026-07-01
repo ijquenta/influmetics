@@ -54,13 +54,27 @@ export async function POST(request: NextRequest) {
         const responseBody = await scraperRes.json();
 
         if (!scraperRes.ok) {
+            const msg = scraperRes.status === 404
+                ? "El usuario no existe en TikTok. Verifica que el nombre sea correcto."
+                : "La API de scraping respondió con error.";
             return NextResponse.json(
-                {
-                    error: "La API de scraping respondió con error.",
-                    statusCode: scraperRes.status,
-                    backendResponse: responseBody,
-                },
+                { error: msg, statusCode: scraperRes.status, backendResponse: responseBody },
                 { status: scraperRes.status }
+            );
+        }
+
+        if (!responseBody.results || responseBody.results.length === 0) {
+            return NextResponse.json(
+                { error: "El usuario no existe en TikTok. Verifica que el nombre sea correcto." },
+                { status: 404 }
+            );
+        }
+
+        const author = responseBody.results[0]?.author;
+        if (!author || !author.id) {
+            return NextResponse.json(
+                { error: "No se pudo obtener la información del perfil. El usuario podría no existir en TikTok." },
+                { status: 404 }
             );
         }
 

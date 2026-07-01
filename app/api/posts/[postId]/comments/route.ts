@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
         const skip = (page - 1) * limit;
 
-        const [comments, total, post] = await Promise.all([
+        const [comments, total, post, sentimentCounts] = await Promise.all([
             prisma.comment.findMany({
                 where: { postId },
                 orderBy: { [sortBy]: sortOrder },
@@ -35,7 +35,19 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                     metrics: { orderBy: { snapshotDate: "desc" }, take: 1 },
                 },
             }),
+            prisma.comment.groupBy({
+                by: ["sentimentLabel"],
+                where: { postId, sentimentLabel: { not: null } },
+                _count: true,
+            }),
         ]);
+
+        const counts = { positivo: 0, negativo: 0, neutro: 0 };
+        for (const row of sentimentCounts) {
+            if (row.sentimentLabel === "POSITIVO") counts.positivo = row._count;
+            else if (row.sentimentLabel === "NEGATIVO") counts.negativo = row._count;
+            else if (row.sentimentLabel === "NEUTRO") counts.neutro = row._count;
+        }
 
         return NextResponse.json({
             data: comments,
@@ -45,6 +57,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                 total,
                 totalPages: Math.ceil(total / limit),
             },
+            sentimentCounts: counts,
             post: post
                 ? {
                       id: post.id,
@@ -59,6 +72,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
                       commentCount: post.metrics?.[0]?.commentCount ?? null,
                       shares: post.metrics?.[0]?.shares ?? null,
                       saves: post.metrics?.[0]?.saves ?? null,
+                      temasDestacados: post.temasDestacados,
+                      sugerencia: post.sugerencia,
                   }
                 : null,
         });
