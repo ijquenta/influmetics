@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -385,30 +382,16 @@ export default function DashboardPage() {
 
     if (loading && !stats) {
         return (
-            <SidebarProvider>
-                <AppSidebar variant="inset" />
-                <SidebarInset>
-                    <SiteHeader />
+
                     <div className="flex flex-1 items-center justify-center gap-2 text-muted-foreground">
                         <IconLoader2 className="w-5 h-5 animate-spin" />
                         Cargando dashboard...
                     </div>
-                </SidebarInset>
-            </SidebarProvider>
         );
     }
 
     return (
-        <SidebarProvider
-            style={{
-                "--sidebar-width": "calc(var(--spacing) * 72)",
-                "--header-height": "calc(var(--spacing) * 12)",
-            } as React.CSSProperties}
-        >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-                <SiteHeader />
-                <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-5 md:py-5 px-4 lg:px-6 bg-muted min-h-full">
                             {/* Header */}
@@ -834,7 +817,5 @@ export default function DashboardPage() {
                         </div>
                     </div>
                 </div>
-            </SidebarInset>
-        </SidebarProvider>
     );
 }
