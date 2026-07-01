@@ -1,9 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,29 +45,19 @@ export default function UsersPage() {
 
     if (isLoading) {
         return (
-            <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset>
-                    <SiteHeader />
+
                     <div className="flex flex-1 items-center justify-center p-6">
                         <Spinner />
                     </div>
-                </SidebarInset>
-            </SidebarProvider>
         );
     }
 
     if (profile?.role !== "admin") {
         return (
-            <SidebarProvider>
-                <AppSidebar />
-                <SidebarInset>
-                    <SiteHeader />
+
                     <div className="flex flex-1 items-center justify-center p-6">
                         <p className="text-muted-foreground">No tienes permisos para acceder a esta página.</p>
                     </div>
-                </SidebarInset>
-            </SidebarProvider>
         );
     }
 
@@ -119,10 +106,6 @@ export default function UsersPage() {
     };
 
     return (
-        <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-                <SiteHeader />
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
@@ -241,7 +224,5 @@ export default function UsersPage() {
                         </div>
                     </div>
                 </div>
-            </SidebarInset>
-        </SidebarProvider>
     );
 }
