@@ -2,9 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -117,7 +114,7 @@ export default function NewInfluencerPage() {
                 .filter((acc) => acc.socialPlatformId && acc.handle.trim())
                 .map((acc) => ({
                     socialPlatformId: parseInt(acc.socialPlatformId),
-                    handle: acc.handle.replace("@", "").trim(),
+                    handle: acc.handle.replace(/^@+/, "").trim(),
                     profileUrl: acc.profileUrl.trim() || null,
                     isActive: acc.isActive,
                 }));
@@ -163,17 +160,7 @@ export default function NewInfluencerPage() {
     };
 
     return (
-        <SidebarProvider
-            style={
-                {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                } as React.CSSProperties
-            }
-        >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-                <SiteHeader />
+
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
@@ -429,7 +416,5 @@ export default function NewInfluencerPage() {
                         </div>
                     </div>
                 </div>
-            </SidebarInset>
-        </SidebarProvider>
     );
 }

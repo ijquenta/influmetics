@@ -1,10 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SiteHeader } from "@/components/site-header";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
     Breadcrumb,
     BreadcrumbList,
@@ -19,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     IconSearch,
     IconLoader2,
@@ -61,15 +59,17 @@ const EXTRACT_STEPS = [
     { key: "processing", label: "Procesando información" },
 ] as const;
 
-export default function AnalysisPage() {
+function AnalysisPage() {
     const router = useRouter();
-    const [value, setValue] = useState("");
+    const searchParams = useSearchParams();
+    const [value, setValue] = useState(searchParams.get("username") || "");
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [currentStep, setCurrentStep] = useState(0);
     const [author, setAuthor] = useState<Author | null>(null);
     const [rawData, setRawData] = useState<ScraperResponse | null>(null);
     const [savedId, setSavedId] = useState<number | null>(null);
+    const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const runStep = (stepIndex: number, delay: number) =>
@@ -77,6 +77,12 @@ export default function AnalysisPage() {
             setCurrentStep(stepIndex);
             setTimeout(resolve, delay);
         });
+
+    useEffect(() => {
+        return () => {
+            if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+        };
+    }, []);
 
     const handleExtract = async () => {
         const trimmed = value.trim();
@@ -102,7 +108,9 @@ export default function AnalysisPage() {
 
             await runStep(2, 300);
 
-            const data: ScraperResponse = await res.json();
+            const body = await res.text();
+            let data: ScraperResponse;
+            try { data = JSON.parse(body); } catch { data = {} as ScraperResponse; }
 
             if (!res.ok) {
                 setError((data as any)?.error || "No se pudieron obtener los datos de este perfil.");
@@ -134,7 +142,9 @@ export default function AnalysisPage() {
                 body: JSON.stringify({ scrapedData: rawData }),
             });
 
-            const data = await res.json();
+            const body = await res.text();
+            let data;
+            try { data = JSON.parse(body); } catch { data = {}; }
 
             if (!res.ok) {
                 toast.error(data?.error || "Error al guardar el perfil.");
@@ -145,7 +155,9 @@ export default function AnalysisPage() {
             if (id) {
                 setSavedId(id);
                 toast.success("Perfil guardado correctamente");
-                setTimeout(() => router.push(`/dashboard/influencers/${id}`), 800);
+                redirectTimerRef.current = setTimeout(() => router.push(`/dashboard/influencers/${id}`), 800);
+            } else {
+                toast.error("Error al guardar: no se recibió el ID del perfil.");
             }
         } catch {
             toast.error("Error al guardar los datos.");
@@ -155,17 +167,7 @@ export default function AnalysisPage() {
     };
 
     return (
-        <SidebarProvider
-            style={
-                {
-                    "--sidebar-width": "calc(var(--spacing) * 72)",
-                    "--header-height": "calc(var(--spacing) * 12)",
-                } as React.CSSProperties
-            }
-        >
-            <AppSidebar variant="inset" />
-            <SidebarInset>
-                <SiteHeader />
+
                 <div className="flex flex-1 flex-col">
                     <div className="@container/main flex flex-1 flex-col gap-2">
                         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6 px-4 lg:px-6 bg-muted min-h-full">
@@ -233,29 +235,49 @@ export default function AnalysisPage() {
                                     )}
 
                                     {loading && (
-                                        <div className="bg-[rgba(108,72,197,0.04)] rounded-xl p-4 space-y-3">
-                                            {EXTRACT_STEPS.map((step, i) => (
-                                                <div key={step.key} className="flex items-center gap-3 text-sm">
-                                                    <div className="w-5 h-5 flex items-center justify-center shrink-0">
-                                                        {i < currentStep ? (
-                                                            <IconCheck className="w-4 h-4 text-green-500" />
-                                                        ) : i === currentStep ? (
-                                                            <IconLoader2 className="w-4 h-4 animate-spin text-primary" />
-                                                        ) : (
-                                                            <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/20" />
-                                                        )}
+                                        <div className="space-y-4">
+                                            <div className="bg-[rgba(108,72,197,0.04)] rounded-xl p-4 space-y-3">
+                                                {EXTRACT_STEPS.map((step, i) => (
+                                                    <div key={step.key} className="flex items-center gap-3 text-sm">
+                                                        <div className="w-5 h-5 flex items-center justify-center shrink-0">
+                                                            {i < currentStep ? (
+                                                                <IconCheck className="w-4 h-4 text-green-500" />
+                                                            ) : i === currentStep ? (
+                                                                <IconLoader2 className="w-4 h-4 animate-spin text-primary" />
+                                                            ) : (
+                                                                <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/20" />
+                                                            )}
+                                                        </div>
+                                                        <span
+                                                            className={
+                                                                i <= currentStep
+                                                                    ? "text-foreground font-medium"
+                                                                    : "text-muted-foreground/40"
+                                                            }
+                                                        >
+                                                            {step.label}
+                                                        </span>
                                                     </div>
-                                                    <span
-                                                        className={
-                                                            i <= currentStep
-                                                                ? "text-foreground font-medium"
-                                                                : "text-muted-foreground/40"
-                                                        }
-                                                    >
-                                                        {step.label}
-                                                    </span>
+                                                ))}
+                                            </div>
+                                            {/* Preview skeleton */}
+                                            <div className="rounded-[20px] border border-[rgba(108,72,197,0.06)] bg-background p-5 space-y-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Skeleton className="h-12 w-12 rounded-full" />
+                                                    <div className="space-y-1.5">
+                                                        <Skeleton className="h-4 w-32 rounded-lg" />
+                                                        <Skeleton className="h-3 w-20 rounded-lg" />
+                                                    </div>
                                                 </div>
-                                            ))}
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                    {Array.from({ length: 4 }).map((_, i) => (
+                                                        <div key={i} className="space-y-1.5">
+                                                            <Skeleton className="h-6 w-16 rounded-lg" />
+                                                            <Skeleton className="h-3 w-12 rounded-lg" />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                         </div>
                                     )}
 
@@ -326,28 +348,28 @@ export default function AnalysisPage() {
                                                     <div className="bg-[rgba(108,72,197,0.04)] rounded-xl p-3 text-center">
                                                         <IconUsers className="w-4 h-4 text-primary mx-auto mb-1" />
                                                         <p className="text-lg font-bold text-foreground">
-                                                            {author.fans.toLocaleString()}
+                                                            {(author.fans ?? 0).toLocaleString()}
                                                         </p>
                                                         <p className="text-[10px] text-muted-foreground">Seguidores</p>
                                                     </div>
                                                     <div className="bg-[rgba(108,72,197,0.04)] rounded-xl p-3 text-center">
                                                         <IconUserPlus className="w-4 h-4 text-primary mx-auto mb-1" />
                                                         <p className="text-lg font-bold text-foreground">
-                                                            {author.following.toLocaleString()}
+                                                            {(author.following ?? 0).toLocaleString()}
                                                         </p>
                                                         <p className="text-[10px] text-muted-foreground">Seguidos</p>
                                                     </div>
                                                     <div className="bg-[rgba(108,72,197,0.04)] rounded-xl p-3 text-center">
                                                         <IconHeart className="w-4 h-4 text-primary mx-auto mb-1" />
                                                         <p className="text-lg font-bold text-foreground">
-                                                            {author.heart.toLocaleString()}
+                                                            {(author.heart ?? 0).toLocaleString()}
                                                         </p>
                                                         <p className="text-[10px] text-muted-foreground">Likes totales</p>
                                                     </div>
                                                     <div className="bg-[rgba(108,72,197,0.04)] rounded-xl p-3 text-center">
                                                         <IconVideo className="w-4 h-4 text-primary mx-auto mb-1" />
                                                         <p className="text-lg font-bold text-foreground">
-                                                            {author.video.toLocaleString()}
+                                                            {(author.video ?? 0).toLocaleString()}
                                                         </p>
                                                         <p className="text-[10px] text-muted-foreground">Videos</p>
                                                     </div>
@@ -402,7 +424,20 @@ export default function AnalysisPage() {
                         </div>
                     </div>
                 </div>
-            </SidebarInset>
-        </SidebarProvider>
+    );
+}
+
+export default function AnalysisPageWrapper() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-1 flex-col p-6 gap-4 bg-muted">
+                <Skeleton className="h-5 w-48 rounded-xl" />
+                <Skeleton className="h-8 w-72 rounded-xl" />
+                <Skeleton className="h-4 w-64 rounded-xl" />
+                <Skeleton className="h-48 rounded-[20px]" />
+            </div>
+        }>
+            <AnalysisPage />
+        </Suspense>
     );
 }
