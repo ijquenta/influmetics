@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
             where,
             include: {
                 primaryGoalType: true,
+                campaignHashtags: true,
                 influencerCampaigns: {
                     include: {
                         influencer: true,

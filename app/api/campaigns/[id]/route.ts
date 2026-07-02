@@ -11,6 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
             where: { id },
             include: {
                 primaryGoalType: true,
+                campaignHashtags: true,
                 influencerCampaigns: {
                     include: {
                         influencer: {
