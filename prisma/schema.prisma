@@ -100,6 +100,18 @@ model CampaignGoalType {
 
 }
 
+model CampaignHashtag {
+  id         Int      @id @default(autoincrement())
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+  campaignId Int
+  hashtag    String?
+  keyword    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([campaignId])
+}
+
 model Campaign {
   id          Int       @id @default(autoincrement())
   name        String
@@ -112,6 +124,9 @@ model Campaign {
   primaryGoalType   CampaignGoalType? @relation(fields: [primaryGoalTypeId], references: [id])
   primaryGoalTypeId Int?
 
+  lastDiscoveredAt DateTime?
+
+  campaignHashtags    CampaignHashtag[]
   influencerCampaigns InfluencerCampaign[]
   posts               Post[]
   internalMetrics     InternalMetric[]
@@ -166,6 +181,8 @@ model Post {
   // TikTok scraper video data
   tiktokVideoId String?
   textLanguage  String?
+
+  @@index([tiktokVideoId])
   duration      Int?
   coverUrl      String?
   webVideoUrl   String?
