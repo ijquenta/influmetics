@@ -1,4 +1,4 @@
-import type { Influencer, InfluencerSocialAccount, Post, PostMetricSnapshot, Campaign, InfluencerCampaign, PostHashtag, PostSubtitle, PostMention } from "@prisma/client";
+import type { Influencer, InfluencerSocialAccount, Post, PostMetricSnapshot, Campaign, InfluencerCampaign, PostHashtag, PostSubtitle, PostMention, CampaignHashtag } from "@prisma/client";
 
 export type SocialAccountWithPlatform = InfluencerSocialAccount & {
     socialPlatform: { code: string; name: string };
@@ -34,6 +34,7 @@ export interface CampaignWithRelations extends Campaign {
     influencerCampaigns: (InfluencerCampaign & {
         influencer: Influencer;
     })[];
+    campaignHashtags: CampaignHashtag[];
     posts: Post[];
     _count?: {
         influencerCampaigns: number;
