@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { IconLoader2, IconEdit, IconTrash, IconCurrencyDollar, IconUsers, IconArticle, IconTrendingUp, IconArrowLeft } from "@tabler/icons-react";
+import { IconLoader2, IconEdit, IconTrash, IconCurrencyDollar, IconUsers, IconArticle, IconTrendingUp, IconArrowLeft, IconSearch } from "@tabler/icons-react";
 import { toast } from "sonner";
 import type { CampaignWithRelations } from "@/shared/types/influencer.types";
 
@@ -165,6 +165,10 @@ export default function CampaignDetailPage() {
                                             <p className="text-[16px] text-muted-foreground">{campaign.description || "Detalle de la campaña"}</p>
                                         </div>
                                         <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/campaigns/${id}/analisis`)} className="rounded-2xl gap-2">
+                                                <IconSearch className="w-4 h-4" />
+                                                Análisis Retrospectivo
+                                            </Button>
                                             <Button variant="outline" size="sm" onClick={openEdit} className="rounded-2xl gap-2">
                                                 <IconEdit className="w-4 h-4" />
                                                 Editar
