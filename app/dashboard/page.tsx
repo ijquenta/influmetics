@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -244,25 +244,29 @@ export default function DashboardPage() {
         }
     };
 
-    const chartConfig: ChartConfig = {
-        views: { label: "Vistas", color: "#6C48C5" },
-        likes: { label: "Likes", color: "#E4405F" },
-        shares: { label: "Shares", color: "#2EC7FF" },
-        clicks: { label: "Clics", color: "#FF8C00" },
-        conversions: { label: "Conversiones", color: "#4CAF50" },
-        revenue: { label: "Ingresos", color: "#F59E0B" },
-        engagement: { label: "Engagement %", color: "#8B5CF6" },
-        ctr: { label: "CTR %", color: "#06B6D4" },
-    };
+    const chartConfig = useMemo<ChartConfig>(() => {
+        const config: ChartConfig = {
+            views: { label: "Vistas", color: "#6C48C5" },
+            likes: { label: "Likes", color: "#E4405F" },
+            shares: { label: "Shares", color: "#2EC7FF" },
+            clicks: { label: "Clics", color: "#FF8C00" },
+            conversions: { label: "Conversiones", color: "#4CAF50" },
+            revenue: { label: "Ingresos", color: "#F59E0B" },
+            engagement: { label: "Engagement %", color: "#8B5CF6" },
+            ctr: { label: "CTR %", color: "#06B6D4" },
+        };
 
-    selectedPlatformIds.forEach((platformId) => {
-        const platform = platforms.find((p) => p.id === platformId);
-        if (platform) {
-            const color = platformColors[platformId] || "#6C48C5";
-            chartConfig[`views_${platform.code}`] = { label: `Vistas ${platform.name}`, color };
-            chartConfig[`engagement_${platform.code}`] = { label: `Engagement ${platform.name}`, color };
-        }
-    });
+        selectedPlatformIds.forEach((platformId) => {
+            const platform = platforms.find((p) => p.id === platformId);
+            if (platform) {
+                const color = platformColors[platformId] || "#6C48C5";
+                config[`views_${platform.code}`] = { label: `Vistas ${platform.name}`, color };
+                config[`engagement_${platform.code}`] = { label: `Engagement ${platform.name}`, color };
+            }
+        });
+
+        return config;
+    }, [selectedPlatformIds, platforms]);
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -397,7 +401,10 @@ export default function DashboardPage() {
                             {/* Header */}
                             <div className="flex items-start justify-between gap-4 flex-wrap">
                                 <div>
-                                    <h1 className="text-[28px] font-bold text-foreground mb-1">Dashboard</h1>
+                                    <h1 className="text-[28px] font-bold text-foreground mb-1">
+                                        Dashboard
+                                        {loading && <IconLoader2 className="w-4 h-4 inline animate-spin ml-2 text-muted-foreground" />}
+                                    </h1>
                                     <p className="text-[16px] text-muted-foreground">Métricas clave y rendimiento de campañas</p>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -521,7 +528,7 @@ export default function DashboardPage() {
                                                     {p.name}
                                                     <button onClick={() => {
                                                         setSelectedPlatformIds(selectedPlatformIds.filter((pid) => pid !== id));
-                                                    }} className="hover:bg-primary hover:text-white rounded-full p-0.5">
+                                                    }} className="hover:bg-primary hover:text-primary-foreground rounded-full p-0.5">
                                                         <IconX className="w-2.5 h-2.5" />
                                                     </button>
                                                 </div>
@@ -543,19 +550,27 @@ export default function DashboardPage() {
                                 </Select>
                             </div>
 
+                            {/* Empty state */}
+                            {!stats && !loading && (
+                                <Card className="rounded-[20px] border-primary/5 p-12 text-center">
+                                    <p className="text-muted-foreground text-lg">No hay datos disponibles</p>
+                                    <p className="text-muted-foreground text-sm mt-1">Ajusta los filtros o carga métricas para ver resultados</p>
+                                </Card>
+                            )}
+
                             {/* KPIs */}
                             {stats && (
                                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                                     {KPI_CARDS.map((kpi) => {
                                         const Icon = kpi.icon;
                                         return (
-                                            <Card key={kpi.key} className="rounded-[20px] border-primary/5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                            <Card key={kpi.key} className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                                 <CardContent className="p-4">
                                                     <div className="flex items-center justify-between mb-2">
                                                         <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{kpi.label}</p>
                                                         <Icon className="w-4 h-4" style={{ color: kpi.color }} />
                                                     </div>
-                                                    <p className="text-[22px] font-bold text-foreground leading-tight">{kpi.value}</p>
+                                                    <p className="text-3xl font-bold text-foreground leading-tight">{kpi.value}</p>
                                                     <div className="flex items-center gap-1 mt-1.5">
                                                         {kpi.change > 0 ? (
                                                             <IconTrendingUp className="w-3.5 h-3.5 text-green-600" />
@@ -581,27 +596,27 @@ export default function DashboardPage() {
                                         <CardContent className="p-4 flex items-center gap-6 flex-wrap">
                                             <div>
                                                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Total vistas</p>
-                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.views)}</p>
+                                                <p className="text-3xl font-bold text-foreground">{fmt(totalFromTimeline.views)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Likes</p>
-                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.likes)}</p>
+                                                <p className="text-3xl font-bold text-foreground">{fmt(totalFromTimeline.likes)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Shares</p>
-                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.shares)}</p>
+                                                <p className="text-3xl font-bold text-foreground">{fmt(totalFromTimeline.shares)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Clics</p>
-                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.clicks)}</p>
+                                                <p className="text-3xl font-bold text-foreground">{fmt(totalFromTimeline.clicks)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Conversiones</p>
-                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.conversions)}</p>
+                                                <p className="text-3xl font-bold text-foreground">{fmt(totalFromTimeline.conversions)}</p>
                                             </div>
                                             <div>
                                                 <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Ingresos</p>
-                                                <p className="text-lg font-bold text-foreground">{fmt(totalFromTimeline.revenue, "currency")}</p>
+                                                <p className="text-3xl font-bold text-foreground">{fmt(totalFromTimeline.revenue, "currency")}</p>
                                             </div>
                                         </CardContent>
                                     </Card>
@@ -613,15 +628,15 @@ export default function DashboardPage() {
                                                     <div className="flex gap-4 mt-1">
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground">Vistas</p>
-                                                            <p className="text-sm font-bold text-foreground">{fmt(avgPerDay.views)}</p>
+                                                            <p className="text-3xl font-bold text-foreground">{fmt(avgPerDay.views)}</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground">Eng.</p>
-                                                            <p className="text-sm font-bold text-foreground">{avgPerDay.engagement.toFixed(2)}%</p>
+                                                            <p className="text-3xl font-bold text-foreground">{avgPerDay.engagement.toFixed(2)}%</p>
                                                         </div>
                                                         <div>
                                                             <p className="text-[10px] text-muted-foreground">Conv.</p>
-                                                            <p className="text-sm font-bold text-foreground">{fmt(avgPerDay.conversions)}</p>
+                                                            <p className="text-3xl font-bold text-foreground">{fmt(avgPerDay.conversions)}</p>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -631,7 +646,7 @@ export default function DashboardPage() {
                                     <Card className="rounded-[16px] border-primary/5 shadow-sm col-span-1">
                                         <CardContent className="p-4">
                                             <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">Período activo</p>
-                                            <p className="text-lg font-bold text-foreground mt-1">{totalTimelineDays} días</p>
+                                            <p className="text-3xl font-bold text-foreground mt-1">{totalTimelineDays} días</p>
                                             <p className="text-[10px] text-muted-foreground mt-0.5">
                                                 {new Date(startDate).toLocaleDateString("es-ES", { day: "numeric", month: "short" })} — {new Date(endDate).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" })}
                                             </p>
@@ -643,7 +658,7 @@ export default function DashboardPage() {
                             {/* Ranking + Chart */}
                             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
                                 {/* Ranking */}
-                                <Card className="lg:col-span-1 rounded-[20px] border-primary/5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <Card className="lg:col-span-1 rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                     <CardHeader className="pb-2 px-5 pt-5">
                                         <CardTitle className="text-[16px] font-bold text-foreground flex items-center gap-2">
                                             <IconCrown className="w-4 h-4 text-amber-500" />
@@ -663,10 +678,7 @@ export default function DashboardPage() {
                                                     const barWidth = (inf.totalViews / maxViews) * 100;
                                                     return (
                                                         <div key={inf.id} className={cn(
-                                                            "p-3 rounded-xl transition-all hover:bg-primary/5",
-                                                            inf.rank === 1 && "bg-amber-500/10 border border-amber-500/20",
-                                                            inf.rank === 2 && "bg-gray-500/10 border border-gray-500/20",
-                                                            inf.rank === 3 && "bg-orange-500/10 border border-orange-500/20"
+                                                            "p-3 rounded-xl transition-all hover:bg-primary/5"
                                                         )}>
                                                             <div className="flex items-start gap-2.5">
                                                                 <div className={cn(
@@ -687,13 +699,13 @@ export default function DashboardPage() {
                                                                     {inf.niche && <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{inf.niche}</p>}
                                                                     {/* Mini bar */}
                                                                     <div className="mt-1.5 h-1.5 bg-primary/5 rounded-full overflow-hidden">
-                                                                        <div className="h-full rounded-full bg-gradient-to-r from-primary to-[#8B5CF6]" style={{ width: `${barWidth}%` }} />
+                                                                        <div className="h-full rounded-full bg-[#2EC7FF]" style={{ width: `${barWidth}%` }} />
                                                                     </div>
                                                                     <div className="flex items-center justify-between mt-1 text-[10px]">
                                                                         <span className="text-muted-foreground">{fmt(inf.totalViews)} vistas</span>
                                                                         <Badge variant="secondary" className={cn(
                                                                             "text-[9px] px-1.5 py-0 h-4",
-                                                                            inf.roi > 50 ? "bg-green-100 text-green-700" : inf.roi > 0 ? "bg-amber-100 text-amber-700" : "bg-red-100 text-red-700"
+                                                                            inf.roi > 50 ? "bg-green-500/10 text-green-600 dark:text-green-400" : inf.roi > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-red-500/10 text-red-600 dark:text-red-400"
                                                                         )}>
                                                                             {inf.roi > 0 ? "+" : ""}{inf.roi.toFixed(0)}% ROI
                                                                         </Badge>
@@ -709,7 +721,7 @@ export default function DashboardPage() {
                                 </Card>
 
                                 {/* Chart */}
-                                <Card className="lg:col-span-3 rounded-[20px] border-primary/5 shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <Card className="lg:col-span-3 rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                     <CardHeader className="pb-2 px-5 pt-5">
                                         <div className="flex items-center justify-between flex-wrap gap-3">
                                             <div>
@@ -746,20 +758,20 @@ export default function DashboardPage() {
                                                             <stop offset="95%" stopColor={chartMetricConfig.color || "#6C48C5"} stopOpacity={0.03} />
                                                         </linearGradient>
                                                     </defs>
-                                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#F0ECF9" />
+                                                    <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="var(--border)" />
                                                     <XAxis
                                                         dataKey="date"
                                                         tickLine={false}
                                                         axisLine={false}
                                                         tickMargin={6}
                                                         minTickGap={40}
-                                                        tick={{ fill: "#94A3B8", fontSize: 11 }}
+                                                        tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                                                         tickFormatter={(v) => formatDate(v)}
                                                     />
                                                     <YAxis
                                                         tickLine={false}
                                                         axisLine={false}
-                                                        tick={{ fill: "#94A3B8", fontSize: 11 }}
+                                                        tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                                                         tickFormatter={(v) => {
                                                             if (["engagement", "ctr"].includes(chartMetric)) return `${v.toFixed(1)}%`;
                                                             if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;

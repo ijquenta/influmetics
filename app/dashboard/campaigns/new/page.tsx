@@ -10,7 +10,6 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IconArrowLeft } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 const goalTypes = [
@@ -113,7 +112,7 @@ export default function NewCampaignPage() {
                             </div>
 
                             <form onSubmit={handleSubmit}>
-                                <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)] max-w-4xl">
+                                <Card className="rounded-[20px] border-primary/10 shadow-[var(--card-shadow-md)] max-w-4xl">
                                     <CardHeader>
                                         <CardTitle className="text-[18px] font-bold text-foreground">Detalles de la Campaña</CardTitle>
                                         <CardDescription className="text-[14px] text-muted-foreground">

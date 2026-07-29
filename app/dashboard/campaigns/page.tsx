@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { IconPlus, IconEye, IconLoader2, IconTarget, IconUsers, IconCurrencyDollar, IconActivity } from "@tabler/icons-react";
 import type { CampaignWithRelations } from "@/shared/types/influencer.types";
@@ -64,55 +65,64 @@ export default function CampaignsPage() {
 
                             {/* KPI Cards */}
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                     <CardContent className="p-4 md:p-5">
                                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                                             <IconTarget className="w-4 h-4" />
                                             <p className="text-[11px] font-medium uppercase tracking-wider">Total</p>
                                         </div>
-                                        <p className="text-[22px] font-bold text-foreground">{campaigns.length}</p>
+                                        <p className="text-3xl font-bold text-foreground">{campaigns.length}</p>
                                         <p className="text-[10px] text-muted-foreground mt-0.5">{activeCount} activas</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                     <CardContent className="p-4 md:p-5">
                                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                                             <IconActivity className="w-4 h-4" />
                                             <p className="text-[11px] font-medium uppercase tracking-wider">Activas</p>
                                         </div>
-                                        <p className="text-[22px] font-bold text-green-600">{activeCount}</p>
+                                        <p className="text-3xl font-bold text-green-600 dark:text-green-400">{activeCount}</p>
                                         <p className="text-[10px] text-muted-foreground mt-0.5">{campaigns.length - activeCount} finalizadas</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                     <CardContent className="p-4 md:p-5">
                                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                                             <IconUsers className="w-4 h-4" />
                                             <p className="text-[11px] font-medium uppercase tracking-wider">Influencers</p>
                                         </div>
-                                        <p className="text-[22px] font-bold text-foreground">{totalInfluencers}</p>
+                                        <p className="text-3xl font-bold text-foreground">{totalInfluencers}</p>
                                         <p className="text-[10px] text-muted-foreground mt-0.5">asignados a campañas</p>
                                     </CardContent>
                                 </Card>
-                                <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                     <CardContent className="p-4 md:p-5">
                                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                                             <IconCurrencyDollar className="w-4 h-4" />
                                             <p className="text-[11px] font-medium uppercase tracking-wider">Inversión total</p>
                                         </div>
-                                        <p className="text-[22px] font-bold text-foreground">${totalInvestment.toLocaleString("es-ES")}</p>
+                                        <p className="text-3xl font-bold text-foreground">${totalInvestment.toLocaleString("es-ES")}</p>
                                         <p className="text-[10px] text-muted-foreground mt-0.5">en todas las campañas</p>
                                     </CardContent>
                                 </Card>
                             </div>
 
                             {/* Table */}
-                            <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                            <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                 <CardContent className="p-0">
                                     {loading ? (
-                                        <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
-                                            <IconLoader2 className="w-4 h-4 animate-spin" />
-                                            Cargando campañas...
+                                        <div className="space-y-2 p-6">
+                                            {Array.from({ length: 4 }).map((_, i) => (
+                                                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
+                                                    <Skeleton className="h-4 w-[180px] rounded-lg" />
+                                                    <Skeleton className="h-4 w-[60px] rounded-lg hidden md:block" />
+                                                    <Skeleton className="h-4 w-[140px] rounded-lg hidden lg:block" />
+                                                    <Skeleton className="h-5 w-[70px] rounded-full" />
+                                                    <Skeleton className="h-4 w-8 rounded-lg ml-auto" />
+                                                    <Skeleton className="h-4 w-12 rounded-lg hidden sm:block" />
+                                                    <Skeleton className="h-8 w-12 rounded-lg" />
+                                                </div>
+                                            ))}
                                         </div>
                                     ) : campaigns.length === 0 ? (
                                         <div className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-2">

@@ -2,12 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PageBreadcrumb } from "@/components/page-breadcrumb";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { IconPlus, IconX } from "@tabler/icons-react";
+import { IconPlus, IconX, IconArrowLeft } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 interface SocialAccount {
@@ -167,6 +169,7 @@ export default function NewInfluencerPage() {
                             {/* Header */}
                             <div className="flex items-center gap-4 mb-6">
                                 <div>
+                                    <PageBreadcrumb />
                                     <h1 className="text-[28px] font-bold text-foreground mb-2">Nuevo Influencer</h1>
                                     <p className="text-[16px] text-muted-foreground">
                                         Completa la información del influencer y sus cuentas de redes sociales
@@ -177,7 +180,7 @@ export default function NewInfluencerPage() {
                             <form onSubmit={handleSubmit}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                     {/* Información Básica */}
-                                    <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="rounded-[20px] border-primary/10 shadow-[var(--card-shadow-md)]">
                                         <CardHeader>
                                             <CardTitle className="text-[18px] font-bold text-foreground">Información Básica</CardTitle>
                                             <CardDescription className="text-[14px] text-muted-foreground">
@@ -258,7 +261,7 @@ export default function NewInfluencerPage() {
                                     </Card>
 
                                     {/* Cuentas de Redes Sociales */}
-                                    <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                                    <Card className="rounded-[20px] border-primary/10 shadow-[var(--card-shadow-md)]">
                                         <CardHeader>
                                             <div className="flex items-center justify-between">
                                                 <div>
@@ -374,14 +377,12 @@ export default function NewInfluencerPage() {
                                                                 </div>
 
                                                                 <div className="flex items-center gap-2">
-                                                                    <input
-                                                                        type="checkbox"
+                                                                    <Checkbox
                                                                         id={`active-${account.id}`}
                                                                         checked={account.isActive}
-                                                                        onChange={(e) =>
-                                                                            updateSocialAccount(account.id, "isActive", e.target.checked)
+                                                                        onCheckedChange={(checked) =>
+                                                                            updateSocialAccount(account.id, "isActive", checked === true)
                                                                         }
-                                                                        className="w-4 h-4 rounded border-primary text-primary focus:ring-primary"
                                                                     />
                                                                     <Label
                                                                         htmlFor={`active-${account.id}`}

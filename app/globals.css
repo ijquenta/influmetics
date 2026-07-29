@@ -78,6 +78,8 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --card-shadow-sm: 0 2px 12px rgba(15, 23, 42, 0.04);
+    --card-shadow-md: 0 4px 20px rgba(108, 72, 197, 0.08);
 }
 
 .dark {
@@ -112,6 +114,8 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+    --card-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.4);
+    --card-shadow-md: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
 @layer base {

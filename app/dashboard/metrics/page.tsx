@@ -204,7 +204,7 @@ export default function MetricsPage() {
                                 <p className="text-[16px] text-muted-foreground">Ingresa las métricas de los posts manualmente</p>
                             </div>
 
-                            <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                            <Card className="rounded-[20px] border-primary/10 shadow-[var(--card-shadow-md)]">
                                 <CardHeader>
                                     <CardTitle className="text-[20px] font-bold text-foreground">Formulario de Métricas</CardTitle>
                                     <CardDescription className="text-[14px] text-muted-foreground">

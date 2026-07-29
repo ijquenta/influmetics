@@ -317,7 +317,7 @@ export default function InfluencersPage() {
                                 </div>
                             </div>
 
-                            <Card className="rounded-[20px] border-primary/10 shadow-[0_4px_20px_rgba(108,72,197,0.08)]">
+                            <Card className="rounded-[20px] border-primary/10 shadow-[var(--card-shadow-md)]">
                                 <CardContent className="p-6">
                                     <div className="relative max-w-md mb-6">
                                         <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -332,7 +332,7 @@ export default function InfluencersPage() {
                                     {loading ? (
                                         <div className="space-y-2">
                                             {Array.from({ length: 5 }).map((_, i) => (
-                                                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-[rgba(108,72,197,0.02)] border border-[rgba(108,72,197,0.06)]">
+                                                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30 border border-border/50">
                                                     <Skeleton className="h-8 w-8 rounded-full shrink-0" />
                                                     <div className="flex-1 min-w-0 space-y-1.5">
                                                         <Skeleton className="h-4 w-[180px] rounded-lg" />
