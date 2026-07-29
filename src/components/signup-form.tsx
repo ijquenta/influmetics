@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -14,7 +14,6 @@ import { toast } from "sonner";
 const ERROR_MESSAGES: Record<string, string> = {
   "User already registered": "Este correo ya está registrado",
   "Password should be at least 6 characters": "La contraseña debe tener al menos 6 caracteres",
-  "Email not confirmed": "Debes confirmar tu correo antes de iniciar sesión",
 };
 
 function getErrorMessage(error: unknown): string {
@@ -24,6 +23,8 @@ function getErrorMessage(error: unknown): string {
 
 export function SignupForm({ className, ...props }: React.ComponentProps<"form">) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const username = searchParams.get("username");
     const { signup } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -48,7 +49,8 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
 
         try {
           await signup(email, password, name);
-          router.push("/dashboard");
+          const target = username ? `/dashboard?username=${encodeURIComponent(username)}` : "/dashboard";
+          router.push(target);
         } catch (err) {
           const message = getErrorMessage(err);
           setError(message);
@@ -64,7 +66,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
                 <div className="flex flex-col items-center gap-1 text-center">
                     <h1 className="text-2xl font-bold">Crea tu cuenta</h1>
                     <p className="text-sm text-balance text-muted-foreground">
-                        Completa el formulario para registrarte
+                        {username ? "Completa el registro para ver tu análisis completo" : "Completa el formulario para registrarte"}
                     </p>
                 </div>
                 <Field>
@@ -102,7 +104,7 @@ export function SignupForm({ className, ...props }: React.ComponentProps<"form">
                 <Field>
                     <FieldDescription className="text-center">
                         ¿Ya tienes una cuenta?{" "}
-                        <Link href="/" className="underline underline-offset-4">
+                        <Link href="/login" className="underline underline-offset-4">
                             Inicia sesión
                         </Link>
                     </FieldDescription>

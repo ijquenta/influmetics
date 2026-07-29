@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -79,6 +80,9 @@ function fmt(n: number, style?: "currency" | "percent"): string {
 }
 
 export default function DashboardPage() {
+    const searchParams = useSearchParams();
+    const usernameParam = searchParams.get("username");
+
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
@@ -88,6 +92,7 @@ export default function DashboardPage() {
     const [platforms, setPlatforms] = useState<Array<{ id: number; name: string; code: string }>>([]);
     const [campaigns, setCampaigns] = useState<Array<{ id: number; name: string }>>([]);
     const [influencerRanking, setInfluencerRanking] = useState<InfluencerRanking[]>([]);
+    const [onboardingData, setOnboardingData] = useState<{ username: string; score: number; emv: number } | null>(null);
 
     const [dateMode, setDateMode] = useState<"range" | "monthly">("range");
     const firstDayOfMonth = new Date(currentYear, currentMonth - 1, 1);
@@ -190,6 +195,22 @@ export default function DashboardPage() {
             fetchTimeline();
         }
     }, [startDate, endDate, selectedPlatformIds, selectedCampaignId, platforms.length]);
+
+    useEffect(() => {
+        if (!usernameParam) return;
+        fetch(`/api/diagnostic?username=${encodeURIComponent(usernameParam)}`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (data.score && data.metrics) {
+                    setOnboardingData({
+                        username: data.profile?.username || usernameParam,
+                        score: data.score.total,
+                        emv: data.metrics.estimatedEMV,
+                    });
+                }
+            })
+            .catch(() => {});
+    }, [usernameParam]);
 
     const fetchStats = async () => {
         try {
@@ -407,6 +428,24 @@ export default function DashboardPage() {
                                     </h1>
                                     <p className="text-[16px] text-muted-foreground">Métricas clave y rendimiento de campañas</p>
                                 </div>
+                                {onboardingData && (
+                                    <div className="w-full flex items-center gap-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                                        <div className="flex-1">
+                                            <p className="text-sm font-semibold text-foreground">
+                                                {onboardingData.username} — TikTok Score: {onboardingData.score}/100
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                EMV estimado: ${onboardingData.emv.toLocaleString("es-ES")}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => setOnboardingData(null)}
+                                            className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-2">
                                     <Button variant="outline" size="sm" onClick={exportToExcel} disabled={timeline.length === 0} className="rounded-2xl gap-2 h-9">
                                         <IconDownload className="w-4 h-4" />
