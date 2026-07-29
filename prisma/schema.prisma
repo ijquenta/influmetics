@@ -7,6 +7,26 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model Company {
+  id          Int      @id @default(autoincrement())
+  name        String
+  rubro       String?
+  culture     String?
+  description String?
+  country     String?
+  website     String?
+  logo        String?
+  size        String?
+
+  users       User[]
+  campaigns   Campaign[]
+  influencers Influencer[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+}
+
 model UserType {
   id   Int    @id @default(autoincrement())
   code String @unique
@@ -18,11 +38,15 @@ model UserType {
 
 model User {
   id         Int      @id @default(autoincrement())
+  supabaseId String?  @unique
   name       String
   email      String   @unique
   country    String?
   userType   UserType @relation(fields: [userTypeId], references: [id])
   userTypeId Int
+
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -47,6 +71,9 @@ model Influencer {
   niche        String?
   referralCode String? @unique
   notes        String?
+
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId Int?
 
   socialAccounts      InfluencerSocialAccount[]
   influencerCampaigns InfluencerCampaign[]
@@ -123,6 +150,9 @@ model Campaign {
 
   primaryGoalType   CampaignGoalType? @relation(fields: [primaryGoalTypeId], references: [id])
   primaryGoalTypeId Int?
+
+  company   Company? @relation(fields: [companyId], references: [id])
+  companyId Int?
 
   lastDiscoveredAt DateTime?
 

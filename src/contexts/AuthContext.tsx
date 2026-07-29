@@ -1,27 +1,57 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { getProfile, type Profile } from "@/lib/supabase/profile";
 import type { User } from "@supabase/supabase-js";
 
+export interface Company {
+  id: number;
+  name: string;
+  rubro: string | null;
+  culture: string | null;
+  description: string | null;
+  country: string | null;
+  website: string | null;
+  logo: string | null;
+  size: string | null;
+}
+
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
+  company: Company | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, role?: string, company?: string) => Promise<void>;
   logout: () => Promise<void>;
   updatePassword: (password: string) => Promise<void>;
   isAuthenticated: boolean;
+  refreshCompany: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const fetchCompany = async (): Promise<Company | null> => {
+  try {
+    const res = await fetch("/api/company");
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  const refreshCompany = useCallback(async () => {
+    const c = await fetchCompany();
+    setCompany(c);
+  }, []);
 
   useEffect(() => {
     const supabase = createClient();
@@ -31,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       if (user) {
         getProfile(user.id).then(setProfile).catch(() => setProfile(null));
+        fetchCompany().then(setCompany);
       }
       setIsLoading(false);
     });
@@ -41,8 +72,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(user);
         if (user) {
           getProfile(user.id).then(setProfile).catch(() => setProfile(null));
+          fetchCompany().then(setCompany);
         } else {
           setProfile(null);
+          setCompany(null);
         }
       }
     );
@@ -82,18 +115,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        profile,
-        isLoading,
-        login,
-        signup,
-        logout,
-        updatePassword,
-        isAuthenticated: !!user,
-      }}
-    >
+      <AuthContext.Provider
+        value={{
+          user,
+          profile,
+          company,
+          isLoading,
+          login,
+          signup,
+          logout,
+          updatePassword,
+          isAuthenticated: !!user,
+          refreshCompany,
+        }}
+      >
       {children}
     </AuthContext.Provider>
   );

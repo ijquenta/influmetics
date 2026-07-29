@@ -11,6 +11,7 @@ import {
     IconLifebuoy,
     IconSend,
     IconShield,
+    IconSettings,
 } from "@tabler/icons-react";
 
 import { NavMain } from "@/components/nav-main";
@@ -28,7 +29,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { profile } = useAuth();
+    const { profile, company } = useAuth();
     const role = profile?.role || "growth_manager";
 
     const navMain = [
@@ -84,6 +85,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const navSecondary = [
         { title: "Soporte", url: "#", icon: IconLifebuoy },
         { title: "Feedback", url: "#", icon: IconSend },
+        { title: "Ajustes", url: "/dashboard/settings", icon: IconSettings },
     ];
 
     return (
@@ -115,6 +117,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <NavSecondary items={navSecondary} className="mt-auto" />
             </SidebarContent>
             <SidebarFooter>
+                {company && (
+                    <div className="px-3 py-1.5 border-t border-sidebar-border">
+                        <p className="text-[11px] font-medium text-muted-foreground truncate">{company.name}</p>
+                    </div>
+                )}
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
