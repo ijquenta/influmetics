@@ -191,6 +191,9 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const { id: idParam } = await params;
         const id = parseInt(idParam);
 
+        const searchParams = request.nextUrl.searchParams;
+        const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "10", 10)));
+
         const campaign = await prisma.campaign.findUnique({
             where: { id },
             include: { campaignHashtags: true },
@@ -334,6 +337,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
         analysis.sort((a, b) => b.brandMentions - a.brandMentions || b.totalViews - a.totalViews);
 
+        const topInfluencers = analysis.slice(0, limit);
+
         return NextResponse.json({
             data: {
                 campaignId: id,
@@ -343,7 +348,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
                 totalVideosFound: results.length,
                 totalInfluencersDetected: analysis.length,
                 discoveredAt: new Date().toISOString(),
-                influencers: analysis,
+                influencers: topInfluencers,
             },
         });
     } catch (error) {

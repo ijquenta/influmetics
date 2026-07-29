@@ -39,7 +39,7 @@ export function NavUser() {
     const { isMobile } = useSidebar();
     const router = useRouter();
     const { theme, setTheme } = useTheme();
-    const { user, profile, logout } = useAuth();
+    const { user, profile, isLoading, logout } = useAuth();
 
     const displayName = profile?.name || (user?.user_metadata?.full_name as string) || user?.email || "";
     const email = user?.email || "";
@@ -59,6 +59,22 @@ export function NavUser() {
         await logout();
         router.push("/");
     };
+
+    if (isLoading && !user) {
+        return (
+            <SidebarMenu>
+                <SidebarMenuItem>
+                    <SidebarMenuButton size="lg" disabled>
+                        <div className="h-8 w-8 rounded-lg bg-muted animate-pulse" />
+                        <div className="grid flex-1 gap-1">
+                            <div className="h-3 w-24 bg-muted animate-pulse rounded" />
+                            <div className="h-2 w-16 bg-muted animate-pulse rounded" />
+                        </div>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarMenu>
+        );
+    }
 
     return (
         <SidebarMenu>

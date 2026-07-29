@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { IconLoader2, IconSearch, IconPlus, IconTrash, IconArrowLeft, IconBrandTiktok, IconChartBar, IconMessage, IconHash } from "@tabler/icons-react";
+import { IconLoader2, IconSearch, IconPlus, IconTrash, IconArrowLeft, IconBrandTiktok, IconChartBar, IconMessage, IconHash, IconUsers } from "@tabler/icons-react";
 import { toast } from "sonner";
 
 interface CampaignHashtagItem {
@@ -64,6 +64,7 @@ export default function CampaignAnalysisPage() {
     const [newHashtag, setNewHashtag] = useState("");
     const [newKeyword, setNewKeyword] = useState("");
     const [knownHandles, setKnownHandles] = useState("");
+    const [limit, setLimit] = useState("10");
 
     const [discovering, setDiscovering] = useState(false);
     const [result, setResult] = useState<DiscoverResult | null>(null);
@@ -132,7 +133,7 @@ export default function CampaignAnalysisPage() {
                 .map((h) => h.trim().replace("@", ""))
                 .filter(Boolean);
 
-            const res = await fetch(`/api/campaigns/${id}/discover`, {
+            const res = await fetch(`/api/campaigns/${id}/discover?limit=${limit}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ knownHandles: handles }),
@@ -214,14 +215,30 @@ export default function CampaignAnalysisPage() {
                                 </div>
                             </div>
 
-                            <div>
-                                <label className="text-xs font-semibold text-muted-foreground mb-1 block">Handles conocidos (opcional, separados por coma)</label>
-                                <Input
-                                    value={knownHandles}
-                                    onChange={(e) => setKnownHandles(e.target.value)}
-                                    placeholder="influencer1, influencer2, influencer3"
-                                    className="rounded-2xl"
-                                />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-semibold text-muted-foreground mb-1 block">Handles conocidos (opcional, separados por coma)</label>
+                                    <Input
+                                        value={knownHandles}
+                                        onChange={(e) => setKnownHandles(e.target.value)}
+                                        placeholder="influencer1, influencer2, influencer3"
+                                        className="rounded-2xl"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold text-muted-foreground mb-1 block flex items-center gap-1">
+                                        <IconUsers className="w-3 h-3" />
+                                        Cantidad de influencers
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={100}
+                                        value={limit}
+                                        onChange={(e) => setLimit(e.target.value)}
+                                        className="rounded-2xl w-24"
+                                    />
+                                </div>
                             </div>
 
                             {loadingHashtags ? (

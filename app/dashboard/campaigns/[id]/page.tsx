@@ -181,47 +181,47 @@ export default function CampaignDetailPage() {
                                     </div>
 
                                     {/* KPI Cards */}
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                            <CardContent className="p-4 md:p-5">
-                                                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                                                    <IconCurrencyDollar className="w-4 h-4" />
-                                                    <p className="text-[11px] font-medium uppercase tracking-wider">Inversión</p>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Inversión</p>
+                                                    <IconCurrencyDollar className="w-4 h-4 text-muted-foreground" />
                                                 </div>
-                                                <p className="text-[22px] font-bold text-foreground">${investment.toLocaleString("es-ES")}</p>
-                                                <p className="text-[10px] text-muted-foreground mt-0.5">{influencerCount} influencers</p>
+                                                <p className="text-3xl font-bold text-foreground leading-tight">${investment.toLocaleString("es-ES")}</p>
+                                                <p className="text-[11px] text-muted-foreground mt-1">{influencerCount} influencers</p>
                                             </CardContent>
                                         </Card>
-                                        <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                            <CardContent className="p-4 md:p-5">
-                                                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                                                    <IconUsers className="w-4 h-4" />
-                                                    <p className="text-[11px] font-medium uppercase tracking-wider">Influencers</p>
+                                        <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Influencers</p>
+                                                    <IconUsers className="w-4 h-4 text-muted-foreground" />
                                                 </div>
-                                                <p className="text-[22px] font-bold text-foreground">{influencerCount}</p>
-                                                <p className="text-[10px] text-muted-foreground mt-0.5">asignados a la campaña</p>
+                                                <p className="text-3xl font-bold text-foreground leading-tight">{influencerCount}</p>
+                                                <p className="text-[11px] text-muted-foreground mt-1">asignados a la campaña</p>
                                             </CardContent>
                                         </Card>
-                                        <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                            <CardContent className="p-4 md:p-5">
-                                                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                                                    <IconArticle className="w-4 h-4" />
-                                                    <p className="text-[11px] font-medium uppercase tracking-wider">Posts</p>
+                                        <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Posts</p>
+                                                    <IconArticle className="w-4 h-4 text-muted-foreground" />
                                                 </div>
-                                                <p className="text-[22px] font-bold text-foreground">{postsCount}</p>
-                                                <p className="text-[10px] text-muted-foreground mt-0.5">publicados</p>
+                                                <p className="text-3xl font-bold text-foreground leading-tight">{postsCount}</p>
+                                                <p className="text-[11px] text-muted-foreground mt-1">publicados</p>
                                             </CardContent>
                                         </Card>
-                                        <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
-                                            <CardContent className="p-4 md:p-5">
-                                                <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                                                    <IconTrendingUp className="w-4 h-4" />
-                                                    <p className="text-[11px] font-medium uppercase tracking-wider">Estado</p>
+                                        <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Estado</p>
+                                                    <IconTrendingUp className="w-4 h-4 text-muted-foreground" />
                                                 </div>
                                                 <Badge variant={campaign.isActive ? "default" : "secondary"} className="rounded-2xl text-sm px-3 py-1">
                                                     {campaign.isActive ? "Activa" : "Finalizada"}
                                                 </Badge>
-                                                <p className="text-[10px] text-muted-foreground mt-1.5">
+                                                <p className="text-[11px] text-muted-foreground mt-1.5">
                                                     {campaign.isActive ? "En curso" : "Campaña cerrada"}
                                                 </p>
                                             </CardContent>
@@ -229,28 +229,28 @@ export default function CampaignDetailPage() {
                                     </div>
 
                                     {/* Info Card */}
-                                    <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
+                                    <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
                                         <CardHeader>
                                             <CardTitle className="text-[18px] font-bold text-foreground">Información general</CardTitle>
                                             <CardDescription className="text-[14px] text-muted-foreground">Datos y fechas de la campaña</CardDescription>
                                         </CardHeader>
                                         <CardContent>
-                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                                                 <div>
-                                                    <p className="text-xs text-muted-foreground mb-1">País</p>
-                                                    <p className="font-semibold text-foreground">{campaign.country || "No especificado"}</p>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">País</p>
+                                                    <p className="text-lg font-bold text-foreground">{campaign.country || "No especificado"}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-muted-foreground mb-1">Objetivo</p>
-                                                    <p className="font-semibold text-foreground">{campaign.primaryGoalType?.name || "Sin definir"}</p>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Objetivo</p>
+                                                    <p className="text-lg font-bold text-foreground">{campaign.primaryGoalType?.name || "Sin definir"}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-muted-foreground mb-1">Fecha inicio</p>
-                                                    <p className="font-semibold text-foreground">{formatDate(campaign.startDate)}</p>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Fecha inicio</p>
+                                                    <p className="text-lg font-bold text-foreground">{formatDate(campaign.startDate)}</p>
                                                 </div>
                                                 <div>
-                                                    <p className="text-xs text-muted-foreground mb-1">Fecha fin</p>
-                                                    <p className="font-semibold text-foreground">{formatDate(campaign.endDate)}</p>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Fecha fin</p>
+                                                    <p className="text-lg font-bold text-foreground">{formatDate(campaign.endDate)}</p>
                                                 </div>
                                             </div>
                                         </CardContent>
