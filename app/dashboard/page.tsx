@@ -409,7 +409,7 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Filters bar */}
-                            <div className="flex flex-wrap items-center gap-2 bg-white rounded-2xl px-4 py-3 border border-primary/5 shadow-sm">
+                            <div className="flex flex-wrap items-center gap-2 bg-card rounded-2xl px-4 py-3 border border-primary/5 shadow-sm">
                                 <IconFilter className="w-4 h-4 text-muted-foreground shrink-0" />
                                 <div className="flex items-center gap-2">
                                     <Switch checked={dateMode === "monthly"} onCheckedChange={(c) => {
@@ -664,7 +664,9 @@ export default function DashboardPage() {
                                                     return (
                                                         <div key={inf.id} className={cn(
                                                             "p-3 rounded-xl transition-all hover:bg-primary/5",
-                                                            inf.rank <= 3 && "bg-gradient-to-r from-amber-50/80 to-transparent border border-amber-200/50"
+                                                            inf.rank === 1 && "bg-amber-500/10 border border-amber-500/20",
+                                                            inf.rank === 2 && "bg-gray-500/10 border border-gray-500/20",
+                                                            inf.rank === 3 && "bg-orange-500/10 border border-orange-500/20"
                                                         )}>
                                                             <div className="flex items-start gap-2.5">
                                                                 <div className={cn(
@@ -723,7 +725,7 @@ export default function DashboardPage() {
                                                     return (
                                                         <button key={m} onClick={() => setChartMetric(m)} className={cn(
                                                             "px-2.5 py-1 rounded-xl text-[10px] font-medium transition-all",
-                                                            chartMetric === m ? "bg-white text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                                            chartMetric === m ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
                                                         )}>
                                                             {cfg.label}
                                                         </button>

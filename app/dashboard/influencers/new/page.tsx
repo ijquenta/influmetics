@@ -407,7 +407,7 @@ export default function NewInfluencerPage() {
                                     <Button
                                         type="submit"
                                         disabled={loading}
-                                        className="bg-gradient-to-r from-primary/80 to-primary text-white rounded-2xl px-8"
+                                        className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground rounded-2xl px-8"
                                     >
                                         {loading ? "Guardando..." : "Crear Influencer"}
                                     </Button>

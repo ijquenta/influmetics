@@ -144,7 +144,7 @@ export default function NewCampaignPage() {
                                                 value={formData.description}
                                                 onChange={(e) => handleInputChange("description", e.target.value)}
                                                 placeholder="Describe brevemente el objetivo y contexto de la campaña..."
-                                                className="w-full rounded-2xl border border-primary/10 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                                                className="w-full rounded-2xl border border-primary/10 bg-card px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-primary"
                                                 rows={4}
                                             />
                                         </div>
@@ -274,7 +274,7 @@ export default function NewCampaignPage() {
                                             <Button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="bg-gradient-to-r from-primary/80 to-primary text-white rounded-2xl px-8"
+                                                className="bg-gradient-to-r from-primary/80 to-primary text-primary-foreground rounded-2xl px-8"
                                             >
                                                 {loading ? "Guardando..." : "Guardar Campaña"}
                                             </Button>
