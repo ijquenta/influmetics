@@ -156,6 +156,12 @@ model Campaign {
 
   lastDiscoveredAt DateTime?
 
+  // ROI configuration — client-provided params stored per campaign
+  botRate         Float?             // B: bot rate override (0-1), null = system default
+  ticketAverage   Decimal? @db.Decimal(12, 2) // T: ticket promedio
+  marginNet       Decimal? @db.Decimal(5, 2)  // M: margen neto (%)
+  conversionRate  Float?             // CR: tasa de conversión (0-1), null = usar escenarios
+
   campaignHashtags    CampaignHashtag[]
   influencerCampaigns InfluencerCampaign[]
   posts               Post[]

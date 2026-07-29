@@ -390,3 +390,9 @@ ALTER TABLE "InternalMetric" ADD CONSTRAINT "InternalMetric_influencerId_fkey" F
 -- AddForeignKey
 ALTER TABLE "InternalMetric" ADD CONSTRAINT "InternalMetric_metricTypeId_fkey" FOREIGN KEY ("metricTypeId") REFERENCES "InternalMetricType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
+-- Add ROI configuration columns to Campaign (run after table creation)
+ALTER TABLE "Campaign" ADD COLUMN IF NOT EXISTS "botRate" DOUBLE PRECISION;
+ALTER TABLE "Campaign" ADD COLUMN IF NOT EXISTS "ticketAverage" DECIMAL(12,2);
+ALTER TABLE "Campaign" ADD COLUMN IF NOT EXISTS "marginNet" DECIMAL(5,2);
+ALTER TABLE "Campaign" ADD COLUMN IF NOT EXISTS "conversionRate" DOUBLE PRECISION;
+

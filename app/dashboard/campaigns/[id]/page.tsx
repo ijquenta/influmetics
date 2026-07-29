@@ -62,6 +62,10 @@ export default function CampaignDetailPage() {
         endDate: "",
         isActive: true,
         primaryGoalTypeId: "",
+        botRate: "",
+        ticketAverage: "",
+        marginNet: "",
+        conversionRate: "",
     });
 
     useEffect(() => {
@@ -91,6 +95,11 @@ export default function CampaignDetailPage() {
             endDate: campaign.endDate ? new Date(campaign.endDate).toISOString().split("T")[0] : "",
             isActive: campaign.isActive,
             primaryGoalTypeId: campaign.primaryGoalTypeId?.toString() || "",
+            // Convert from stored decimal (0.10) to UI percentage (10) for display
+            botRate: campaign.botRate != null ? String(campaign.botRate * 100) : "",
+            ticketAverage: campaign.ticketAverage != null ? String(campaign.ticketAverage) : "",
+            marginNet: campaign.marginNet != null ? String(campaign.marginNet) : "",
+            conversionRate: campaign.conversionRate != null ? String(campaign.conversionRate * 100) : "",
         });
         setEditOpen(true);
     };
@@ -98,10 +107,17 @@ export default function CampaignDetailPage() {
     const handleSave = async () => {
         setSaving(true);
         try {
+            const body: Record<string, unknown> = { ...form };
+            // Send null for empty ROI fields so they get cleared
+            body.ticketAverage = form.ticketAverage ? parseFloat(form.ticketAverage) : null;
+            body.marginNet = form.marginNet ? parseFloat(form.marginNet) : null;
+            // Convert from UI percentage (e.g. 10) to decimal (0.10) for storage
+            body.botRate = form.botRate ? parseFloat(form.botRate) / 100 : null;
+            body.conversionRate = form.conversionRate ? parseFloat(form.conversionRate) / 100 : null;
             const res = await fetch(`/api/campaigns/${id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(form),
+                body: JSON.stringify(body),
             });
             if (!res.ok) throw new Error();
             toast.success("Campaña actualizada");
@@ -256,6 +272,48 @@ export default function CampaignDetailPage() {
                                         </CardContent>
                                     </Card>
 
+                                    {/* ROI Config */}
+                                    <Card className="rounded-[20px] border-primary/5 shadow-[var(--card-shadow-sm)]">
+                                        <CardHeader>
+                                            <CardTitle className="text-[18px] font-bold text-foreground">Configuración ROI</CardTitle>
+                                            <CardDescription className="text-[14px] text-muted-foreground">
+                                                Parámetros del cliente para el modelo predictivo de ventas directas
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                                <div>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Ticket promedio (T)</p>
+                                                    <p className="text-lg font-bold text-foreground">
+                                                        {campaign.ticketAverage ? `$${Number(campaign.ticketAverage).toLocaleString("es-ES")}` : "—"}
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Precio de venta unitario</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Margen neto (M)</p>
+                                                    <p className="text-lg font-bold text-foreground">
+                                                        {campaign.marginNet != null ? `${campaign.marginNet}%` : "—"}
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Margen de ganancia</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Tasa de bots (B)</p>
+                                                    <p className="text-lg font-bold text-foreground">
+                                                        {campaign.botRate != null ? `${(campaign.botRate * 100).toFixed(0)}%` : "—"}
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Default: 10%</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground mb-1">Tasa de conversión (CR)</p>
+                                                    <p className="text-lg font-bold text-foreground">
+                                                        {campaign.conversionRate != null ? `${(campaign.conversionRate * 100).toFixed(1)}%` : "—"}
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground mt-0.5">Por escenario si no se define</p>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
                                     {/* Influencers assigned */}
                                     <Card className="rounded-[20px] border-[rgba(108,72,197,0.06)] shadow-[0_2px_12px_rgba(15,23,42,0.04)]">
                                         <CardHeader>
@@ -385,6 +443,31 @@ export default function CampaignDetailPage() {
                                         <div className="flex items-center gap-2">
                                             <input type="checkbox" id="isActive" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} className="rounded border-primary/30" />
                                             <Label htmlFor="isActive" className="text-sm">Campaña activa</Label>
+                                        </div>
+                                        <hr className="border-primary/10" />
+                                        <div>
+                                            <p className="text-sm font-semibold mb-1 text-muted-foreground uppercase tracking-wider">Configuración ROI</p>
+                                            <p className="text-xs text-muted-foreground mb-3">Parámetros del cliente para el modelo predictivo</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Ticket promedio (T) $</Label>
+                                                <Input type="number" min={0} step={0.01} value={form.ticketAverage} onChange={(e) => setForm({ ...form, ticketAverage: e.target.value })} placeholder="Ej: 50.00" className="rounded-2xl" />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Margen neto (M) %</Label>
+                                                <Input type="number" min={0} max={100} step={0.1} value={form.marginNet} onChange={(e) => setForm({ ...form, marginNet: e.target.value })} placeholder="Ej: 30" className="rounded-2xl" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Tasa de bots (B) %</Label>
+                                                <Input type="number" min={0} max={100} step={1} value={form.botRate} onChange={(e) => setForm({ ...form, botRate: e.target.value })} placeholder="Ej: 10 (default)" className="rounded-2xl" />
+                                            </div>
+                                            <div>
+                                                <Label className="text-sm font-semibold mb-2 block">Tasa de conversión (CR) %</Label>
+                                                <Input type="number" min={0} max={100} step={0.1} value={form.conversionRate} onChange={(e) => setForm({ ...form, conversionRate: e.target.value })} placeholder="Ej: 2.0" className="rounded-2xl" />
+                                            </div>
                                         </div>
                                     </div>
                                     <DialogFooter>

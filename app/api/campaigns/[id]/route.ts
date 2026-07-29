@@ -84,19 +84,28 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         const { id: idParam } = await params;
         const id = parseInt(idParam);
         const body = await request.json();
-        const { name, description, country, startDate, endDate, isActive, primaryGoalTypeId } = body;
+        const { name, description, country, startDate, endDate, isActive, primaryGoalTypeId, botRate, ticketAverage, marginNet, conversionRate } = body;
+
+        const data: Record<string, unknown> = {};
+        if (name !== undefined) data.name = name;
+        if (description !== undefined) data.description = description;
+        if (country !== undefined) data.country = country;
+        if (startDate !== undefined) data.startDate = new Date(startDate);
+        if (endDate !== undefined) data.endDate = endDate ? new Date(endDate) : null;
+        if (isActive !== undefined) data.isActive = isActive;
+        if (primaryGoalTypeId !== undefined) {
+            data.primaryGoalType = primaryGoalTypeId
+                ? { connect: { id: parseInt(primaryGoalTypeId) } }
+                : { disconnect: true };
+        }
+        if (botRate !== undefined) data.botRate = botRate === null ? null : parseFloat(botRate);
+        if (ticketAverage !== undefined) data.ticketAverage = ticketAverage === null ? null : parseFloat(ticketAverage);
+        if (marginNet !== undefined) data.marginNet = marginNet === null ? null : parseFloat(marginNet);
+        if (conversionRate !== undefined) data.conversionRate = conversionRate === null ? null : parseFloat(conversionRate);
 
         const campaign = await prisma.campaign.update({
             where: { id },
-            data: {
-                name,
-                description,
-                country,
-                startDate: startDate ? new Date(startDate) : undefined,
-                endDate: endDate ? new Date(endDate) : null,
-                isActive,
-                primaryGoalTypeId: primaryGoalTypeId ? parseInt(primaryGoalTypeId) : null,
-            },
+            data,
             include: {
                 primaryGoalType: true,
                 _count: {
