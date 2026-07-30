@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -55,6 +56,11 @@ export function DiagnosticStepResults({ result, onReset }: Props) {
   const { influencers, campaignMetrics } = result;
 
   const [expandedInf, setExpandedInf] = useState<string | null>(null);
+  const [investment, setInvestment] = useState("");
+  const [showROI, setShowROI] = useState(false);
+  const roi = investment && Number(investment) > 0
+    ? ((campaignMetrics.totalEMV - Number(investment)) / Number(investment)) * 100
+    : null;
 
   const totalReach = influencers.reduce((s, i) => s + i.metrics.avgViews, 0);
   const avgScore = Math.round(influencers.reduce((s, i) => s + i.score.total, 0) / influencers.length);
@@ -130,6 +136,62 @@ export function DiagnosticStepResults({ result, onReset }: Props) {
             {topInf.profile.avatar ? <AvatarImage src={topInf.profile.avatar} /> : null}
             <AvatarFallback className="text-[8px]">{topInf.username.slice(0, 2).toUpperCase()}</AvatarFallback>
           </Avatar>
+        </div>
+      </FadeIn>
+
+      {/* ─── ROI ─── */}
+      <FadeIn delay={0.2} className="w-full max-w-2xl mt-5">
+        <div className="rounded-2xl bg-card border border-border/60 p-4">
+          <p className="text-xs font-semibold text-foreground mb-3 flex items-center gap-1.5">
+            <IconCurrencyDollar className="w-3.5 h-3.5 text-muted-foreground" />
+            Retorno de Inversión (ROI)
+          </p>
+          {!showROI ? (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm font-medium">$</span>
+                <Input
+                  type="number"
+                  value={investment}
+                  onChange={(e) => setInvestment(e.target.value)}
+                  placeholder="Inversión total de la campaña"
+                  className="pl-7 h-10 text-sm rounded-xl"
+                />
+              </div>
+              <Button
+                size="sm"
+                onClick={() => setShowROI(true)}
+                disabled={!investment || Number(investment) <= 0}
+                className="rounded-xl h-10 shrink-0"
+              >
+                Calcular ROI
+              </Button>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-4"
+            >
+              <div className="flex-1">
+                <p className="text-xl font-extrabold text-foreground">
+                  {roi !== null ? `${roi >= 0 ? "+" : ""}${roi.toFixed(0)}%` : "—"}
+                </p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">ROI</p>
+              </div>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-foreground">{fmtCurrency(campaignMetrics.totalEMV)}</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Valor Generado (EMV)</p>
+              </div>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-foreground">{fmtCurrency(Number(investment))}</p>
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Inversión</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => { setShowROI(false); setInvestment(""); }} className="rounded-xl shrink-0 text-muted-foreground">
+                Cambiar
+              </Button>
+            </motion.div>
+          )}
         </div>
       </FadeIn>
 
