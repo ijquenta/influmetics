@@ -318,14 +318,14 @@ function AnalysisPage() {
                                     <CardContent>
                                         <div className="flex flex-col sm:flex-row gap-6">
                                             <div className="flex flex-col items-center gap-3 shrink-0">
-                                                <Avatar className="h-20 w-20">
+                                                <Avatar className="h-28 w-28 ring-2 ring-primary/20">
                                                     <AvatarImage src={author.avatar} alt={author.name} />
-                                                    <AvatarFallback className="text-lg">
+                                                    <AvatarFallback className="text-2xl">
                                                         {(author.name || "?").slice(0, 2).toUpperCase()}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 {author.verified && (
-                                                    <Badge className="bg-blue-100 text-blue-700 text-[10px]">
+                                                    <Badge className="bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 text-[10px]">
                                                         Verificado
                                                     </Badge>
                                                 )}

@@ -53,32 +53,24 @@ export function TikTokScoreRing({ score, label, topPercent, size = 180 }: TikTok
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (animatedScore / 100) * circumference;
 
-  const getColor = () => {
-    if (score >= 80) return "#16a34a";
-    if (score >= 60) return "#6C48C5";
-    if (score >= 40) return "#f59e0b";
-    return "#6b7280";
-  };
+  const isLarge = size >= 140;
+  const isMedium = size >= 100;
+  const scoreSize = isLarge ? "text-4xl" : isMedium ? "text-2xl" : "text-lg";
+  const scoreLabelSize = isLarge ? "text-[10px]" : isMedium ? "text-[9px]" : "text-[8px]";
+  const labelSize = isLarge ? "text-sm" : "text-xs";
+  const topSize = isLarge ? "text-xs" : "text-[10px]";
+  const strokeW = isLarge ? "10" : isMedium ? "8" : "6";
 
   return (
-    <div ref={ref} className="flex flex-col items-center gap-2">
+    <div ref={ref} className="flex flex-col items-center gap-1.5">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox="0 0 160 160" className="transform -rotate-90">
+          <circle cx="80" cy="80" r={radius} fill="none" stroke="hsl(var(--border))" strokeWidth={strokeW} />
           <circle
-            cx="80"
-            cy="80"
-            r={radius}
+            cx="80" cy="80" r={radius}
             fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="10"
-          />
-          <circle
-            cx="80"
-            cy="80"
-            r={radius}
-            fill="none"
-            stroke={getColor()}
-            strokeWidth="10"
+            stroke="hsl(var(--primary))"
+            strokeWidth={strokeW}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
@@ -86,16 +78,16 @@ export function TikTokScoreRing({ score, label, topPercent, size = 180 }: TikTok
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-4xl font-bold tracking-tight" style={{ color: getColor() }}>
+          <span className={`${scoreSize} font-bold tracking-tight text-foreground`}>
             {animatedScore}
           </span>
-          <span className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">
-            TikTok Score
+          <span className={`${scoreLabelSize} uppercase tracking-widest text-muted-foreground`}>
+            Score
           </span>
         </div>
       </div>
-      <span className="text-sm font-semibold text-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">{topPercent}</span>
+      {label && <span className={`${labelSize} font-semibold text-foreground text-center leading-tight`}>{label}</span>}
+      {topPercent && <span className={`${topSize} text-muted-foreground`}>{topPercent}</span>}
     </div>
   );
 }

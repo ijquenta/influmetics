@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { IconCheck, IconLoader2 } from "@tabler/icons-react";
@@ -59,8 +60,11 @@ export function DiagnosticStepScanning({ influencerCount }: DiagnosticStepScanni
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] px-4">
-      <div className="w-full max-w-sm flex flex-col items-center gap-6">
-        <IconLoader2 className="w-10 h-10 text-primary animate-spin" />
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5 }} className="w-full max-w-sm flex flex-col items-center gap-6">
+        <div className="relative">
+          <motion.div className="absolute inset-0 rounded-full bg-primary/20 blur-xl" animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} />
+          <IconLoader2 className="w-10 h-10 text-primary animate-spin relative" />
+        </div>
 
         <Badge variant="outline" className="rounded-2xl text-xs gap-1">
           {influencerCount} influencer{influencerCount !== 1 ? "es" : ""}
@@ -108,7 +112,7 @@ export function DiagnosticStepScanning({ influencerCount }: DiagnosticStepScanni
             TikTok puede tardar hasta 3 minutos. Gracias por tu paciencia.
           </p>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
