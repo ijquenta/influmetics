@@ -11,22 +11,34 @@ interface DiagnosticStepInputProps {
   loading: boolean;
 }
 
+function extractUsername(input: string): string | null {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  const urlMatch = trimmed.match(
+    /(?:https?:\/\/)?(?:www\.)?tiktok\.com\/@([a-zA-Z0-9_.-]+)/i
+  );
+  if (urlMatch) return urlMatch[1];
+
+  return trimmed.replace(/^@/, "");
+}
+
 export function DiagnosticStepInput({ onStart, loading }: DiagnosticStepInputProps) {
   const [usernames, setUsernames] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState("");
   const [error, setError] = useState("");
 
   const addUsername = () => {
-    const trimmed = currentInput.trim().replace(/^@/, "");
-    if (!trimmed) {
-      setError("Ingresa un usuario de TikTok");
+    const username = extractUsername(currentInput);
+    if (!username) {
+      setError("Ingresa un usuario o URL de TikTok");
       return;
     }
-    if (usernames.includes(trimmed)) {
+    if (usernames.includes(username)) {
       setError("Este usuario ya fue agregado");
       return;
     }
-    setUsernames([...usernames, trimmed]);
+    setUsernames([...usernames, username]);
     setCurrentInput("");
     setError("");
   };
@@ -70,15 +82,12 @@ export function DiagnosticStepInput({ onStart, loading }: DiagnosticStepInputPro
       <form onSubmit={handleSubmit} className="w-full max-w-lg flex flex-col items-center gap-4">
         <div className="w-full flex gap-2">
           <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium text-sm">
-              @
-            </span>
             <Input
               value={currentInput}
               onChange={(e) => { setCurrentInput(e.target.value); setError(""); }}
               onKeyDown={handleKeyDown}
-              placeholder="usuario_tiktok"
-              className="pl-8 h-11 text-base rounded-2xl border-primary/20 focus-visible:border-primary"
+              placeholder="@usuario o https://tiktok.com/@usuario"
+              className="h-11 text-base rounded-2xl border-primary/20 focus-visible:border-primary"
               disabled={loading}
             />
           </div>
